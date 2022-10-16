@@ -1,7 +1,7 @@
-import cv2
 import numpy as np
 import moviepy.editor as mpy
-from imagefunctions import NormalImage,XPText
+import moviepy.config as mpyconfig
+from imagefunctions import NormalImage,XPError
 from statefunctions import NormalKeyframe
 from compositingfunctions import ImageComposite
 from util import *
@@ -31,7 +31,7 @@ def stateprocessor(keyframes):
 def composite(state):
     canvas = newimage(1280, 720)
     for keyframe in state:
-        canvas = keyframe.composite(canvas, keyframe.image())
+        canvas = keyframe.composite(canvas, keyframe.imagefunction)
     return canvas
 
 def frameprocessor(frame, keyframes):
@@ -43,9 +43,9 @@ def frameprocessor(frame, keyframes):
             break
     return returnkeyframes
 
-keyframes.append(Keyframe(10, {"text":"dgkldfjldgk","x":100,"y":200}, XPText, NormalKeyframe, ImageComposite))
-keyframes.append(Keyframe(70, {"text":"dgkldfjldgk","x":120,"y":220}, XPText, NormalKeyframe, ImageComposite))
-keyframes.append(Keyframe(130, {"text":"dgkldfjldgk","x":140,"y":240}, XPText, NormalKeyframe, ImageComposite))
+keyframes.append(Keyframe(10, Params({"text":"smoke","buttons":["yeah","lets go","Cancel"],"x":100,"y":200}), XPError, NormalKeyframe, ImageComposite))
+keyframes.append(Keyframe(70, Params({"text":"gdfgjdlgrgrelhjrtklhjgreg","buttons":["OK"],"x":120,"y":220}), XPError, NormalKeyframe, ImageComposite))
+keyframes.append(Keyframe(130, Params({"title":"Error","erroricon":"xp/Exclamation.png","buttons":["Yes","No"],"x":140,"y":240}), XPError, NormalKeyframe, ImageComposite))
 
 
 def getframeimage(i):
@@ -55,10 +55,11 @@ def getframeimage(i):
     state = stateprocessor(processedkeyframes)
     image:Image = composite(state)
     return np.asarray(image.convert("RGB"))
-
+mpyconfig.FFMPEG_BINARY = "ffmpeg"
 def render(filename, length, keyframes):
+
     clip = mpy.VideoClip(getframeimage, duration=length / 60)
     #clip.write_videofile(filename=filename, fps=60, codec="libx264rgb", ffmpeg_params=["-strict","-2"]) perfection, doesnt embed | don't delete this
-    clip.write_videofile(filename=filename, fps=60, codec="libvpx-vp9",ffmpeg_params=["-pix_fmt","yuv444p"],write_logfile=True) #perfection, embeds
+    clip.write_videofile(filename=filename, fps=60, codec="libvpx-vp9",ffmpeg_params=["-pix_fmt","yuv444p"],write_logfile=True) #perfection, embeds only on pc
 
 render("video.mp4", 150, keyframes)

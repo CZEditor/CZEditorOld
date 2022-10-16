@@ -511,39 +511,53 @@ def Create2000Button(text,style=0,underline=False):
         Button = put(Button,textgraphic,floor(w(Button)/2-w(textgraphic)/2),4)
     return Button
 
-def CreateXPWindow(width,height,captiontext="",active=True,insideimagepath = "",erroriconpath="",errortext="",button1="",button2="",button3="",button1style=0,button2style=0,button3style=0):
-
-    if active:
+#def CreateXPWindow(width,height,captiontext="",active=True,insideimagepath = "",erroriconpath="",errortext="",button1="",button2="",button3="",button1style=0,button2style=0,button3style=0):
+def CreateXPWindow(param):
+    width = 0
+    height = 0
+    if param.active:
         TopFrame = Image.open("xp/Frame Up Active.png").convert("RGBA")
         LeftFrame = Image.open("xp/Frame Left Active.png").convert("RGBA")
         RightFrame = Image.open("xp/Frame Right Active.png").convert("RGBA")
         BottomFrame = Image.open("xp/Frame Bottom Active.png").convert("RGBA")
         CloseButton = Image.open("xp/Close button.png").convert("RGBA")
+        if param.buttonstyles:
+            button1style = param.buttonstyles[0]
+            button2style = param.buttonstyles[1]
+            button3style = param.buttonstyles[2]
+        else:
+            button1style = 0
+            button2style = 0
+            button3style = 0
     else:
         TopFrame = Image.open("xp/Frame Up Inactive.png").convert("RGBA")
         LeftFrame = Image.open("xp/Frame Left Inactive.png").convert("RGBA")
         RightFrame = Image.open("xp/Frame Right Inactive.png").convert("RGBA")
         BottomFrame = Image.open("xp/Frame Bottom Inactive.png").convert("RGBA")
         CloseButton = Image.open("xp/Close button Inactive.png").convert("RGBA")
-        button1style = button1style*(button1style != 4)
-        button2style = button2style*(button2style != 4) 
-        button3style = button3style*(button3style != 4)
+        if param.buttonstyles:
+            button1style = param.buttonstyles[0]*(param.buttonstyles[0] != 4)
+            button2style = param.buttonstyles[1]*(param.buttonstyles[1] != 4) 
+            button3style = param.buttonstyles[2]*(param.buttonstyles[2] != 4)
+        else:
+            button1style = 0
+            button2style = 0
+            button3style = 0
     textposx = 15+3
     textposy = 11+h(TopFrame)
-    
-    captiontextwidth = w(createtext(captiontext,".\\xp\\fonts\\caption\\"))
+    captiontextimg = createtext(param.title,".\\xp\\fonts\\caption\\")
+    captiontextwidth = w(captiontextimg)
     width = max(width,captiontextwidth+43)
-    createdtext = createtext(errortext,".\\xp\\fonts\\text\\",(0,0,0,255))
+    createdtext = createtext(param.text,".\\xp\\fonts\\text\\",(0,0,0,255))
     #textposy -= min(15,h(createdtext)//2)
     width = max(width,w(createdtext)+textposx+8+3)
     height = max(height,h(createdtext)+h(TopFrame)+3+25)
     print(textposy)
-    if(insideimagepath != ""):
-        insideimage = Image.open(insideimagepath).convert("RGBA")
-        height = max(h(insideimage)+h(TopFrame)+3,height)
-        width = max(width,w(insideimage)+6)
-    if(erroriconpath != ""):
-        erroricon = Image.open(erroriconpath).convert("RGBA")
+    #if(insideimagepath != ""):
+    #    insideimage = Image.open(insideimagepath).convert("RGBA")
+    #    width = max(width,w(insideimage)+6)
+    if(param.erroricon):
+        erroricon = Image.open(param.erroricon).convert("RGBA")
         textposx += 15+w(erroricon)
         textposy = max(textposy,11+floor(h(erroricon)/2-h(createdtext)/2)+h(TopFrame))
         height = max(height,h(erroricon)+h(TopFrame)+3+11+11+3)
@@ -552,10 +566,10 @@ def CreateXPWindow(width,height,captiontext="",active=True,insideimagepath = "",
     buttonsimage = Image.new("RGBA",(0,0),(0,0,0,0))
     buttonswidth = 0
     buttonsheight = 0
-    if button1 != "":
+    if len(param.buttons) > 0:
         buttonswidth += 11
         
-        button1img = CreateXPButton(button1,button1style)
+        button1img = CreateXPButton(param.buttons[0],button1style)
         #IMAGE = put(IMAGE,button1img,3+12,height-3-12,"02")
         buttonsheight = max(buttonsheight,h(button1img)+14)
         temp = Image.new("RGBA",(buttonswidth+w(button1img),buttonsheight),(0,0,0,0))
@@ -563,9 +577,9 @@ def CreateXPWindow(width,height,captiontext="",active=True,insideimagepath = "",
         temp = put(temp,button1img,buttonswidth,3)
         buttonsimage = temp.copy()
         buttonswidth += w(button1img)
-        if button2 != "":
+        if len(param.buttons) > 1:
             buttonswidth += 6
-            button2img = CreateXPButton(button2,button2style)
+            button2img = CreateXPButton(param.buttons[1],button2style)
             #IMAGE = put(IMAGE,button2img,3+12,height-3-12,"02")
             buttonsheight = max(buttonsheight,h(button2img)+14)
             temp = Image.new("RGBA",(buttonswidth+w(button2img),buttonsheight),(0,0,0,0))
@@ -573,9 +587,9 @@ def CreateXPWindow(width,height,captiontext="",active=True,insideimagepath = "",
             temp = put(temp,button2img,buttonswidth,3)
             buttonsimage = temp.copy()
             buttonswidth += w(button2img)
-            if button3 != "":
+            if len(param.buttons) > 2:
                 buttonswidth += 6
-                button3img = CreateXPButton(button3,button3style)
+                button3img = CreateXPButton(param.buttons[2],button3style)
                 #IMAGE = put(IMAGE,button2img,3+12,height-3-12,"02")
                 buttonsheight = max(buttonsheight,h(button3img)+14)
                 temp = Image.new("RGBA",(buttonswidth+w(button3img),buttonsheight),(0,0,0,0))
@@ -600,16 +614,16 @@ def CreateXPWindow(width,height,captiontext="",active=True,insideimagepath = "",
     IMAGE = put(IMAGE,cropx(BottomFrame,w(BottomFrame)-5,w(BottomFrame)).resize((5,3),Image.NEAREST),width,height,"22")
     IMAGE = put(IMAGE,Image.new("RGBA", (width-6,height-3-h(TopFrame)), (236,233,216,255)),3,h(TopFrame),"00")
     IMAGE = put(IMAGE,CloseButton,width-5,5,"20")
-    if active:
-        IMAGE = put(IMAGE,createtext(captiontext,".\\xp\\fonts\\captionshadow\\",(10,24,131,255)),8,8,"00")
-        IMAGE = put(IMAGE,createtext(captiontext,".\\xp\\fonts\\caption\\"),7,7,"00")
+    if param.active:
+        IMAGE = put(IMAGE,createtext(param.title,".\\xp\\fonts\\captionshadow\\",(10,24,131,255)),8,8,"00")
+        IMAGE = put(IMAGE,captiontextimg,7,7,"00")
     else:
-        IMAGE = put(IMAGE,createtext(captiontext,".\\xp\\fonts\\caption\\",(216,228,248,255)),7,7,"00")
-    if(insideimagepath != ""):
-        IMAGE = put(IMAGE,insideimage,3,h(TopFrame))
-    if(erroriconpath != ""):
+        IMAGE = put(IMAGE,createtext(param.title,".\\xp\\fonts\\caption\\",(216,228,248,255)),7,7,"00")
+    #if(insideimagepath != ""):
+    #    IMAGE = put(IMAGE,insideimage,3,h(TopFrame))
+    if(param.erroricon != ""):
         IMAGE = put(IMAGE,erroricon,3+11,h(TopFrame)+11)
-    IMAGE = put(IMAGE,createtext(errortext,".\\xp\\fonts\\text\\",(0,0,0,255)),textposx,textposy)
+    IMAGE = put(IMAGE,createdtext,textposx,textposy)
     IMAGE = put(IMAGE,buttonsimage,width//2-5,height-3,"12")
     return IMAGE
 
