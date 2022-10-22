@@ -1,3 +1,4 @@
+from multiprocessing import dummy
 from turtle import update
 import numpy as np
 import moviepy.editor as mpy
@@ -7,10 +8,11 @@ from statefunctions import NormalKeyframe
 from compositingfunctions import ImageComposite
 from util import *
 from PySide6.QtWidgets import QAbstractButton,QMainWindow,QApplication,QFrame,QScrollArea,QSplitter,QWidget,QGraphicsScene,QGraphicsView,QGraphicsItem,QGraphicsSceneMouseEvent
-from PySide6.QtGui import QPixmap,QPainter,QPen,QBrush,QColor,QRadialGradient,QResizeEvent
+from PySide6.QtGui import QPixmap,QPainter,QPen,QBrush,QColor,QRadialGradient,QResizeEvent,QMouseEvent
 from PySide6.QtCore import QSize,Qt,QRectF,QPoint,QLine
 from PIL import Image,ImageQt
 from ui import *
+from typing import *
 import sys
 keyframes = []
 class Keyframe():
@@ -26,6 +28,89 @@ class Keyframe():
         self.imagefunction = imagefunction
         self.statefunction = statefunction
         self.compositingfunction = compositingfunction
+
+class Keyframelist():
+    def __init__(self):
+        self.keyframes = []
+        self.needssorting = False
+    def add(self,keyframe:Keyframe) -> None:
+        self.keyframes.append(keyframe)
+        self.needssorting = True
+    def append(self,keyframe:Keyframe) -> None:
+        self.keyframes.append(keyframe)
+        self.needssorting = True
+    @overload
+    def change(self,keyframe:Keyframe,change:Keyframe) -> None:
+        ...
+    @overload
+    def change(self,i:int,change:Keyframe) -> None:
+        ...
+    def change(self,o,change:Keyframe) -> None:
+        if isinstance(o,Keyframe):
+            i = self.keyframes.index(o)
+        else:
+            i = o
+        prevframe = self.keyframes[i].frame
+        self.keyframes[i] = change
+        self.needssorting = True
+    @overload
+    def remove(self,keyframe:Keyframe) -> None:
+        ...
+    @overload
+    def remove(self,i:int) -> None:
+        ...
+    def remove(self,o) -> None:
+        if isinstance(o,Keyframe):
+            i = self.keyframes.index(o)
+        else:
+            i = o
+        self.keyframes.pop(i)
+    def pop(self,i:int) -> None:
+        self.keyframes.pop(i)
+    def len(self) -> int:
+        return len(self.keyframes)
+    def get(self,i) -> Keyframe:
+        if self.needssorting:
+            self.keyframes = sorted(self.keyframes,key=lambda k: k.frame)
+            self.needssorting = False
+        return keyframes[i]
+    def __str__(self) -> str:
+        if self.needssorting:
+            self.keyframes = sorted(self.keyframes,key=lambda k: k.frame)
+            self.needssorting = False
+        return str(self.keyframes)
+    def __getitem__(self,i:int) -> Keyframe:
+        if self.needssorting:
+            self.keyframes = sorted(self.keyframes,key=lambda k: k.frame)
+            self.needssorting = False
+        return self.keyframes[i]
+    def __setitem__(self,i:int,change:Keyframe) -> None:
+        prevframe = self.keyframes[i].frame
+        self.keyframes[i] = change
+        self.needssorting = True
+    @overload
+    def setframe(self,keyframe:Keyframe,frame:int):
+        ...
+    @overload
+    def setframe(self,i:int,frame:int):
+        ...
+    def setframe(self,o,frame:int):
+        if isinstance(o,Keyframe):
+            i = self.keyframes.index(o)
+        else:
+            i = o
+        prevframe = self.keyframes[i].frame
+        self.keyframes[i].frame = frame
+        self.needssorting = True
+    def isinrange(self,i) -> bool:
+        return len(self.keyframes) > i and i > 0
+    def getsafe(self,i):
+        if len(self.keyframes) > i and i > 0:
+            return self.keyframes[i]
+        else:
+            return None
+    def isin(self,keyframe:Keyframe) -> bool:
+        return keyframe in self.keyframes
 
 
 def stateprocessor(keyframes):
@@ -49,6 +134,7 @@ def frameprocessor(frame, keyframes):
             break
     return returnkeyframes
 
+keyframes = Keyframelist()
 keyframes.append(Keyframe(10, Params({"text":"smoke","buttons":["yeah","lets go","Cancel"],"x":100,"y":200}), XPError, NormalKeyframe, ImageComposite))
 keyframes.append(Keyframe(70, Params({"text":"gdfgjdlgrgrelhjrtklhjgreg","buttons":["OK"],"x":120,"y":220}), XPError, NormalKeyframe, ImageComposite))
 keyframes.append(Keyframe(130, Params({"title":"Error","erroricon":"xp/Exclamation.png","buttons":["Yes","No"],"x":140,"y":240}), XPError, NormalKeyframe, ImageComposite))
@@ -158,18 +244,36 @@ playbackframe = 100
 def updateplaybackframe(frame):
     global playbackframe
     playbackframe = frame
+
+class QGraphicsViewEvent(QGraphicsView):
+    def __init__(self,*args,**kwargs):
+        super().__init__(*args,**kwargs)
+        self.onpress = dummyfunction
+        self.onmove = dummyfunction
+        self.onrelease = dummyfunction
+    def mousePressEvent(self, event) -> None:
+        self.onpress(event)
+        return super().mousePressEvent(event)
+    def mouseReleaseEvent(self, event) -> None:
+        self.onrelease(event)
+        return super().mouseReleaseEvent(event)
+    def mouseMoveEvent(self, event) -> None:
+        self.onmove(event)
+        return super().mouseMoveEvent(event)
+
 class CzeTimeline(QWidget):
     coolgradient = QRadialGradient(50,50,90)
     coolgradient.setColorAt(1,QColor(255,255,255))
     coolgradient.setColorAt(0,QColor(255,0,0))
     
-    def __init__(self,parent):
+    def __init__(self,parent,parentclass):
         global keyframes
         self.keyframes = {}
         super().__init__(parent)
+        self.parentclass:Window = parentclass
         self.scene = QGraphicsScene(self)
         self.scene.setSceneRect(self.rect())
-        self.graphicsview = QGraphicsView(self)
+        self.graphicsview = QGraphicsViewEvent(self)
         self.graphicsview.setScene(self.scene)
         self.graphicsview.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         #kefrmae = self.scene.addRect(QRectF(0,0,18,18),QPen(QColor(0,0,0),0),coolgradient)
@@ -180,33 +284,32 @@ class CzeTimeline(QWidget):
             self.addKeyframe(keyframe)
         self.playbackcursor = self.scene.addLine(QLine(playbackframe,self.graphicsview.sceneRect().top(),playbackframe,self.graphicsview.sceneRect().bottom()),QPen(QColor(255,0,0),0))
         self.draggedframe = None
+        self.graphicsview.onpress = self.pressEvent
+        self.graphicsview.onrelease = self.releaseEvent
+        self.graphicsview.onmove = self.mmoveEvent
     def updateplaybackcursor(self,frame):
         self.playbackcursor.setLine(QLine(frame,self.graphicsview.sceneRect().top(),frame,self.graphicsview.sceneRect().bottom()))
-    def mouseMoveEvent(self, event:QGraphicsSceneMouseEvent) -> None:
-        print("move")
+    def mmoveEvent(self, event:QMouseEvent) -> None:
         if self.draggedframe:
-            keyframes[keyframes.index(self.draggedframe)].frame = event.pos().x()
-            print(event.pos().x())
+            keyframes.setframe(self.draggedframe,event.pos().x())
             self.keyframes[self.draggedframe].setPos(self.draggedframe.frame,0)
+            self.parentclass.updateviewport()
         return super().mouseMoveEvent(event)
-    def mousePressEvent(self, event:QGraphicsSceneMouseEvent) -> None:
-        print(self.graphicsview.transform())
+    def pressEvent(self, event:QMouseEvent) -> None:
         founditem:QGraphicsItem = self.scene.itemAt(event.pos().x()+self.graphicsview.sceneRect().left(),event.pos().y()+self.graphicsview.sceneRect().top(),self.graphicsview.transform())
-        print(founditem)
         if founditem != None:
             self.draggedframe = founditem.data(0)
-            print(self.draggedframe)
         else:
             updateplaybackframe(event.pos().x())
             self.updateplaybackcursor(event.pos().x())
+            self.parentclass.updateviewport()
         return super().mousePressEvent(event)
-    def mouseReleaseEvent(self, event:QGraphicsSceneMouseEvent) -> None:
-        print("release",self.draggedframe)
+    def releaseEvent(self, event:QMouseEvent) -> None:
         if self.draggedframe:
-            keyframes[keyframes.index(self.draggedframe)].frame = event.pos().x()
-            print(event.pos().x())
+            keyframes.setframe(self.draggedframe,event.pos().x())
             self.keyframes[self.draggedframe].setPos(self.draggedframe.frame,0)
             self.draggedframe = None
+            self.parentclass.updateviewport()
         return super().mouseReleaseEvent(event)
     
         #return super().mouseReleaseEvent(event)
@@ -236,11 +339,14 @@ class Window(QMainWindow):
         self.setStyleSheet("background-color: qradialgradient(spread:pad, cx:4.5, cy:4.5, radius:7, fx:4.5, fy:4.5, stop:0 rgba(255, 0, 0, 255), stop:1 rgba(0, 0, 0, 255))")
         hozsplitter = QSplitter(Qt.Orientation.Vertical,self)
         topsplitter = QSplitter(hozsplitter)
-        keyframeoptions = CzeKeyframeOptions(topsplitter)
-        viewport = CzeViewport(topsplitter)
-        timeline = CzeTimeline(hozsplitter)
+        self.keyframeoptions = CzeKeyframeOptions(topsplitter)
+        self.viewport = CzeViewport(topsplitter)
+        self.timeline = CzeTimeline(hozsplitter,self)
         self.setCentralWidget(hozsplitter)
         self.show()
+    def updateviewport(self):
+        self.viewport.updateviewportimage(playbackframe)
+        self.viewport.update()
 app = QApplication([])
 window = Window()
 sys.exit(app.exec())
