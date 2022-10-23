@@ -8,7 +8,7 @@ from statefunctions import NormalKeyframe
 from compositingfunctions import ImageComposite
 from util import *
 from PySide6.QtWidgets import QAbstractButton,QMainWindow,QApplication,QFrame,QScrollArea,QSplitter,QWidget,QGraphicsScene,QGraphicsView,QGraphicsItem,QGraphicsSceneMouseEvent
-from PySide6.QtGui import QPixmap,QPainter,QPen,QBrush,QColor,QRadialGradient,QResizeEvent,QMouseEvent
+from PySide6.QtGui import QPixmap,QPainter,QPen,QBrush,QColor,QRadialGradient,QResizeEvent,QMouseEvent,QWheelEvent
 from PySide6.QtCore import QSize,Qt,QRectF,QPoint,QLine
 from PIL import Image,ImageQt
 from ui import *
@@ -251,15 +251,24 @@ class QGraphicsViewEvent(QGraphicsView):
         self.onpress = dummyfunction
         self.onmove = dummyfunction
         self.onrelease = dummyfunction
+        self.onscroll = dummyfunction
+        self.previousmouse = QPoint(0,0)
     def mousePressEvent(self, event) -> None:
+        #print(event)
         self.onpress(event)
+        self.previousmouse = event.pos()
         return super().mousePressEvent(event)
     def mouseReleaseEvent(self, event) -> None:
         self.onrelease(event)
         return super().mouseReleaseEvent(event)
-    def mouseMoveEvent(self, event) -> None:
-        self.onmove(event)
+    def mouseMoveEvent(self, event:QMouseEvent) -> None:
+        self.onmove(event,self.previousmouse)
+        #print(event)
+        self.previousmouse = event.pos()
         return super().mouseMoveEvent(event)
+    def wheelEvent(self, event) -> None:
+        self.onscroll(event)
+        return super().wheelEvent(event)
 
 class CzeTimeline(QWidget):
     coolgradient = QRadialGradient(50,50,90)
@@ -272,59 +281,103 @@ class CzeTimeline(QWidget):
         super().__init__(parent)
         self.parentclass:Window = parentclass
         self.scene = QGraphicsScene(self)
-        self.scene.setSceneRect(self.rect())
         self.graphicsview = QGraphicsViewEvent(self)
+        #self.graphicsview.setSceneRect(QRectF(0,0,200,2000))
         self.graphicsview.setScene(self.scene)
         self.graphicsview.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.graphicsview.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.graphicsview.horizontalScrollBar().disconnect(self.graphicsview)
+        self.graphicsview.verticalScrollBar().disconnect(self.graphicsview)
         #kefrmae = self.scene.addRect(QRectF(0,0,18,18),QPen(QColor(0,0,0),0),coolgradient)
         #self.scene.addLine(QLine(0,0,0,self.scene.height()),QPen(QColor(0,0,0),0))
         self.graphicsview.setStyleSheet("border-image:url(editor/Square Frame.png) 2; border-width:2;")
         #self.graphicsview.setTransformationAnchor(QGraphicsView.ViewportAnchor.AnchorUnderMouse)
         for keyframe in keyframes:
             self.addKeyframe(keyframe)
-        self.playbackcursor = self.scene.addLine(QLine(playbackframe,self.graphicsview.sceneRect().top(),playbackframe,self.graphicsview.sceneRect().bottom()),QPen(QColor(255,0,0),0))
+        boundingrect = self.graphicsview.mapToScene(self.graphicsview.viewport().geometry()).boundingRect()
+        self.playbackcursor = self.scene.addLine(QLine(playbackframe,boundingrect.top(),playbackframe,boundingrect.bottom()),QPen(QColor(255,0,0),0))
         self.draggedframe = None
         self.graphicsview.onpress = self.pressEvent
         self.graphicsview.onrelease = self.releaseEvent
         self.graphicsview.onmove = self.mmoveEvent
+        self.graphicsview.onscroll = self.zoom
+        #self.graphicsview.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
+        #self.graphicsview.setTransformationAnchor(QGraphicsView.ViewportAnchor.AnchorViewCenter)
+        self.graphicsview.verticalScrollBar().setMaximum(200000000)
+        self.graphicsview.horizontalScrollBar().setMaximum(200000000)
+        
     def updateplaybackcursor(self,frame):
-        self.playbackcursor.setLine(QLine(frame,self.graphicsview.sceneRect().top(),frame,self.graphicsview.sceneRect().bottom()))
-    def mmoveEvent(self, event:QMouseEvent) -> None:
+        boundingrect = self.graphicsview.mapToScene(self.graphicsview.viewport().geometry()).boundingRect()
+        self.playbackcursor.setLine(QLine(frame,boundingrect.top(),frame,boundingrect.bottom()))
+    def mmoveEvent(self, event:QMouseEvent,prevpos:QPoint) -> None:
+        if event.buttons() & Qt.MouseButton.MiddleButton:
+            delta = event.pos()-prevpos
+            self.graphicsview.translate(delta.x(),delta.y())
+            boundingrect = self.graphicsview.mapToScene(self.graphicsview.viewport().geometry()).boundingRect()
+            self.playbackcursor.setLine(QLine(playbackframe,boundingrect.top(),playbackframe,boundingrect.bottom()))
         if self.draggedframe:
-            keyframes.setframe(self.draggedframe,event.pos().x())
+            keyframes.setframe(self.draggedframe,self.graphicsview.mapToScene(event.pos().x(),0).x())
             self.keyframes[self.draggedframe].setPos(self.draggedframe.frame,0)
             self.parentclass.updateviewport()
         return super().mouseMoveEvent(event)
     def pressEvent(self, event:QMouseEvent) -> None:
-        founditem:QGraphicsItem = self.scene.itemAt(event.pos().x()+self.graphicsview.sceneRect().left(),event.pos().y()+self.graphicsview.sceneRect().top(),self.graphicsview.transform())
-        if founditem != None:
-            self.draggedframe = founditem.data(0)
-        else:
-            updateplaybackframe(event.pos().x())
-            self.updateplaybackcursor(event.pos().x())
-            self.parentclass.updateviewport()
+        if event.button() == Qt.MouseButton.LeftButton:
+            founditem:QGraphicsItem = self.graphicsview.itemAt(event.pos().x(),event.pos().y())
+            if founditem != None:
+                self.draggedframe = founditem.data(0)
+            else:
+                updateplaybackframe(self.graphicsview.mapToScene(event.pos().x(),0).x())
+                self.updateplaybackcursor(self.graphicsview.mapToScene(event.pos().x(),0).x())
+                self.parentclass.updateviewport()
+       
         return super().mousePressEvent(event)
     def releaseEvent(self, event:QMouseEvent) -> None:
-        if self.draggedframe:
-            keyframes.setframe(self.draggedframe,event.pos().x())
-            self.keyframes[self.draggedframe].setPos(self.draggedframe.frame,0)
-            self.draggedframe = None
-            self.parentclass.updateviewport()
+        if event.button() == Qt.MouseButton.LeftButton:
+            if self.draggedframe:
+                keyframes.setframe(self.draggedframe,self.graphicsview.mapToScene(event.pos().x(),0).x())
+                self.keyframes[self.draggedframe].setPos(self.draggedframe.frame,0)
+                self.draggedframe = None
+                self.parentclass.updateviewport()
         return super().mouseReleaseEvent(event)
     
         #return super().mouseReleaseEvent(event)
-    def resizeEvent(self, event) -> None:
+    def resizeEvent(self, event:QResizeEvent) -> None:
         #self.scene.setSceneRect(self.rect())
-        self.graphicsview.setFixedSize(self.size())
-        self.graphicsview.setSceneRect(QRectF(QPoint(0,-self.height()/2),self.size()-QSize(5,5)))
+        r = self.graphicsview.sceneRect()
+        r.setSize(event.size()/self.graphicsview.transform().m11()+QSize(1000,1000))  #hacky workaround, if this wasnt here it would snap to 0,0 every time you shrinked the view by more than 1 pixel per frame
+        self.graphicsview.setSceneRect(r)
+        self.graphicsview.setFixedSize(event.size())
+        r = self.graphicsview.sceneRect()
+        r.setSize(event.size()/self.graphicsview.transform().m11())
+        self.graphicsview.setSceneRect(r)
+        #print(r)
+        #print(self.graphicsview.)
         super().resizeEvent(event)
-        self.playbackcursor.setLine(QLine(playbackframe,self.graphicsview.sceneRect().top(),playbackframe,self.graphicsview.sceneRect().bottom()))
+        boundingrect = self.graphicsview.mapToScene(self.graphicsview.viewport().geometry()).boundingRect()
+        self.playbackcursor.setLine(QLine(playbackframe,boundingrect.top(),playbackframe,boundingrect.bottom()))
     
     def addKeyframe(self,keyframe:Keyframe):
         self.keyframes[keyframe] = self.scene.addRect(QRectF(-9,-9,18,18),QPen(QColor(0,0,0),0),self.coolgradient)
         self.keyframes[keyframe].setRotation(45)
         self.keyframes[keyframe].setPos(keyframe.frame,0)
         self.keyframes[keyframe].setData(0,keyframe)
+    def zoom(self,event:QWheelEvent):
+        oldpos = self.graphicsview.mapToScene(event.position().toPoint())
+        factor = 1.05
+        self.graphicsview.setTransformationAnchor(QGraphicsView.ViewportAnchor.AnchorUnderMouse)
+        
+        self.graphicsview.scale((factor if event.angleDelta().y() > 0 else 1/factor),(factor if event.angleDelta().y() > 0 else 1/factor))
+        r = self.graphicsview.sceneRect()
+        r.setSize(self.size()/self.graphicsview.transform().m11())
+        self.graphicsview.setSceneRect(r)
+        newpos = self.graphicsview.mapToScene(event.position().toPoint())
+        delta = newpos-oldpos
+        self.graphicsview.setTransformationAnchor(QGraphicsView.ViewportAnchor.AnchorViewCenter)
+        
+        self.graphicsview.translate(delta.x(),delta.y())
+        boundingrect = self.graphicsview.mapToScene(self.graphicsview.viewport().geometry()).boundingRect()
+        self.playbackcursor.setLine(QLine(playbackframe,boundingrect.top(),playbackframe,boundingrect.bottom()))
+    
     #def paintEvent(self, event) -> None:
     #    painter = QPainter(self)
     #    painter.setViewport()
