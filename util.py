@@ -15,16 +15,47 @@ def newimage(w,h,r=0,g=0,b=0,a=255):
 class Params(object):
     def __init__(self,params:dict,**kwargs):
         for k in params.keys():
-            setattr(self,k,params[k])
+            if isinstance(params[k],dict):
+                setattr(self,k,Params(params[k]))
+            elif isinstance(params[k],list):
+                setattr(self,k,self.iterateoverlist(params[k]))
+            else:
+                setattr(self,k,params[k])
+        print(vars(self))
         for k in kwargs:
-            setattr(self,k,kwargs[k])
+            if isinstance(kwargs[k],dict):
+                setattr(self,k,Params(kwargs[k]))
+            else:
+                setattr(self,k,kwargs[k])
+    def iterateoverlist(self,l:list):
+        returnal = []
+        for i in l:
+            if isinstance(i,dict):
+                returnal.append(Params(i))
+            elif isinstance(i,list):
+                returnal.append(self.iterateoverlist(i))
+            else:
+                returnal.append(i)
+        return returnal
     def __getattr__(self,param:str):
         return None
+    def iterate(self,toiterate:dict):
+        out = {}
+        for k,v in toiterate.items():
+            if isinstance(v,Params):
+                #print(v)
+                out[k] = v.copy()
+            else:
+                out[k] = v
+        return out
     def copy(self):
-        return Params(vars(self))
+        var = self.iterate(vars(self))
+        return Params(var)
     def __str__(self):
-        return str(vars(self))
-
+        returnal = {}
+        for k,v in vars(self).items():
+            returnal[k] = str(v)
+        return str(returnal)
 def fillindefaults(param,defaults):
     for key in defaults.keys():
         if getattr(param,key) == None:

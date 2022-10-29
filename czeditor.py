@@ -7,7 +7,7 @@ from imagefunctions import NormalImage,XPError
 from statefunctions import NormalKeyframe
 from compositingfunctions import ImageComposite
 from util import *
-from PySide6.QtWidgets import QAbstractButton,QMainWindow,QApplication,QFrame,QScrollArea,QSplitter,QWidget,QGraphicsScene,QGraphicsView,QGraphicsItem,QGraphicsSceneMouseEvent
+from PySide6.QtWidgets import QAbstractButton,QMainWindow,QApplication,QFrame,QScrollArea,QSplitter,QWidget,QGraphicsScene,QGraphicsView,QGraphicsItem,QGraphicsSceneMouseEvent,QComboBox,QPlainTextEdit
 from PySide6.QtGui import QPixmap,QPainter,QPen,QBrush,QColor,QRadialGradient,QResizeEvent,QMouseEvent,QWheelEvent
 from PySide6.QtCore import QSize,Qt,QRectF,QPoint,QLine
 from PIL import Image,ImageQt
@@ -15,19 +15,24 @@ from ui import *
 from typing import *
 import sys
 keyframes = []
+
 class Keyframe():
     def image(self):
-        return self.imagefunction(self.param)
+        return self.imageparams.function.image(self.imageparams.params)
     def state(self, statetomodify):
-        return self.statefunction(statetomodify, self)
+        for stateparam in self.stateparams:
+            statetomodify = stateparam.function.state(statetomodify,self)
+        return statetomodify
     def composite(self, canvas, image):
-        return self.compositingfunction(canvas, image, self.param)
-    def __init__(self, frame, param, imagefunction, statefunction, compositingfunction):
+        for compositingparam in self.compositingparams:
+            canvas = compositingparam.function.composite(canvas,image,compositingparam)
+        return canvas
+    def __init__(self, frame, param):
         self.frame = frame
-        self.param = param
-        self.imagefunction = imagefunction
-        self.statefunction = statefunction
-        self.compositingfunction = compositingfunction
+        self.params = param
+        self.imageparams = param.image
+        self.stateparams = param.states
+        self.compositingparams = param.compositing
 
 class Keyframelist():
     def __init__(self):
@@ -122,7 +127,7 @@ def stateprocessor(keyframes):
 def composite(state):
     canvas = newimage(1280, 720)
     for keyframe in state:
-        canvas = keyframe.composite(canvas, keyframe.imagefunction)
+        canvas = keyframe.composite(canvas, keyframe.imageparams)
     return canvas
 
 def frameprocessor(frame, keyframes):
@@ -135,9 +140,9 @@ def frameprocessor(frame, keyframes):
     return returnkeyframes
 
 keyframes = Keyframelist()
-keyframes.append(Keyframe(10, Params({"text":"smoke","buttons":["yeah","lets go","Cancel"],"x":100,"y":200}), XPError, NormalKeyframe, ImageComposite))
-keyframes.append(Keyframe(70, Params({"text":"gdfgjdlgrgrelhjrtklhjgreg","buttons":["OK"],"x":120,"y":220}), XPError, NormalKeyframe, ImageComposite))
-keyframes.append(Keyframe(130, Params({"title":"Error","erroricon":"xp/Exclamation.png","buttons":["Yes","No"],"x":140,"y":240}), XPError, NormalKeyframe, ImageComposite))
+keyframes.append(Keyframe(10, Params({"image":{"function":XPError,"params":{"text":"smoke","buttons":["yeah","lets go","Cancel"]}},"states":[{"function":NormalKeyframe,"params":{}}],"compositing":[{"function":ImageComposite,"params":{"x":100,"y":200}}]})))
+keyframes.append(Keyframe(70, Params({"image":{"function":XPError,"params":{"text":"gdfgjdlgrgrelhjrtklhjgreg","buttons":["OK"]}},"states":[{"function":NormalKeyframe,"params":{}}],"compositing":[{"function":ImageComposite,"params":{"x":120,"y":220}}]})))
+keyframes.append(Keyframe(130, Params({"image":{"function":XPError,"params":{"title":"Error","erroricon":"xp/Exclamation.png","buttons":["Yes","No"]}},"states":[{"function":NormalKeyframe,"params":{}}],"compositing":[{"function":ImageComposite,"params":{"x":140,"y":240}}]})))
 
 
 def getframeimage(i):
@@ -212,6 +217,12 @@ class QRedScrollArea(QScrollArea):
         #self.setFixedSize(w,h)
         #self.move(x,y)
         self.setStyleSheet("border-image:url(editor/Square Frame.png) 2; border-width:2;")
+
+class QRedOptionCategory(QRedFrame):
+    def __init__(self,parent,param:Params):
+        super().__init__(parent)
+        self.param = param
+        
 class CzeKeyframeOptions(QRedScrollArea):
     def __init__(self,parent):
         super().__init__(parent)

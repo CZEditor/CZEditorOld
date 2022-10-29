@@ -4,9 +4,12 @@ from generate import CreateXPWindow
 
 
 
-def NormalImage(param:Params):
-    return openimage(param.imagepath)
-
-def XPError(param:Params):
-    fillindefaults(param,{"text":"","title":"","buttons":[],"buttonstyles":[],"erroricon":""})
-    return CreateXPWindow(param)
+class NormalImage():
+    name = "Image"
+    def image(param:Params):
+        return openimage(param.imagepath)
+class XPError():
+    name = "Windows XP Error"
+    def image(param:Params):
+        fillindefaults(param,{"text":"","title":"","buttons":[],"buttonstyles":[],"erroricon":""})
+        return CreateXPWindow(param)
