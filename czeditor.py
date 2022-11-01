@@ -7,7 +7,7 @@ from imagefunctions import NormalImage,XPError
 from statefunctions import NormalKeyframe
 from compositingfunctions import ImageComposite
 from util import *
-from PySide6.QtWidgets import QAbstractButton,QMainWindow,QApplication,QFrame,QScrollArea,QSplitter,QWidget,QGraphicsScene,QGraphicsView,QGraphicsItem,QGraphicsSceneMouseEvent,QComboBox,QPlainTextEdit
+from PySide6.QtWidgets import QAbstractButton,QMainWindow,QApplication,QFrame,QScrollArea,QSplitter,QWidget,QGraphicsScene,QGraphicsView,QGraphicsItem,QGraphicsSceneMouseEvent,QComboBox,QPlainTextEdit,QLabel,QVBoxLayout,QHBoxLayout,QSizePolicy,QFormLayout
 from PySide6.QtGui import QPixmap,QPainter,QPen,QBrush,QColor,QRadialGradient,QResizeEvent,QMouseEvent,QWheelEvent
 from PySide6.QtCore import QSize,Qt,QRectF,QPoint,QLine
 from PIL import Image,ImageQt
@@ -208,24 +208,75 @@ class QRedButton(QAbstractButton):
 class QRedFrame(QFrame):
     def __init__(self,parent):
         super().__init__(parent)
-        #self.setFixedSize(w,h)
-        #self.move(x,y)
         self.setStyleSheet("border-image:url(editor/Square Frame.png) 2; border-width:2;")
+
 class QRedScrollArea(QScrollArea):
     def __init__(self,parent):
         super().__init__(parent)
-        #self.setFixedSize(w,h)
-        #self.move(x,y)
         self.setStyleSheet("border-image:url(editor/Square Frame.png) 2; border-width:2;")
+
+class QRedTextBox(QPlainTextEdit):
+    def __init__(self,parent,onchange=dummyfunction):
+        super().__init__(parent)
+        self.onchange = onchange
+        self.setStyleSheet("border-image:url(editor/Text Box.png) 2; border-width:2;")
+    def changeEvent(self, e) -> None:
+        self.onchange(self.toPlainText())
+        return super().changeEvent(e)
+        
+class QRedTextProperty(QRedFrame):
+    def __init__(self,parent,param:Params,index):
+        super().__init__(parent)
+        self.param = param
+        self.widgets = QHBoxLayout()
+        self.index = index
+        self.textbox = QRedTextBox(None,self.updateproperty)
+        self.textbox.setPlainText(getattr(param,index))
+        self.widgets.addWidget(self.textbox)
+        self.setLayout(self.widgets)
+    def updateproperty(self,value:str):
+        setattr(self.param,self.index,value)
+    def updatetextbox(self):
+        self.textbox.onchange = dummyfunction
+        self.textbox.setPlainText(getattr(self.param,self.index))
+        self.textbox.onchange = self.updateproperty
+class QRedDropDownFrame(QRedFrame):
+    def __init__(self,parent,name):
+        super().__init__(parent)
+        self.whole = QVBoxLayout(self)
+        self.collapseButton = QRedButton(None,name,0,0,self.collapse)
+        self.mainView = QRedFrame(self)        
+        self.widgets = QFormLayout(self.mainView)
+        self.widgets.addRow("text",QRedTextProperty(None,keyframes.get(0).imageparams,"text"))
+        self.mainView.setLayout(self.widgets)
+        self.mainView.sizePolicy().setVerticalPolicy(QSizePolicy.Policy.Minimum)
+        self.mainView.sizePolicy().setHorizontalPolicy(QSizePolicy.Policy.Maximum)
+        self.whole.addWidget(self.collapseButton)
+        self.whole.addWidget(self.mainView)
+        self.setLayout(self.whole)
+        self.collapsed = False
+        print(self.mainView.maximumHeight())
+    def collapse(self):
+        if self.collapsed:
+            self.mainView.setMaximumHeight(9999)
+            self.collapsed = False
+        else:
+            self.mainView.setMaximumHeight(0)
+            self.collapsed = True
 
 class QRedOptionCategory(QRedFrame):
     def __init__(self,parent,param:Params):
         super().__init__(parent)
         self.param = param
         
+
 class CzeKeyframeOptions(QRedScrollArea):
     def __init__(self,parent):
         super().__init__(parent)
+        self.widgets = QVBoxLayout()
+        dropdo = QRedDropDownFrame(None,"yo")
+        self.widgets.addWidget(dropdo)
+        self.setLayout(self.widgets)
 class CzeViewport(QWidget):
     def __init__(self,parent):
         super().__init__(parent)
