@@ -8,7 +8,7 @@ from statefunctions import NormalKeyframe
 from compositingfunctions import ImageComposite
 from util import *
 from PySide6.QtWidgets import QAbstractButton,QMainWindow,QApplication,QFrame,QScrollArea,QSplitter,QWidget,QGraphicsScene,QGraphicsView,QGraphicsItem,QGraphicsSceneMouseEvent,QComboBox,QPlainTextEdit,QLabel,QVBoxLayout,QHBoxLayout,QSizePolicy,QFormLayout
-from PySide6.QtGui import QPixmap,QPainter,QPen,QBrush,QColor,QRadialGradient,QResizeEvent,QMouseEvent,QWheelEvent
+from PySide6.QtGui import QPixmap,QPainter,QPen,QBrush,QColor,QRadialGradient,QResizeEvent,QMouseEvent,QWheelEvent,QTextOption
 from PySide6.QtCore import QSize,Qt,QRectF,QPoint,QLine
 from PIL import Image,ImageQt
 from ui import *
@@ -220,6 +220,8 @@ class QRedTextBox(QPlainTextEdit):
         super().__init__(parent)
         self.onchange = onchange
         self.setStyleSheet("border-image:url(editor/Text Box.png) 2; border-width:2;")
+        self.setWordWrapMode(QTextOption.WrapMode.NoWrap)
+        #self.setMaximumHeight(150)
     def changeEvent(self, e) -> None:
         self.onchange(self.toPlainText())
         return super().changeEvent(e)
@@ -234,6 +236,7 @@ class QRedTextProperty(QRedFrame):
         self.textbox.setPlainText(getattr(param,index))
         self.widgets.addWidget(self.textbox)
         self.setLayout(self.widgets)
+        
     def updateproperty(self,value:str):
         setattr(self.param,self.index,value)
     def updatetextbox(self):
@@ -255,7 +258,8 @@ class QRedDropDownFrame(QRedFrame):
         self.whole.addWidget(self.mainView)
         self.setLayout(self.whole)
         self.collapsed = False
-        print(self.mainView.maximumHeight())
+        #print(self.mainView.maximumHeight())
+        self.setMaximumHeight(200)
     def collapse(self):
         if self.collapsed:
             self.mainView.setMaximumHeight(9999)
