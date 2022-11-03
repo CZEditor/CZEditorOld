@@ -232,7 +232,7 @@ class QRedTextProperty(QRedFrame):
         self.param = param
         self.widgets = QHBoxLayout()
         self.index = index
-        self.textbox = QRedTextBox(None,self.updateproperty)
+        self.textbox = QRedTextBox(self,self.updateproperty)
         self.textbox.setPlainText(getattr(param,index))
         self.widgets.addWidget(self.textbox)
         self.setLayout(self.widgets)
@@ -253,11 +253,13 @@ class QRedDropDownFrame(QRedFrame):
         self.widgets.addRow("text",QRedTextProperty(None,keyframes.get(0).imageparams,"text"))
         self.mainView.setLayout(self.widgets)
         self.mainView.sizePolicy().setVerticalPolicy(QSizePolicy.Policy.Minimum)
-        self.mainView.sizePolicy().setHorizontalPolicy(QSizePolicy.Policy.Maximum)
+        self.mainView.sizePolicy().setHorizontalPolicy(QSizePolicy.Policy.MinimumExpanding)
         self.whole.addWidget(self.collapseButton)
         self.whole.addWidget(self.mainView)
         self.setLayout(self.whole)
         self.collapsed = False
+        self.whole.setAlignment(Qt.AlignmentFlag.AlignTop)
+        self.whole.setSizeConstraint(QVBoxLayout.SizeConstraint.SetFixedSize)
         #print(self.mainView.maximumHeight())
         self.setMaximumHeight(200)
     def collapse(self):
@@ -277,10 +279,22 @@ class QRedOptionCategory(QRedFrame):
 class CzeKeyframeOptions(QRedScrollArea):
     def __init__(self,parent):
         super().__init__(parent)
+        self.viewframe = QRedFrame(None)
+        #self.alayout = QVBoxLayout()
         self.widgets = QVBoxLayout()
         dropdo = QRedDropDownFrame(None,"yo")
         self.widgets.addWidget(dropdo)
-        self.setLayout(self.widgets)
+        dropdo2 = QRedDropDownFrame(None,"yo2")
+        self.widgets.addWidget(dropdo2)
+        self.viewframe.setLayout(self.widgets)
+        self.widgets.setAlignment(Qt.AlignmentFlag.AlignTop)
+        self.setWidget(self.viewframe)
+        #self.setSizePolicy(QSizePolicy.Policy.MinimumExpanding,QSizePolicy.Policy.MinimumExpanding)
+        #self.widgets.setAlignment(Qt.AlignmentFlag.AlignTop)
+        #self.alayout.addWidget(self.viewframe)
+        self.setWidgetResizable(True)
+        
+    
 class CzeViewport(QWidget):
     def __init__(self,parent):
         super().__init__(parent)
