@@ -1,5 +1,4 @@
 from PIL import Image
-
 openedimages = {}
 newimages = {}
 def openimage(s):
@@ -21,7 +20,7 @@ class Params(object):
                 setattr(self,k,self.iterateoverlist(params[k]))
             else:
                 setattr(self,k,params[k])
-        print(vars(self))
+        #print(vars(self))
         for k in kwargs:
             if isinstance(kwargs[k],dict):
                 setattr(self,k,Params(kwargs[k]))
@@ -56,8 +55,23 @@ class Params(object):
         for k,v in vars(self).items():
             returnal[k] = str(v)
         return str(returnal)
+    def __getitem__(self,param):
+        return self.__getattribute__(param)
+    def __setitem__(self,index,param):
+        return self.__setattr__(index,param)
+
 def fillindefaults(param,defaults):
     for key in defaults.keys():
         if getattr(param,key) == None:
             setattr(param,key,defaults[key])
     return param
+class emptylist():
+    def __init__(self,default):
+        self.default = default
+    def __getitem__(self,param):
+        return self.default
+    def __setitem__(self,index,param):
+        return
+def dummyfunction(*args,**kwargs):
+    pass
+

@@ -535,14 +535,7 @@ def CreateXPWindow(param):
         RightFrame = Image.open("xp/Frame Right Inactive.png").convert("RGBA")
         BottomFrame = Image.open("xp/Frame Bottom Inactive.png").convert("RGBA")
         CloseButton = Image.open("xp/Close button Inactive.png").convert("RGBA")
-        if param.buttonstyles:
-            button1style = param.buttonstyles[0]*(param.buttonstyles[0] != 4)
-            button2style = param.buttonstyles[1]*(param.buttonstyles[1] != 4) 
-            button3style = param.buttonstyles[2]*(param.buttonstyles[2] != 4)
-        else:
-            button1style = 0
-            button2style = 0
-            button3style = 0
+        
     textposx = 15+3
     textposy = 11+h(TopFrame)
     captiontextimg = createtext(param.title,".\\xp\\fonts\\caption\\")
@@ -566,10 +559,11 @@ def CreateXPWindow(param):
     buttonsimage = Image.new("RGBA",(0,0),(0,0,0,0))
     buttonswidth = 0
     buttonsheight = 0
+    
     if len(param.buttons) > 0:
         buttonswidth += 11
         
-        button1img = CreateXPButton(param.buttons[0],button1style)
+        button1img = CreateXPButton(param.buttons[0],param.buttonstyles[0]*(param.buttonstyles[0] != 4))
         #IMAGE = put(IMAGE,button1img,3+12,height-3-12,"02")
         buttonsheight = max(buttonsheight,h(button1img)+14)
         temp = Image.new("RGBA",(buttonswidth+w(button1img),buttonsheight),(0,0,0,0))
@@ -577,9 +571,9 @@ def CreateXPWindow(param):
         temp = put(temp,button1img,buttonswidth,3)
         buttonsimage = temp.copy()
         buttonswidth += w(button1img)
-        if len(param.buttons) > 1:
+        for i in range(len(param.buttons)-1):
             buttonswidth += 6
-            button2img = CreateXPButton(param.buttons[1],button2style)
+            button2img = CreateXPButton(param.buttons[i+1],param.buttonstyles[i+1]*(param.buttonstyles[i+1] != 4))
             #IMAGE = put(IMAGE,button2img,3+12,height-3-12,"02")
             buttonsheight = max(buttonsheight,h(button2img)+14)
             temp = Image.new("RGBA",(buttonswidth+w(button2img),buttonsheight),(0,0,0,0))
@@ -587,16 +581,6 @@ def CreateXPWindow(param):
             temp = put(temp,button2img,buttonswidth,3)
             buttonsimage = temp.copy()
             buttonswidth += w(button2img)
-            if len(param.buttons) > 2:
-                buttonswidth += 6
-                button3img = CreateXPButton(param.buttons[2],button3style)
-                #IMAGE = put(IMAGE,button2img,3+12,height-3-12,"02")
-                buttonsheight = max(buttonsheight,h(button3img)+14)
-                temp = Image.new("RGBA",(buttonswidth+w(button3img),buttonsheight),(0,0,0,0))
-                temp = put(temp,buttonsimage,0,0)
-                temp = put(temp,button3img,buttonswidth,3)
-                buttonsimage = temp.copy()
-                buttonswidth += w(button3img)
         width = max(width,buttonswidth+12)
         height += buttonsheight
     #buttonswidth.show()
