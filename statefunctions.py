@@ -7,3 +7,5 @@ class NormalKeyframe():
         keyframe.imageparams.params.active = True
         statetomodify.append(keyframe)
         return statetomodify
+    def __str__(self):
+        return self.name

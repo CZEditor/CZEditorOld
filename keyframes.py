@@ -5,6 +5,12 @@ from statefunctions import *
 from compositingfunctions import *
 
 class Keyframe():
+    def __init__(self, frame, param:Params):
+        self.frame = frame
+        self.params = param
+        self.imageparams = param.image
+        self.stateparams = param.states
+        self.compositingparams = param.compositing
     def image(self):
         return self.imageparams.function.image(self.imageparams.params)
     def state(self, statetomodify):
@@ -15,12 +21,6 @@ class Keyframe():
         for compositingparam in self.compositingparams:
             canvas = compositingparam.function.composite(canvas,image,compositingparam)
         return canvas
-    def __init__(self, frame, param):
-        self.frame = frame
-        self.params = param
-        self.imageparams = param.image
-        self.stateparams = param.states
-        self.compositingparams = param.compositing
 
 class Keyframelist():
     def __init__(self):

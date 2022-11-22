@@ -13,4 +13,6 @@ class ImageComposite():
     def composite(canvas,imagefunction,params):
         
         canvas.alpha_composite(cachecomposite(imagefunction),(params.params.x,params.params.y))
-        return canvas 
+        return canvas
+    def __str__(self):
+        return self.name

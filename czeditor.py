@@ -6,7 +6,7 @@ from imagefunctions import NormalImage,XPError
 from statefunctions import NormalKeyframe
 from compositingfunctions import ImageComposite
 from util import *
-from PySide6.QtWidgets import QAbstractButton,QMainWindow,QApplication,QFrame,QScrollArea,QSplitter,QWidget,QGraphicsScene,QGraphicsView,QGraphicsItem,QGraphicsSceneMouseEvent,QComboBox,QPlainTextEdit,QLabel,QVBoxLayout,QHBoxLayout,QSizePolicy,QFormLayout,QLineEdit,QGridLayout
+from PySide6.QtWidgets import QAbstractButton,QMainWindow,QApplication,QFrame,QScrollArea,QSplitter,QWidget,QGraphicsScene,QGraphicsView,QGraphicsItem,QGraphicsSceneMouseEvent,QComboBox,QPlainTextEdit,QLabel,QVBoxLayout,QHBoxLayout,QSizePolicy,QFormLayout,QLineEdit,QGridLayout,QSpinBox
 from PySide6.QtGui import QPixmap,QPainter,QPen,QBrush,QColor,QRadialGradient,QResizeEvent,QMouseEvent,QWheelEvent,QTextOption
 from PySide6.QtCore import QSize,Qt,QRectF,QPoint,QLine,SIGNAL
 from PIL import Image,ImageQt
@@ -16,7 +16,11 @@ import sys
 from keyframes import *
 
 
-
+UIDropdownLists = {
+    [NormalImage,XPError],
+    [NormalKeyframe],
+    [ImageComposite]
+}
 
 def stateprocessor(keyframes):
     state = []
@@ -174,6 +178,16 @@ class QRedTextEntry(QLineEdit):
         self.textChanged.connect(self.change)
     def change(self) -> None:
         self.onchange(self.text())   
+class QRedSpinBox(QSpinBox):
+    def __init__(self,parent,onchange=dummyfunction):
+        super().__init__(parent)
+        self.onchange = onchange
+        self.setStyleSheet("border-image:url(editor/Text Box.png) 2; border-width:2;")
+        self.setMaximum(50000)
+        self.setMinimum(-50000)
+        self.valueChanged.connect(self.change)
+    def change(self) -> None:
+        self.onchange(self.value()) 
 class QRedTextProperty(QRedFrame):
     def __init__(self,parent,param:Params,index):
         super().__init__(parent)
@@ -191,6 +205,24 @@ class QRedTextProperty(QRedFrame):
     def updatetextbox(self):
         self.textbox.onchange = dummyfunction
         self.textbox.setPlainText(self.param[self.index])
+        self.textbox.onchange = self.updateproperty
+class QRedNumberProperty(QRedFrame):
+    def __init__(self,parent,param:Params,index):
+        super().__init__(parent)
+        self.param = param
+        self.widgets = QHBoxLayout()
+        self.index = index
+        self.textbox = QRedSpinBox(self,self.updateproperty)
+        self.textbox.setValue(param[index])
+        self.widgets.addWidget(self.textbox)
+        self.setLayout(self.widgets)
+        self.setStyleSheet("border-width:0px;")
+    def updateproperty(self,value:int):
+        #print("setting:",value)
+        self.param[self.index] = value
+    def updatetextbox(self):
+        self.textbox.onchange = dummyfunction
+        self.textbox.setValue(self.param[self.index])
         self.textbox.onchange = self.updateproperty
 class QRedTextEntryListProperty(QRedFrame):
     def __init__(self,parent,param:Params,index):
@@ -211,7 +243,7 @@ class QRedTextEntryListProperty(QRedFrame):
         self.textbox.setText(self.param[self.index])
         self.textbox.onchange = self.updateproperty
 class QRedTextListProperty(QRedFrame):
-    def __init__(self,parent):
+    def __init__(self,parent,thelist):
         super().__init__(parent)
         
         self.whole = QVBoxLayout(self)
@@ -219,7 +251,7 @@ class QRedTextListProperty(QRedFrame):
         self.mainView = QRedFrame(self)
         self.withbuttons = QGridLayout()
         self.widgets = QFormLayout()
-        self.thelist = keyframes[0].imageparams.params.buttons
+        self.thelist = thelist
         self.entries = []
         self.widgetbuttons = QGridLayout()
         for i in range(len(self.thelist)):
@@ -229,7 +261,7 @@ class QRedTextListProperty(QRedFrame):
             arow.addWidget(QRedButton(None,"/\\",0,0,self.moveup,CreateRedSmallButton,False,arow))
             arow.addWidget(QRedButton(None,"\\/",0,0,self.movedown,CreateRedSmallButton,False,arow))
             arow.addWidget(QRedButton(None,"-",0,0,self.remove,CreateRedSmallButton,False,arow))
-            self.widgets.addRow("button",arow)
+            self.widgets.addRow("",arow)
         self.withbuttons.addLayout(self.widgets,0,0)
         self.withbuttons.addLayout(self.widgetbuttons,0,1)
         self.withbuttons.addWidget(QRedExpandableButton(None,"+",self.add),1,0)
@@ -268,7 +300,7 @@ class QRedTextListProperty(QRedFrame):
         self.entries[index].updatetextbox()
         self.entries[index+1].updatetextbox()
     def remove(self,arow):
-        index = self.widgets.getLayoutPosition(arow)[0] #no idea either why it has to be [0]. it returns a tuple that looks like this (4, <ItemRole.FieldRole: 1>)
+        index = self.widgets.getLayoutPosition(arow)[0] #no idea why it has to be [0]. it returns a tuple that looks like this (4, <ItemRole.FieldRole: 1>)
         self.thelist.pop(index)
         self.widgets.removeRow(index)
         self.entries.pop(index)
@@ -292,17 +324,16 @@ class QRedDropDownFrame(QRedFrame):
         self.collapseButton = QRedExpandableButton(None,name,self.collapse)
         self.mainView = QRedFrame(self)
         self.widgets = QFormLayout(self.mainView)
-        self.widgets.addRow("text",QRedTextProperty(None,keyframes[0].imageparams.params,"text"))
-        self.widgets.addRow("buttons",QRedTextListProperty(None))
+        
         self.mainView.setLayout(self.widgets)
         self.mainView.sizePolicy().setVerticalPolicy(QSizePolicy.Policy.Minimum)
-        self.mainView.sizePolicy().setHorizontalPolicy(QSizePolicy.Policy.MinimumExpanding)
+        self.mainView.sizePolicy().setHorizontalPolicy(QSizePolicy.Policy.Preferred)
         self.whole.addWidget(self.collapseButton)
         self.whole.addWidget(self.mainView)
         self.setLayout(self.whole)
         self.collapsed = False
         self.whole.setAlignment(Qt.AlignmentFlag.AlignTop)
-        self.whole.setSizeConstraint(QVBoxLayout.SizeConstraint.SetFixedSize)
+        self.whole.setSizeConstraint(QVBoxLayout.SizeConstraint.SetNoConstraint)
         #print(self.mainView.maximumHeight())
         #self.setMaximumHeight(200)
         self.mainView.setStyleSheet("border-width:0px; background:none;")
@@ -316,20 +347,35 @@ class QRedDropDownFrame(QRedFrame):
 
 
 
-class QRedOptionCategory(QRedFrame):
-    def __init__(self,parent,param:Params):
-        super().__init__(parent)
-        self.param = param
-        
+
+class CzeKeyframeOptionCategory(QRedDropDownFrame):
+    def __init__(self,parent,name:str,params:Params):
+        super().__init__(parent,name)
+        self.params = params
+        self.iterate(self.params)
+    def iterate(self,params):
+        for key in vars(params).keys():
+            param = params[key]
+            if isinstance(param,str):
+                self.widgets.addRow(key,QRedTextProperty(None,params,key))
+            elif isinstance(param,list):
+                self.widgets.addRow(key,QRedTextListProperty(None,param))
+            elif isinstance(param,Params):
+                self.iterate(param)
+            elif isinstance(param,int):
+                self.widgets.addRow(key,QRedNumberProperty(None,params,key))
+            #Add a dropdown list. (HARD) (No bandaid solutions. It has to be done properly, so no ifs to check what dropdown it should be)
 
 class CzeKeyframeOptions(QRedScrollArea):
     def __init__(self,parent):
+        self.params = keyframes[0].params
         super().__init__(parent)
         self.viewframe = QRedFrame(None)
+        self.selectedframe = 0
         #self.alayout = QVBoxLayout()
         self.widgets = QVBoxLayout()
-        dropdo = QRedDropDownFrame(None,"yo")
-        self.widgets.addWidget(dropdo)
+        #dropdo = QRedDropDownFrame(None,"yo")
+        self.iterate(self.params)
         #dropdo2 = QRedDropDownListFrame(None)
         #self.widgets.addWidget(dropdo2)
         self.viewframe.setLayout(self.widgets)
@@ -339,7 +385,14 @@ class CzeKeyframeOptions(QRedScrollArea):
         #self.widgets.setAlignment(Qt.AlignmentFlag.AlignTop)
         #self.alayout.addWidget(self.viewframe)
         self.setWidgetResizable(True)
-    
+    def iterate(self,params):
+        for param in vars(params).values():
+            if isinstance(param,Params):
+                self.widgets.addWidget(CzeKeyframeOptionCategory(None,"Expand/Collapse",param)) #Make it display the actual name!
+            elif isinstance(param,list):
+                for i in param:
+                    self.iterate(i)
+                #Add a + button here to add more entries
 class CzeViewport(QWidget):
     def __init__(self,parent):
         super().__init__(parent)

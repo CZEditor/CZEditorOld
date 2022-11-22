@@ -1,6 +1,7 @@
 from PIL import Image
 openedimages = {}
 newimages = {}
+
 def openimage(s):
     if s not in openedimages:
         openedimages[s] = Image.open(s).convert("RGBA")
@@ -10,6 +11,7 @@ def newimage(w,h,r=0,g=0,b=0,a=255):
     if cachestr not in newimages:
         newimages[cachestr] = Image.new("RGBA",(w,h),(r,g,b,a))
     return newimages[cachestr].copy()
+
 
 class Params(object):
     def __init__(self,params:dict,**kwargs):
@@ -59,6 +61,15 @@ class Params(object):
         return self.__getattribute__(param)
     def __setitem__(self,index,param):
         return self.__setattr__(index,param)
+
+class Selectable():
+    def __init__(self,options=[None],index=0):
+        self.options = options
+        self.index = index
+    def __call__(self):
+        return self.options[self.index]
+        
+    
 
 def fillindefaults(param,defaults):
     for key in defaults.keys():
