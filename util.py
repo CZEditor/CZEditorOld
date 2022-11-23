@@ -63,11 +63,17 @@ class Params(object):
         return self.__setattr__(index,param)
 
 class Selectable():
-    def __init__(self,options=[None],index=0):
+    def __init__(self,index=0,options=[["None",None]]):
         self.options = options
         self.index = index
+        self.names = [i[0] for i in self.options]
     def __call__(self):
-        return self.options[self.index]
+        print(self.options[self.index])
+        return self.options[self.index][1]
+    def __str__(self):
+        return str(self.options[self.index][1])
+    def name(self):
+        return self.names[self.index]
         
     
 

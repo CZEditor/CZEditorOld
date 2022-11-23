@@ -9,3 +9,4 @@ class NormalKeyframe():
         return statetomodify
     def __str__(self):
         return self.name
+statefunctionsdropdown = [["Windows Error",NormalKeyframe]]

@@ -5,7 +5,7 @@ def cachecomposite(func):
     global imagecache
     strparam = str(func)
     if strparam not in imagecache:
-        imagecache[strparam] = func.function.image(func.params)
+        imagecache[strparam] = func.function().image(func.params)
     return imagecache[strparam]
 
 class ImageComposite():
@@ -16,3 +16,4 @@ class ImageComposite():
         return canvas
     def __str__(self):
         return self.name
+compositingfunctionsdropdown = [["Normal Media",ImageComposite]]

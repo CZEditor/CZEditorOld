@@ -545,12 +545,11 @@ def CreateXPWindow(param):
     #textposy -= min(15,h(createdtext)//2)
     width = max(width,w(createdtext)+textposx+8+3)
     height = max(height,h(createdtext)+h(TopFrame)+3+25)
-    print(textposy)
     #if(insideimagepath != ""):
     #    insideimage = Image.open(insideimagepath).convert("RGBA")
     #    width = max(width,w(insideimage)+6)
-    if(param.erroricon):
-        erroricon = Image.open(param.erroricon).convert("RGBA")
+    if(param.erroricon()):
+        erroricon = Image.open(param.erroricon()).convert("RGBA")
         textposx += 15+w(erroricon)
         textposy = max(textposy,11+floor(h(erroricon)/2-h(createdtext)/2)+h(TopFrame))
         height = max(height,h(erroricon)+h(TopFrame)+3+11+11+3)
@@ -605,7 +604,7 @@ def CreateXPWindow(param):
         IMAGE = put(IMAGE,createtext(param.title,".\\xp\\fonts\\caption\\",(216,228,248,255)),7,7,"00")
     #if(insideimagepath != ""):
     #    IMAGE = put(IMAGE,insideimage,3,h(TopFrame))
-    if(param.erroricon != ""):
+    if(param.erroricon() != ""):
         IMAGE = put(IMAGE,erroricon,3+11,h(TopFrame)+11)
     IMAGE = put(IMAGE,createdtext,textposx,textposy)
     IMAGE = put(IMAGE,buttonsimage,width//2-5,height-3,"12")

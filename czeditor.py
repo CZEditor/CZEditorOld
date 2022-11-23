@@ -16,11 +16,11 @@ import sys
 from keyframes import *
 
 
-UIDropdownLists = {
+UIDropdownLists = [
     [NormalImage,XPError],
     [NormalKeyframe],
     [ImageComposite]
-}
+]
 
 def stateprocessor(keyframes):
     state = []
@@ -188,6 +188,16 @@ class QRedSpinBox(QSpinBox):
         self.valueChanged.connect(self.change)
     def change(self) -> None:
         self.onchange(self.value()) 
+class QRedComboBox(QComboBox):
+    def __init__(self,parent,elements=[],onchange=dummyfunction):
+        super().__init__(parent)
+        self.onchange = onchange
+        
+        self.setStyleSheet("border-image:url(editor/Text Box.png) 2; border-width:2;")
+        self.addItems(elements)
+        self.currentIndexChanged.connect(self.valuechanged)
+    def valuechanged(self,index) -> None:
+        self.onchange(self.currentText(),self.currentIndex()) 
 class QRedTextProperty(QRedFrame):
     def __init__(self,parent,param:Params,index):
         super().__init__(parent)
@@ -224,6 +234,24 @@ class QRedNumberProperty(QRedFrame):
         self.textbox.onchange = dummyfunction
         self.textbox.setValue(self.param[self.index])
         self.textbox.onchange = self.updateproperty
+class QRedSelectableProperty(QRedFrame):
+    def __init__(self,parent,param:Selectable):
+        super().__init__(parent)
+        self.param = param
+        self.widgets = QHBoxLayout()
+        self.combobox = QRedComboBox(self,self.param.names,self.updateproperty)
+        self.combobox.setCurrentIndex(self.param.index)
+        self.widgets.addWidget(self.combobox)
+        
+        self.setLayout(self.widgets)
+        self.setStyleSheet("border-width:0px;")
+    def updateproperty(self,name,index):
+        #print("setting:",value)
+        self.param.index = index
+    def updateself(self):
+        self.combobox.onchange = dummyfunction
+        self.combobox.setCurrentIndex(self.param.index)
+        self.combobox.onchange = self.updateproperty
 class QRedTextEntryListProperty(QRedFrame):
     def __init__(self,parent,param:Params,index):
         super().__init__(parent)
@@ -364,11 +392,13 @@ class CzeKeyframeOptionCategory(QRedDropDownFrame):
                 self.iterate(param)
             elif isinstance(param,int):
                 self.widgets.addRow(key,QRedNumberProperty(None,params,key))
+            elif isinstance(param,Selectable):
+                self.widgets.addRow(key,QRedSelectableProperty(None,param))
             #Add a dropdown list. (HARD) (No bandaid solutions. It has to be done properly, so no ifs to check what dropdown it should be)
 
 class CzeKeyframeOptions(QRedScrollArea):
     def __init__(self,parent):
-        self.params = keyframes[0].params
+        self.params = keyframes[2].params
         super().__init__(parent)
         self.viewframe = QRedFrame(None)
         self.selectedframe = 0

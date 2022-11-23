@@ -12,14 +12,15 @@ class Keyframe():
         self.stateparams = param.states
         self.compositingparams = param.compositing
     def image(self):
-        return self.imageparams.function.image(self.imageparams.params)
+        return self.imageparams.function().image(self.imageparams.params)
     def state(self, statetomodify):
         for stateparam in self.stateparams:
-            statetomodify = stateparam.function.state(statetomodify,self)
+            print(stateparam.function())
+            statetomodify = stateparam.function().state(statetomodify,self)
         return statetomodify
     def composite(self, canvas, image):
         for compositingparam in self.compositingparams:
-            canvas = compositingparam.function.composite(canvas,image,compositingparam)
+            canvas = compositingparam.function().composite(canvas,image,compositingparam)
         return canvas
 
 class Keyframelist():
@@ -107,6 +108,6 @@ class Keyframelist():
 
 
 keyframes = Keyframelist()
-keyframes.append(Keyframe(10, Params({"image":{"function":XPError,"params":{"text":"smoke","buttons":["yeah","lets go","Cancel"]}},"states":[{"function":NormalKeyframe,"params":{}}],"compositing":[{"function":ImageComposite,"params":{"x":100,"y":200}}]})))
-keyframes.append(Keyframe(70, Params({"image":{"function":XPError,"params":{"text":"gdfgjdlgrgrelhjrtklhjgreg","buttons":["OK"]}},"states":[{"function":NormalKeyframe,"params":{}}],"compositing":[{"function":ImageComposite,"params":{"x":120,"y":220}}]})))
-keyframes.append(Keyframe(130, Params({"image":{"function":XPError,"params":{"title":"Error","erroricon":"xp/Exclamation.png","buttons":["Yes","No"]}},"states":[{"function":NormalKeyframe,"params":{}}],"compositing":[{"function":ImageComposite,"params":{"x":140,"y":240}}]})))
+keyframes.append(Keyframe(10, Params({"image":{"function":Selectable(1,imagefunctionsdropdown),"params":{"text":"smoke","buttons":["yeah","lets go","Cancel"]}},"states":[{"function":Selectable(0,statefunctionsdropdown),"params":{}}],"compositing":[{"function":Selectable(0,compositingfunctionsdropdown),"params":{"x":100,"y":200}}]})))
+keyframes.append(Keyframe(70, Params({"image":{"function":Selectable(1,imagefunctionsdropdown),"params":{"text":"gdfgjdlgrgrelhjrtklhjgreg","buttons":["OK"]}},"states":[{"function":Selectable(0,statefunctionsdropdown),"params":{}}],"compositing":[{"function":Selectable(0,compositingfunctionsdropdown),"params":{"x":120,"y":220}}]})))
+keyframes.append(Keyframe(130, Params({"image":{"function":Selectable(1,imagefunctionsdropdown),"params":{"title":"Error","erroricon":Selectable(1,[["Critical Error","xp/Critical Error.png"],["Exclamation","xp/Exclamation.png"],["Information","xp/Information.png"],["Question","xp/Question.png"],["None",""]]),"buttons":["Yes","No"]}},"states":[{"function":Selectable(0,statefunctionsdropdown),"params":{}}],"compositing":[{"function":Selectable(0,compositingfunctionsdropdown),"params":{"x":140,"y":240}}]})))
