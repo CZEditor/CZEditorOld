@@ -10,6 +10,10 @@ def cachecomposite(func):
 
 class ImageComposite():
     name = "Normal Media"
+    params = {
+        "x":0,
+        "y":0
+    }
     def composite(canvas,imagefunction,params):
         
         canvas.alpha_composite(cachecomposite(imagefunction),(params.params.x,params.params.y))

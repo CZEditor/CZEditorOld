@@ -235,11 +235,13 @@ class QRedNumberProperty(QRedFrame):
         self.textbox.setValue(self.param[self.index])
         self.textbox.onchange = self.updateproperty
 class QRedSelectableProperty(QRedFrame):
-    def __init__(self,parent,param:Selectable):
+    def __init__(self,parent,param:Selectable,override=None):
         super().__init__(parent)
+        if override==None:
+            override = self.updateproperty
         self.param = param
         self.widgets = QHBoxLayout()
-        self.combobox = QRedComboBox(self,self.param.names,self.updateproperty)
+        self.combobox = QRedComboBox(self,self.param.names,override)
         self.combobox.setCurrentIndex(self.param.index)
         self.widgets.addWidget(self.combobox)
         
@@ -276,6 +278,8 @@ class QRedTextListProperty(QRedFrame):
         
         self.whole = QVBoxLayout(self)
         self.collapseButton = QRedExpandableButton(None,"expand",self.collapse)
+        self.collapseButton.sizePolicy().setHorizontalPolicy(QSizePolicy.Policy.MinimumExpanding)
+        self.collapseButton.setMinimumWidth(60)
         self.mainView = QRedFrame(self)
         self.withbuttons = QGridLayout()
         self.widgets = QFormLayout()
@@ -379,26 +383,53 @@ class QRedDropDownFrame(QRedFrame):
 class CzeKeyframeOptionCategory(QRedDropDownFrame):
     def __init__(self,parent,name:str,params:Params):
         super().__init__(parent,name)
+        self.whole.insertWidget(0,QRedSelectableProperty(None,params.function,self.rebuild))
         self.params = params
-        self.iterate(self.params)
+        self.iterate(self.params.params)
+    def rebuild(self,name,index):
+        self.params.function.index = index
+        for i in range(self.widgets.rowCount()):
+            self.widgets.removeRow(0)
+        self.params.params = self.params.function().params
+        self.iterate(self.params.params)
     def iterate(self,params):
-        for key in vars(params).keys():
+        for key in vars(params).keys():     
             param = params[key]
+            print(key,type(param),param.__class__)
             if isinstance(param,str):
                 self.widgets.addRow(key,QRedTextProperty(None,params,key))
-            elif isinstance(param,list):
+            elif isinstance(param,StringList):
                 self.widgets.addRow(key,QRedTextListProperty(None,param))
+            elif isinstance(param,list):
+                self.iteratelist(param)
             elif isinstance(param,Params):
                 self.iterate(param)
             elif isinstance(param,int):
                 self.widgets.addRow(key,QRedNumberProperty(None,params,key))
             elif isinstance(param,Selectable):
                 self.widgets.addRow(key,QRedSelectableProperty(None,param))
-            #Add a dropdown list. (HARD) (No bandaid solutions. It has to be done properly, so no ifs to check what dropdown it should be)
+    def iteratelist(self,thelist):
+        i = 0
+        for param in thelist:
+            print(type(param))
+            if isinstance(param,str):
+                self.widgets.addRow("",QRedTextProperty(None,thelist,i))
+            
+            elif isinstance(param,StringList):
+                self.widgets.addRow("",QRedTextListProperty(None,param))
+            elif isinstance(param,list):
+                self.iteratelist(param)
+            elif isinstance(param,Params):
+                self.iterate(param)
+            elif isinstance(param,int):
+                self.widgets.addRow("",QRedNumberProperty(None,thelist,i))
+            elif isinstance(param,Selectable):
+                self.widgets.addRow("",QRedSelectableProperty(None,param))
+            i+=1
 
 class CzeKeyframeOptions(QRedScrollArea):
     def __init__(self,parent):
-        self.params = keyframes[2].params
+        self.params = keyframes[0].params
         super().__init__(parent)
         self.viewframe = QRedFrame(None)
         self.selectedframe = 0
@@ -421,7 +452,8 @@ class CzeKeyframeOptions(QRedScrollArea):
                 self.widgets.addWidget(CzeKeyframeOptionCategory(None,"Expand/Collapse",param)) #Make it display the actual name!
             elif isinstance(param,list):
                 for i in param:
-                    self.iterate(i)
+                    if isinstance(i,Params):
+                        self.widgets.addWidget(CzeKeyframeOptionCategory(None,"Expand/Collapse",i))
                 #Add a + button here to add more entries
 class CzeViewport(QWidget):
     def __init__(self,parent):

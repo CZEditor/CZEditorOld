@@ -68,7 +68,6 @@ class Selectable():
         self.index = index
         self.names = [i[0] for i in self.options]
     def __call__(self):
-        print(self.options[self.index])
         return self.options[self.index][1]
     def __str__(self):
         return str(self.options[self.index][1])
@@ -92,3 +91,20 @@ class emptylist():
 def dummyfunction(*args,**kwargs):
     pass
 
+
+class StringList():
+    def __init__(self,initial):
+        self.list = initial
+    def __getitem__(self,param):
+        return self.list[param]
+    def __setitem__(self,param,value):
+        self.list[param] = value
+    def pop(self,index):
+        self.list.pop(index)
+    def append(self,param):
+        self.list.append(param)
+    def __len__(self):
+        return len(self.list)
+    def __str__(self):
+        return str(self.list)
+    
