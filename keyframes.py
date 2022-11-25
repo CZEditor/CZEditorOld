@@ -112,7 +112,85 @@ keyframes.append(Keyframe(20,Params(
         "image":
         {
             "function":Selectable(0,imagefunctionsdropdown),
-            "params":{"imagepath":"Bez tytułu5.png"}
+            "params":{"imagepath":"editor/icondark.png"}
+        },
+        "states":
+        [
+            {
+                "function":Selectable(0,statefunctionsdropdown),
+                "params":{}
+            }
+        ],
+        "compositing":
+        [
+            {
+                "function":Selectable(0,compositingfunctionsdropdown),
+                "params":
+                {
+                    "x":500,
+                    "y":400,
+                }
+            }
+        ]
+    })))
+keyframes.append(Keyframe(40,Params(
+    {
+        "image":
+        {
+            "function":Selectable(0,imagefunctionsdropdown),
+            "params":{"imagepath":"xp/Close button.png"}
+        },
+        "states":
+        [
+            {
+                "function":Selectable(0,statefunctionsdropdown),
+                "params":{}
+            }
+        ],
+        "compositing":
+        [
+            {
+                "function":Selectable(0,compositingfunctionsdropdown),
+                "params":
+                {
+                    "x":500,
+                    "y":400,
+                }
+            }
+        ]
+    })))
+keyframes.append(Keyframe(60,Params(
+    {
+        "image":
+        {
+            "function":Selectable(0,imagefunctionsdropdown),
+            "params":{"imagepath":"xp/Information.png"}
+        },
+        "states":
+        [
+            {
+                "function":Selectable(0,statefunctionsdropdown),
+                "params":{}
+            }
+        ],
+        "compositing":
+        [
+            {
+                "function":Selectable(0,compositingfunctionsdropdown),
+                "params":
+                {
+                    "x":500,
+                    "y":400,
+                }
+            }
+        ]
+    })))
+keyframes.append(Keyframe(80,Params(
+    {
+        "image":
+        {
+            "function":Selectable(0,imagefunctionsdropdown),
+            "params":{"imagepath":"xp/Exclamation.png"}
         },
         "states":
         [

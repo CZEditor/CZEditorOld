@@ -1,7 +1,7 @@
-
+from util import Params
 class NormalKeyframe():
     name = "Media"
-    params = {}
+    params = Params({})
     def state(statetomodify,keyframe):
         statetomodify.append(keyframe)
         return statetomodify
@@ -9,7 +9,7 @@ class NormalKeyframe():
         return self.name
 class ErrorKeyframe():
     name = "Windows Error"
-    params = {}
+    params = Params({})
     def state(statetomodify,keyframe):
         if statetomodify:
             statetomodify[-1].imageparams.params.active = False

@@ -212,6 +212,7 @@ class QRedTextProperty(QRedFrame):
     def updateproperty(self,value:str):
         #print("setting:",value)
         self.param[self.index] = value
+        window.updateviewport(window.playbackframe)
     def updatetextbox(self):
         self.textbox.onchange = dummyfunction
         self.textbox.setPlainText(self.param[self.index])
@@ -230,6 +231,7 @@ class QRedNumberProperty(QRedFrame):
     def updateproperty(self,value:int):
         #print("setting:",value)
         self.param[self.index] = value
+        window.updateviewport(window.playbackframe)
     def updatetextbox(self):
         self.textbox.onchange = dummyfunction
         self.textbox.setValue(self.param[self.index])
@@ -250,6 +252,7 @@ class QRedSelectableProperty(QRedFrame):
     def updateproperty(self,name,index):
         #print("setting:",value)
         self.param.index = index
+        window.updateviewport(window.playbackframe)
     def updateself(self):
         self.combobox.onchange = dummyfunction
         self.combobox.setCurrentIndex(self.param.index)
@@ -268,10 +271,12 @@ class QRedTextEntryListProperty(QRedFrame):
     def updateproperty(self,value:str):
         #print("setting:",value)
         self.param[self.index] = value
+        window.updateviewport(window.playbackframe)
     def updatetextbox(self):
         self.textbox.onchange = dummyfunction
         self.textbox.setText(self.param[self.index])
         self.textbox.onchange = self.updateproperty
+        window.updateviewport(window.playbackframe)
 class QRedTextListProperty(QRedFrame):
     def __init__(self,parent,thelist):
         super().__init__(parent)
@@ -324,6 +329,7 @@ class QRedTextListProperty(QRedFrame):
         self.thelist[index],self.thelist[index-1] = self.thelist[index-1],self.thelist[index]
         self.entries[index].updatetextbox()
         self.entries[index-1].updatetextbox()
+        window.updateviewport(window.playbackframe)
     def movedown(self,arow):
         index = self.widgets.getLayoutPosition(arow)[0]
         if index == len(self.thelist)-1:
@@ -331,11 +337,13 @@ class QRedTextListProperty(QRedFrame):
         self.thelist[index],self.thelist[index+1] = self.thelist[index+1],self.thelist[index]
         self.entries[index].updatetextbox()
         self.entries[index+1].updatetextbox()
+        window.updateviewport(window.playbackframe)
     def remove(self,arow):
         index = self.widgets.getLayoutPosition(arow)[0] #no idea why it has to be [0]. it returns a tuple that looks like this (4, <ItemRole.FieldRole: 1>)
         self.thelist.pop(index)
         self.widgets.removeRow(index)
         self.entries.pop(index)
+        window.updateviewport(window.playbackframe)
     def add(self):
         
         self.thelist.append("")
@@ -347,7 +355,8 @@ class QRedTextListProperty(QRedFrame):
         arow.addWidget(QRedButton(None,"\\/",0,0,self.movedown,CreateRedSmallButton,False,arow))
         arow.addWidget(QRedButton(None,"-",0,0,self.remove,CreateRedSmallButton,False,arow))
         self.widgets.addRow("button",arow)
-        print(self.thelist)
+        window.updateviewport(window.playbackframe)
+        #print(self.thelist)
 class QRedDropDownFrame(QRedFrame):
     def __init__(self,parent,name):
         super().__init__(parent)
@@ -390,12 +399,21 @@ class CzeKeyframeOptionCategory(QRedDropDownFrame):
         self.params.function.index = index
         for i in range(self.widgets.rowCount()):
             self.widgets.removeRow(0)
-        self.params.params = self.params.function().params
+        self.params.params = self.params.function().params.copy()
         self.iterate(self.params.params)
+        window.updateviewport(window.playbackframe)
+    def changekeyframe(self,name,params):
+        self.whole.removeWidget(self.whole.children()[0])
+        self.whole.insertWidget(0,QRedSelectableProperty(None,params.function,self.rebuild))
+        for i in range(self.widgets.rowCount()):
+            self.widgets.removeRow(0)
+        self.params = params
+        self.iterate(self.params.params)
+        window.updateviewport(window.playbackframe)
     def iterate(self,params):
         for key in vars(params).keys():     
             param = params[key]
-            print(key,type(param),param.__class__)
+            #print(key,type(param),param.__class__)
             if isinstance(param,str):
                 self.widgets.addRow(key,QRedTextProperty(None,params,key))
             elif isinstance(param,StringList):
@@ -411,7 +429,7 @@ class CzeKeyframeOptionCategory(QRedDropDownFrame):
     def iteratelist(self,thelist):
         i = 0
         for param in thelist:
-            print(type(param))
+            #print(type(param))
             if isinstance(param,str):
                 self.widgets.addRow("",QRedTextProperty(None,thelist,i))
             
@@ -428,11 +446,11 @@ class CzeKeyframeOptionCategory(QRedDropDownFrame):
             i+=1
 
 class CzeKeyframeOptions(QRedScrollArea):
-    def __init__(self,parent):
+    def __init__(self,parent,parentclass):
         self.params = keyframes[0].params
         super().__init__(parent)
+        self.parentclass = parentclass
         self.viewframe = QRedFrame(None)
-        self.selectedframe = 0
         #self.alayout = QVBoxLayout()
         self.widgets = QVBoxLayout()
         #dropdo = QRedDropDownFrame(None,"yo")
@@ -443,9 +461,13 @@ class CzeKeyframeOptions(QRedScrollArea):
         self.widgets.setAlignment(Qt.AlignmentFlag.AlignTop)
         self.setWidget(self.viewframe)
         self.setSizePolicy(QSizePolicy.Policy.Maximum,QSizePolicy.Policy.Preferred)
+        
         #self.widgets.setAlignment(Qt.AlignmentFlag.AlignTop)
         #self.alayout.addWidget(self.viewframe)
         self.setWidgetResizable(True)
+    def changeEvent(self, arg__1) -> None:
+        self.setMaximumWidth(self.widgets.contentsRect().width()+self.verticalScrollBar().width())
+        return super().changeEvent(arg__1)
     def iterate(self,params):
         for param in vars(params).values():
             if isinstance(param,Params):
@@ -455,6 +477,16 @@ class CzeKeyframeOptions(QRedScrollArea):
                     if isinstance(i,Params):
                         self.widgets.addWidget(CzeKeyframeOptionCategory(None,"Expand/Collapse",i))
                 #Add a + button here to add more entries
+    def rebuild(self):
+        if self.parentclass.selectedframe:
+            self.params = self.parentclass.selectedframe.params
+            for i in range(self.widgets.count()):
+                self.widgets.itemAt(0).widget().setParent(None)
+            self.iterate(self.params)
+        else:
+            for i in range(self.widgets.count()):
+                self.widgets.itemAt(0).widget().setParent(None)
+            
 class CzeViewport(QWidget):
     def __init__(self,parent):
         super().__init__(parent)
@@ -500,14 +532,18 @@ class Window(QMainWindow):
         self.setStyleSheet("background-color: qradialgradient(spread:pad, cx:4.5, cy:4.5, radius:7, fx:4.5, fy:4.5, stop:0 rgba(255, 0, 0, 255), stop:1 rgba(0, 0, 0, 255));  color: rgb(255,192,192);")
         hozsplitter = QSplitter(Qt.Orientation.Vertical,self)
         topsplitter = QSplitter(hozsplitter)
-        self.keyframeoptions = CzeKeyframeOptions(topsplitter)
+        self.keyframeoptions = CzeKeyframeOptions(topsplitter,self)
         self.viewport = CzeViewport(topsplitter)
         self.timeline = CzeTimeline(hozsplitter,self)
+        self.selectedframe = None
         self.setCentralWidget(hozsplitter)
         self.show()
+        self.playbackframe = 100
     def updateviewport(self,theframe):
         self.viewport.updateviewportimage(theframe)
         self.viewport.update()
+    def updatekeyframeoptions(self):
+        self.keyframeoptions.rebuild()
 app = QApplication([])
 window = Window()
 sys.exit(app.exec())

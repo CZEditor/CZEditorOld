@@ -2,12 +2,11 @@ from generate import *
 from PIL import Image
 from functools import cache
 from util import *
-from PySide6.QtWidgets import QWidget,QGraphicsScene,QGraphicsView,QGraphicsItem
+from PySide6.QtWidgets import QWidget,QGraphicsScene,QGraphicsView,QGraphicsItem,QGraphicsRectItem
 from PySide6.QtGui import QPen,QColor,QRadialGradient,QResizeEvent,QMouseEvent,QWheelEvent
 from PySide6.QtCore import QSize,Qt,QRectF,QPoint,QLine
 from keyframes import *
 playbackframe = 100
-
 
 def updateplaybackframe(frame):
     global playbackframe
@@ -79,7 +78,9 @@ class CzeTimeline(QWidget):
     coolgradient = QRadialGradient(50,50,90)
     coolgradient.setColorAt(1,QColor(255,255,255))
     coolgradient.setColorAt(0,QColor(255,0,0))
-    
+    selectedcoolgradient = QRadialGradient(30,30,60)
+    selectedcoolgradient.setColorAt(1,QColor(255,127,127))
+    selectedcoolgradient.setColorAt(0,QColor(255,0,0))
     def __init__(self,parent,parentclass):
         global keyframes
         self.keyframes = {}
@@ -110,7 +111,7 @@ class CzeTimeline(QWidget):
         #self.graphicsview.setTransformationAnchor(QGraphicsView.ViewportAnchor.AnchorViewCenter)
         self.graphicsview.verticalScrollBar().setMaximum(200000000)
         self.graphicsview.horizontalScrollBar().setMaximum(200000000)
-        
+        self.lastm1pos = None
     def updateplaybackcursor(self,frame):
         boundingrect = self.graphicsview.mapToScene(self.graphicsview.viewport().geometry()).boundingRect()
         self.playbackcursor.setLine(QLine(frame,boundingrect.top(),frame,boundingrect.bottom()))
@@ -123,17 +124,29 @@ class CzeTimeline(QWidget):
         if self.draggedframe:
             keyframes.setframe(self.draggedframe,self.graphicsview.mapToScene(event.pos().x(),0).x())
             self.keyframes[self.draggedframe].setPos(self.draggedframe.frame,0)
-            self.parentclass.updateviewport(playbackframe)
+            self.parentclass.updateviewport(self.parentclass.playbackframe)
         return super().mouseMoveEvent(event)
     def pressEvent(self, event:QMouseEvent) -> None:
         if event.button() == Qt.MouseButton.LeftButton:
             founditem:QGraphicsItem = self.graphicsview.itemAt(event.pos().x(),event.pos().y())
             if founditem != None:
                 self.draggedframe = founditem.data(0)
+                
+                if self.parentclass.selectedframe:
+                    self.keyframes[self.parentclass.selectedframe].setBrush(self.coolgradient)
+                founditem.setBrush(self.selectedcoolgradient)
+                self.parentclass.selectedframe = founditem.data(0)
+                self.parentclass.updatekeyframeoptions()
             else:
-                updateplaybackframe(self.graphicsview.mapToScene(event.pos().x(),0).x())
+                self.parentclass.playbackframe = self.graphicsview.mapToScene(event.pos().x(),0).x()
                 self.updateplaybackcursor(self.graphicsview.mapToScene(event.pos().x(),0).x())
-                self.parentclass.updateviewport(playbackframe)
+                self.parentclass.updateviewport(self.parentclass.playbackframe)
+                if event.pos() == self.lastm1pos:
+                    if self.parentclass.selectedframe:
+                        self.keyframes[self.parentclass.selectedframe].setBrush(self.coolgradient)
+                        self.parentclass.selectedframe = None
+                        self.parentclass.updatekeyframeoptions()
+            self.lastm1pos = event.pos()
        
         return super().mousePressEvent(event)
     def releaseEvent(self, event:QMouseEvent) -> None:
@@ -142,7 +155,7 @@ class CzeTimeline(QWidget):
                 keyframes.setframe(self.draggedframe,self.graphicsview.mapToScene(event.pos().x(),0).x())
                 self.keyframes[self.draggedframe].setPos(self.draggedframe.frame,0)
                 self.draggedframe = None
-                self.parentclass.updateviewport(playbackframe)
+                self.parentclass.updateviewport(self.parentclass.playbackframe)
         return super().mouseReleaseEvent(event)
     
         #return super().mouseReleaseEvent(event)
