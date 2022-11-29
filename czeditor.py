@@ -6,7 +6,7 @@ from imagefunctions import NormalImage,XPError
 from statefunctions import NormalKeyframe
 from compositingfunctions import ImageComposite
 from util import *
-from PySide6.QtWidgets import QAbstractButton,QMainWindow,QApplication,QFrame,QScrollArea,QSplitter,QWidget,QGraphicsScene,QGraphicsView,QGraphicsItem,QGraphicsSceneMouseEvent,QComboBox,QPlainTextEdit,QLabel,QVBoxLayout,QHBoxLayout,QSizePolicy,QFormLayout,QLineEdit,QGridLayout,QSpinBox
+from PySide6.QtWidgets import QAbstractButton,QMainWindow,QApplication,QFrame,QScrollArea,QSplitter,QWidget,QGraphicsScene,QGraphicsView,QGraphicsItem,QGraphicsSceneMouseEvent,QComboBox,QPlainTextEdit,QLabel,QVBoxLayout,QHBoxLayout,QSizePolicy,QFormLayout,QLineEdit,QGridLayout,QSpinBox,QGraphicsPixmapItem
 from PySide6.QtGui import QPixmap,QPainter,QPen,QBrush,QColor,QRadialGradient,QResizeEvent,QMouseEvent,QWheelEvent,QTextOption
 from PySide6.QtCore import QSize,Qt,QRectF,QPoint,QLine,SIGNAL
 from PIL import Image,ImageQt
@@ -487,28 +487,88 @@ class CzeKeyframeOptions(QRedScrollArea):
         else:
             for i in range(self.widgets.count()):
                 self.widgets.itemAt(0).widget().setParent(None)
-            
+
+class CzeViewportDraggableHandle(QGraphicsItem):
+    def __init__(self,parent,parentclass,params,x,y):
+        super().__init__(parent)
+        self.params = params
+        self.xparam = x
+        self.yparam = y
+        self.parentclass = parentclass
+        #self.setPos(self.x,self.y)
+        self.setCursor(Qt.CursorShape.SizeAllCursor)
+    def boundingRect(self) -> QRectF:
+        return QRectF(-4,-4,7,7)
+    def paint(self, painter: QPainter, option, widget: Optional[QWidget] = ...) -> None:
+        #print(self.params)
+        self.setPos(self.params[self.xparam]/1280*self.parentclass.picture.width(),self.params[self.yparam]/720*self.parentclass.picture.height())
+        painter.setPen(QPen(QColor(255,255,255),1))
+        painter.drawEllipse(QRectF(-4,-4,7,7))
+        #return super().paint(painter, option, widget)
+    def mousePressEvent(self, event: QGraphicsSceneMouseEvent) -> None:
+        #print(event.buttons())
+        event.accept()
+        #return super().mousePressEvent(event)
+    def mouseMoveEvent(self, event:QGraphicsSceneMouseEvent) -> None:
+        #print(event.buttons())
+        if event.buttons() & Qt.MouseButton.LeftButton:
+            self.params[self.xparam] = int(event.scenePos().x()/self.parentclass.picture.width()*1280)
+            self.params[self.yparam] = int(event.scenePos().y()/self.parentclass.picture.height()*720)
+            self.setPos(self.params[self.xparam]/1280*self.parentclass.picture.width(),self.params[self.yparam]/720*self.parentclass.picture.height())
+        event.accept()
+        #return super().mouseMoveEvent(event)
+    def mouseReleaseEvent(self, event: QGraphicsSceneMouseEvent) -> None:
+        self.parentclass.updateviewportimage(self.parentclass.timestamp)
+        return super().mouseReleaseEvent(event)
+class CzeViewportDraggableBox(QGraphicsItem):
+    def __init__(self,parent,parentclass,params,x,y):
+        super().__init__(parent)
+        self.params = params
+        self.xparam = x
+        self.yparam = y
+        self.parentclass = parentclass
+        #self.setPos(self.x,self.y)
+        self.setCursor(Qt.CursorShape.CrossCursor)
+    def boundingRect(self) -> QRectF:
+        return QRectF(-4,-4,7,7)
+    def paint(self, painter: QPainter, option, widget: Optional[QWidget] = ...) -> None:
+        self.setPos(self.params[self.xparam]/1280*self.parentclass.picture.width(),self.params[self.yparam]/720*self.parentclass.picture.height())
+        painter.setPen(QPen(QColor(255,255,255),1))
+        painter.drawEllipse(QRectF(-4,-4,7,7))
 class CzeViewport(QWidget):
     def __init__(self,parent):
         super().__init__(parent)
         self.timestamp = 100
+        self.scene = QGraphicsScene(self)
+        self.graphicsview = QGraphicsView(self)
+        self.graphicsview.setScene(self.scene)
+        self.viewportimage = self.scene.addPixmap(QPixmap.fromImage(ImageQt.ImageQt(getviewportimage(self.timestamp))))
         self.updateviewportimage(self.timestamp)
+        
         #self.thelayout = QHBoxLayout()
        # self.setLayout(self.thelayout)
         #self.setMaximumSize(1280,720)
         self.setSizePolicy(QSizePolicy.Policy.Expanding,QSizePolicy.Policy.Ignored)
+        self.somehandle = CzeViewportDraggableHandle(None,self,keyframes[0].params.compositing[0].params,"x","y")
+        self.scene.addItem(self.somehandle)
     def updateviewportimage(self,i):
         image:Image.Image = getviewportimage(i)
         #image = image.resize(self.size().toTuple(),Image.Resampling.NEAREST)
         self.picture = QPixmap.fromImage(ImageQt.ImageQt(image))
+        self.picture = self.picture.scaled(QSize(min(self.size().width(),1280),min(self.size().height(),720)),Qt.AspectRatioMode.KeepAspectRatio)
         self.timestamp = i
-    def paintEvent(self, e):
-        painter = QPainter(self)
-       # print(self.size(),QSize(self.size().width(),self.size().height()))
-        pic = self.picture.scaled(QSize(min(self.size().width(),1280),min(self.size().height(),720)),Qt.AspectRatioMode.KeepAspectRatio)
-        painter.drawPixmap((self.width()-pic.width())/2,(self.height()-pic.height())/2,pic)
+        self.viewportimage.setPixmap(self.picture)
+        #self.viewportimage.setPos((self.width()-pic.width())/2,(self.height()-pic.height())/2)
+    #def paintEvent(self, e):
+    #    painter = QPainter(self)
+    #   # print(self.size(),QSize(self.size().width(),self.size().height()))
+    #    pic = self.picture.scaled(QSize(min(self.size().width(),1280),min(self.size().height(),720)),Qt.AspectRatioMode.KeepAspectRatio)
+    #    painter.drawPixmap((self.width()-pic.width())/2,(self.height()-pic.height())/2,pic)
+    #    self.somehandle.paint(painter)
     def resizeEvent(self, event:QResizeEvent) -> None:
         self.updateviewportimage(self.timestamp)
+        self.graphicsview.setFixedSize(event.size())
+        self.scene.setSceneRect(0,0,self.picture.width()-2,self.picture.height()-2)
         #size = event.size()
         #croppedevent = QResizeEvent(QSize(min(size.width(),size.height()/self.picture.size().width()*self.picture.size().height()),min(size.height(),size.width()/self.picture.size().height()*self.picture.size().width())),event.oldSize())
         return super().resizeEvent(event)
