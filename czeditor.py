@@ -396,6 +396,7 @@ class CzeKeyframeOptionCategory(QRedDropDownFrame):
         self.params = params
         self.iterate(self.params.params)
     def rebuild(self,name,index):
+        print(vars(self))
         self.params.function.index = index
         for i in range(self.widgets.rowCount()):
             self.widgets.removeRow(0)
@@ -531,14 +532,18 @@ class Window(QMainWindow):
         #button = QRedButton(self,"yeah",4,4,lambda: print("pressed"))
         self.setStyleSheet("background-color: qradialgradient(spread:pad, cx:4.5, cy:4.5, radius:7, fx:4.5, fy:4.5, stop:0 rgba(255, 0, 0, 255), stop:1 rgba(0, 0, 0, 255));  color: rgb(255,192,192);")
         hozsplitter = QSplitter(Qt.Orientation.Vertical,self)
+        #rightsplitter = QSplitter(hozsplitter)
         topsplitter = QSplitter(hozsplitter)
+        
         self.keyframeoptions = CzeKeyframeOptions(topsplitter,self)
         self.viewport = CzeViewport(topsplitter)
+        self.presets = CzePresets(topsplitter,self)
         self.timeline = CzeTimeline(hozsplitter,self)
         self.selectedframe = None
         self.setCentralWidget(hozsplitter)
         self.show()
         self.playbackframe = 100
+        self.draggedpreset = None
     def updateviewport(self,theframe):
         self.viewport.updateviewportimage(theframe)
         self.viewport.update()

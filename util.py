@@ -34,7 +34,7 @@ class Params(object):
             if isinstance(i,dict):
                 returnal.append(Params(i))
             elif isinstance(i,list):
-                returnal.append(self.iterateoverlist(i))
+                returnal.append(self.iterateoverlist(i))            
             else:
                 returnal.append(i)
         return returnal
@@ -44,10 +44,21 @@ class Params(object):
         out = {}
         for k,v in toiterate.items():
             if isinstance(v,Params):
-                #print(v)
                 out[k] = v.copy()
+            elif isinstance(v,list):
+                out[k] = self.iteratelist(v)
             else:
                 out[k] = v
+        return out
+    def iteratelist(self,toiterate:list):
+        out = []
+        for v in toiterate:
+            if isinstance(v,Params):
+                out.append(v.copy())
+            elif isinstance(v,list):
+                out.append(self.iteratelist(v))
+            else:
+                out.append(v)
         return out
     def copy(self):
         var = self.iterate(vars(self))
@@ -74,7 +85,7 @@ class Selectable():
     def name(self):
         return self.names[self.index]
         
-    
+
 
 def fillindefaults(param,defaults):
     for key in defaults.keys():

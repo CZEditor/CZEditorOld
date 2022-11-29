@@ -3,8 +3,8 @@ from PIL import Image
 from functools import cache
 from util import *
 from PySide6.QtWidgets import QWidget,QGraphicsScene,QGraphicsView,QGraphicsItem,QGraphicsRectItem
-from PySide6.QtGui import QPen,QColor,QRadialGradient,QResizeEvent,QMouseEvent,QWheelEvent
-from PySide6.QtCore import QSize,Qt,QRectF,QPoint,QLine
+from PySide6.QtGui import QPen,QColor,QRadialGradient,QResizeEvent,QMouseEvent,QWheelEvent,QDrag,QDragEnterEvent,QDragLeaveEvent,QDragMoveEvent,QDropEvent
+from PySide6.QtCore import QSize,Qt,QRectF,QPoint,QLine,QMimeData,Qt
 from keyframes import *
 playbackframe = 100
 
@@ -52,10 +52,14 @@ def CreateRedTab(text,active=True):
 class QGraphicsViewEvent(QGraphicsView):
     def __init__(self,*args,**kwargs):
         super().__init__(*args,**kwargs)
+        self.setAcceptDrops(True)
         self.onpress = dummyfunction
         self.onmove = dummyfunction
         self.onrelease = dummyfunction
         self.onscroll = dummyfunction
+        self.dragenter = dummyfunction
+        self.dragmove = dummyfunction
+        self.dragdrop = dummyfunction
         self.previousmouse = QPoint(0,0)
     def mousePressEvent(self, event) -> None:
         #print(event)
@@ -73,7 +77,12 @@ class QGraphicsViewEvent(QGraphicsView):
     def wheelEvent(self, event) -> None:
         self.onscroll(event)
         return super().wheelEvent(event)
-
+    def dragEnterEvent(self, event: QDragEnterEvent) -> None:
+        self.dragenter(event)
+    def dragMoveEvent(self, event: QDragMoveEvent) -> None:
+        self.dragmove(event)
+    def dropEvent(self, event:QDropEvent) -> None:
+        self.dragdrop(event)
 class CzeTimeline(QWidget):
     coolgradient = QRadialGradient(50,50,90)
     coolgradient.setColorAt(1,QColor(255,255,255))
@@ -112,6 +121,12 @@ class CzeTimeline(QWidget):
         self.graphicsview.verticalScrollBar().setMaximum(200000000)
         self.graphicsview.horizontalScrollBar().setMaximum(200000000)
         self.lastm1pos = None
+        self.setAcceptDrops(True)
+        self.graphicsview.setAcceptDrops(True)
+        self.graphicsview.viewport().setAcceptDrops(True)
+        self.graphicsview.dragenter = self.dragEnterEvent
+        self.graphicsview.dragdrop = self.dropEvent
+        self.graphicsview.dragmove = self.dragMoveEvent
     def updateplaybackcursor(self,frame):
         boundingrect = self.graphicsview.mapToScene(self.graphicsview.viewport().geometry()).boundingRect()
         self.playbackcursor.setLine(QLine(frame,boundingrect.top(),frame,boundingrect.bottom()))
@@ -121,7 +136,7 @@ class CzeTimeline(QWidget):
             self.graphicsview.translate(delta.x(),delta.y())
             boundingrect = self.graphicsview.mapToScene(self.graphicsview.viewport().geometry()).boundingRect()
             self.playbackcursor.setLine(QLine(playbackframe,boundingrect.top(),playbackframe,boundingrect.bottom()))
-        if self.draggedframe:
+        if self.draggedframe and self.graphicsview.geometry().contains(event.pos()):
             keyframes.setframe(self.draggedframe,self.graphicsview.mapToScene(event.pos().x(),0).x())
             self.keyframes[self.draggedframe].setPos(self.draggedframe.frame,0)
             self.parentclass.updateviewport(self.parentclass.playbackframe)
@@ -130,18 +145,26 @@ class CzeTimeline(QWidget):
         if event.button() == Qt.MouseButton.LeftButton:
             founditem:QGraphicsItem = self.graphicsview.itemAt(event.pos().x(),event.pos().y())
             if founditem != None:
-                self.draggedframe = founditem.data(0)
+                if event.pos() == self.lastm1pos:
+                    self.parentclass.draggedpreset = founditem.data(0).params.copy()
+                    drag = QDrag(self)
+                    mime = QMimeData()
+                    drag.setMimeData(mime)
+                    drag.exec_(Qt.MoveAction)
+                else:
+                    self.draggedframe = founditem.data(0)
+                    if self.parentclass.selectedframe:
+                        self.keyframes[self.parentclass.selectedframe].setBrush(self.coolgradient)
+                    founditem.setBrush(self.selectedcoolgradient)
+                    self.parentclass.selectedframe = founditem.data(0)
+                    self.parentclass.updatekeyframeoptions()
                 
-                if self.parentclass.selectedframe:
-                    self.keyframes[self.parentclass.selectedframe].setBrush(self.coolgradient)
-                founditem.setBrush(self.selectedcoolgradient)
-                self.parentclass.selectedframe = founditem.data(0)
-                self.parentclass.updatekeyframeoptions()
             else:
                 self.parentclass.playbackframe = self.graphicsview.mapToScene(event.pos().x(),0).x()
                 self.updateplaybackcursor(self.graphicsview.mapToScene(event.pos().x(),0).x())
                 self.parentclass.updateviewport(self.parentclass.playbackframe)
                 if event.pos() == self.lastm1pos:
+                    
                     if self.parentclass.selectedframe:
                         self.keyframes[self.parentclass.selectedframe].setBrush(self.coolgradient)
                         self.parentclass.selectedframe = None
@@ -149,6 +172,19 @@ class CzeTimeline(QWidget):
             self.lastm1pos = event.pos()
        
         return super().mousePressEvent(event)
+    def dragEnterEvent(self, event: QDragEnterEvent) -> None:
+        event.accept()
+    def dragMoveEvent(self, event: QDragMoveEvent) -> None:
+        event.accept()
+    def dropEvent(self, event: QDropEvent) -> None:
+        #print(self.parentclass.draggedpreset)
+        if self.parentclass.draggedpreset and not self.draggedframe:
+            keyframe = Keyframe(self.graphicsview.mapToScene(event.pos().x(),0).x(),self.parentclass.draggedpreset.copy())
+            keyframes.add(keyframe)
+            self.addKeyframe(keyframe)
+            self.parentclass.draggedpreset = None
+        event.accept()
+        return super().dropEvent(event)
     def releaseEvent(self, event:QMouseEvent) -> None:
         if event.button() == Qt.MouseButton.LeftButton:
             if self.draggedframe:
@@ -195,3 +231,128 @@ class CzeTimeline(QWidget):
         self.graphicsview.translate(delta.x(),delta.y())
         boundingrect = self.graphicsview.mapToScene(self.graphicsview.viewport().geometry()).boundingRect()
         self.playbackcursor.setLine(QLine(playbackframe,boundingrect.top(),playbackframe,boundingrect.bottom()))
+
+class CzePresets(QWidget):
+    coolgradient = QRadialGradient(50,50,90)
+    coolgradient.setColorAt(1,QColor(255,255,255))
+    coolgradient.setColorAt(0,QColor(255,0,0))
+    selectedcoolgradient = QRadialGradient(30,30,60)
+    selectedcoolgradient.setColorAt(1,QColor(255,127,127))
+    selectedcoolgradient.setColorAt(0,QColor(255,0,0))
+    def __init__(self,parent,parentclass):
+        super().__init__(parent)
+        self.parentclass = parentclass
+        self.scene = QGraphicsScene(self)
+        self.graphicsview = QGraphicsViewEvent(self)
+        self.graphicsview.setScene(self.scene)
+        self.keyframes = [Params(
+    {
+        "image":
+        {
+            "function":Selectable(0,imagefunctionsdropdown),
+            "params":{"imagepath":"xp/Exclamation.png"}
+        },
+        "states":
+        [
+            {
+                "function":Selectable(0,statefunctionsdropdown),
+                "params":{}
+            }
+        ],
+        "compositing":
+        [
+            {
+                "function":Selectable(0,compositingfunctionsdropdown),
+                "params":
+                {
+                    "x":500,
+                    "y":400,
+                }
+            }
+        ]
+    }),Params(
+    {
+        "image":
+        {
+            "function":Selectable(0,imagefunctionsdropdown),
+            "params":{"imagepath":"xp/Exclamation.png"}
+        },
+        "states":
+        [
+            {
+                "function":Selectable(0,statefunctionsdropdown),
+                "params":{}
+            }
+        ],
+        "compositing":
+        [
+            {
+                "function":Selectable(0,compositingfunctionsdropdown),
+                "params":
+                {
+                    "x":500,
+                    "y":400,
+                }
+            }
+        ]
+    })]
+        self.drawnkeyframes = {}
+        i = 0
+        for keyframe in self.keyframes:
+            self.drawnkeyframes[keyframe] = self.scene.addRect(QRectF(-9,-9,18,18),QPen(QColor(0,0,0),0),self.coolgradient)
+            self.drawnkeyframes[keyframe].setRotation(45)
+            self.drawnkeyframes[keyframe].setPos((i%6)*25,floor(i/6)*25)
+            self.drawnkeyframes[keyframe].setData(0,keyframe)
+            i+=1
+        self.graphicsview.onpress = self.pressEvent
+        self.setAcceptDrops(True)
+        self.graphicsview.setAcceptDrops(True)
+        self.graphicsview.viewport().setAcceptDrops(True)
+        self.graphicsview.dragenter = self.dragEnterEvent
+        self.graphicsview.dragmove = self.dragMoveEvent
+        self.graphicsview.dragdrop = self.dropEvent
+    def resizeEvent(self, event:QResizeEvent) -> None:
+        #self.scene.setSceneRect(self.rect())
+        r = self.graphicsview.sceneRect()
+        r.setSize(event.size()/self.graphicsview.transform().m11()+QSize(1000,1000))  #hacky workaround, if this wasnt here it would snap to 0,0 every time you shrinked the view by more than 1 pixel per frame
+        self.graphicsview.setSceneRect(r)
+        self.graphicsview.setFixedSize(event.size())
+        r = self.graphicsview.sceneRect()
+        r.setSize(event.size()/self.graphicsview.transform().m11())
+        self.graphicsview.setSceneRect(r)
+        #print(r)
+        #print(self.graphicsview.)
+        super().resizeEvent(event)
+        #boundingrect = self.graphicsview.mapToScene(self.graphicsview.viewport().geometry()).boundingRect()
+        #self.playbackcursor.setLine(QLine(playbackframe,boundingrect.top(),playbackframe,boundingrect.bottom()))
+    def dragEnterEvent(self, event: QDragEnterEvent) -> None:
+        event.accept()
+    def dragMoveEvent(self, event: QDragMoveEvent) -> None:
+        event.accept()
+    def dropEvent(self, event: QDropEvent) -> None:
+        if self.parentclass.draggedpreset:
+            #print(self.parentclass.draggedpreset)
+            if self.parentclass.draggedpreset in self.keyframes:
+                self.parentclass.draggedpreset = None
+                return super().mouseReleaseEvent(event)
+            keyframe = self.parentclass.draggedpreset.copy()
+            i = len(self.keyframes)
+            self.keyframes.append(self.parentclass.draggedpreset.copy())
+            self.drawnkeyframes[keyframe] = self.scene.addRect(QRectF(-9,-9,18,18),QPen(QColor(0,0,0),0),self.coolgradient)
+            self.drawnkeyframes[keyframe].setRotation(45)
+            self.drawnkeyframes[keyframe].setPos((i%6)*25,floor(i/6)*25)
+            self.drawnkeyframes[keyframe].setData(0,keyframe)
+            self.parentclass.draggedpreset = None
+        event.accept()
+    def pressEvent(self, event:QMouseEvent) -> None:
+        if event.button() == Qt.MouseButton.LeftButton:
+            founditem:QGraphicsItem = self.graphicsview.itemAt(event.pos().x(),event.pos().y())
+            if founditem != None:
+                self.parentclass.draggedpreset = founditem.data(0).copy()
+                #print(self.parentclass.draggedpreset)
+                drag = QDrag(self)
+                mime = QMimeData()
+                drag.setMimeData(mime)
+                drag.exec_(Qt.MoveAction)
+                
+        return super().mouseReleaseEvent(event)
