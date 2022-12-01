@@ -15,7 +15,7 @@ class Keyframe():
         return self.imageparams.function().image(self.imageparams.params)
     def state(self, statetomodify):
         for stateparam in self.stateparams:
-            statetomodify = stateparam.function().state(statetomodify,self)
+            statetomodify = stateparam.function().state(statetomodify,self,stateparam)
         return statetomodify
     def composite(self, canvas, image):
         for compositingparam in self.compositingparams:

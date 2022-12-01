@@ -412,6 +412,7 @@ class CzeKeyframeOptionCategory(QRedDropDownFrame):
         self.iterate(self.params.params)
     def rebuild(self,name,index):
         #print(vars(self))
+        print([self.params])
         self.params.function.index = index
         for i in range(self.widgets.rowCount()):
             self.widgets.removeRow(0)
@@ -510,16 +511,16 @@ class CzeKeyframeOptionCategoryList(QRedFrame):
         if index == 0:
             return
         self.thelist[index],self.thelist[index-1] = self.thelist[index-1],self.thelist[index]
-        self.entries[index].updatetextbox()
-        self.entries[index-1].updatetextbox()
+        #self.entries[index].updatetextbox()
+        #self.entries[index-1].updatetextbox()
         window.updateviewport(window.playbackframe)
     def movedown(self,arow):
         index = self.widgets.getLayoutPosition(arow)[0]
         if index == len(self.thelist)-1:
             return
         self.thelist[index],self.thelist[index+1] = self.thelist[index+1],self.thelist[index]
-        self.entries[index].updatetextbox()
-        self.entries[index+1].updatetextbox()
+        #self.entries[index].updatetextbox()
+        #self.entries[index+1].updatetextbox()
         window.updateviewport(window.playbackframe)
     def remove(self,arow):
         index = self.widgets.getLayoutPosition(arow)[0] #no idea why it has to be [0]. it returns a tuple that looks like this (4, <ItemRole.FieldRole: 1>)
@@ -532,6 +533,7 @@ class CzeKeyframeOptionCategoryList(QRedFrame):
         self.thelist.append(self.baseparam.copy())
         i = len(self.thelist)-1
         self.entries.append(CzeKeyframeOptionCategory(None,"expand/collapse",self.thelist[i]))
+        print([self.thelist[i].params],[self.baseparam.params])
         arow = QHBoxLayout()
         arow.addWidget(self.entries[i])
         arow.addWidget(QRedButton(None,"/\\",0,0,self.moveup,CreateRedSmallButton,False,arow))
