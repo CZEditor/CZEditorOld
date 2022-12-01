@@ -118,4 +118,12 @@ class StringList():
         return len(self.list)
     def __str__(self):
         return str(self.list)
-    
+
+class ParamLink():
+    def __init__(self,params,key):
+        self.params = params
+        self.key = key
+    def __call__(self):
+        return self.params[self.key]
+    def set(self,value):
+        self.params[self.key] = value

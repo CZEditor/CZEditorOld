@@ -7,13 +7,14 @@ from statefunctions import NormalKeyframe
 from compositingfunctions import ImageComposite
 from util import *
 from PySide6.QtWidgets import QAbstractButton,QMainWindow,QApplication,QFrame,QScrollArea,QSplitter,QWidget,QGraphicsScene,QGraphicsView,QGraphicsItem,QGraphicsSceneMouseEvent,QComboBox,QPlainTextEdit,QLabel,QVBoxLayout,QHBoxLayout,QSizePolicy,QFormLayout,QLineEdit,QGridLayout,QSpinBox,QGraphicsPixmapItem
-from PySide6.QtGui import QPixmap,QPainter,QPen,QBrush,QColor,QRadialGradient,QResizeEvent,QMouseEvent,QWheelEvent,QTextOption
-from PySide6.QtCore import QSize,Qt,QRectF,QPoint,QLine,SIGNAL
+from PySide6.QtGui import QPixmap,QPainter,QPen,QBrush,QColor,QRadialGradient,QResizeEvent,QMouseEvent,QWheelEvent,QTextOption,QKeyEvent
+from PySide6.QtCore import QSize,Qt,QRectF,QPoint,QLine,SIGNAL,QTimerEvent
 from PIL import Image,ImageQt
 from ui import *
 from typing import *
 import sys
 from keyframes import *
+from time import time
 
 
 UIDropdownLists = [
@@ -21,6 +22,20 @@ UIDropdownLists = [
     [NormalKeyframe],
     [ImageComposite]
 ]
+baseparams = Params({
+    "image":{
+        "function":Selectable(0,imagefunctionsdropdown),
+        "params":Selectable(0,imagefunctionsdropdown)().params.copy()
+    },
+    "states":{
+        "function":Selectable(0,statefunctionsdropdown),
+        "params":Selectable(0,statefunctionsdropdown)().params.copy()
+    },
+    "compositing":{
+        "function":Selectable(0,compositingfunctionsdropdown),
+        "params":Selectable(0,compositingfunctionsdropdown)().params.copy()
+    }
+})
 
 def stateprocessor(keyframes):
     state = []
@@ -396,7 +411,7 @@ class CzeKeyframeOptionCategory(QRedDropDownFrame):
         self.params = params
         self.iterate(self.params.params)
     def rebuild(self,name,index):
-        print(vars(self))
+        #print(vars(self))
         self.params.function.index = index
         for i in range(self.widgets.rowCount()):
             self.widgets.removeRow(0)
@@ -445,7 +460,95 @@ class CzeKeyframeOptionCategory(QRedDropDownFrame):
             elif isinstance(param,Selectable):
                 self.widgets.addRow("",QRedSelectableProperty(None,param))
             i+=1
-
+class CzeKeyframeOptionCategoryList(QRedFrame):
+    def __init__(self,parent,thelist,baseparam):
+        super().__init__(parent)
+        self.baseparam = baseparam
+        self.whole = QVBoxLayout(self)
+        self.collapseButton = QRedExpandableButton(None,"expand",self.collapse)
+        self.collapseButton.sizePolicy().setHorizontalPolicy(QSizePolicy.Policy.MinimumExpanding)
+        self.collapseButton.setMinimumWidth(60)
+        self.mainView = QRedFrame(self)
+        self.withbuttons = QGridLayout()
+        self.widgets = QFormLayout()
+        self.thelist = thelist
+        self.entries = []
+        self.widgetbuttons = QGridLayout()
+        for i in range(len(self.thelist)):
+            self.entries.append(CzeKeyframeOptionCategory(None,"expand/collapse",self.thelist[i]))
+            arow = QHBoxLayout()
+            arow.addWidget(self.entries[i])
+            arow.addWidget(QRedButton(None,"/\\",0,0,self.moveup,CreateRedSmallButton,False,arow))
+            arow.addWidget(QRedButton(None,"\\/",0,0,self.movedown,CreateRedSmallButton,False,arow))
+            arow.addWidget(QRedButton(None,"-",0,0,self.remove,CreateRedSmallButton,False,arow))
+            self.widgets.addRow("",arow)
+        self.withbuttons.addLayout(self.widgets,0,0)
+        self.withbuttons.addLayout(self.widgetbuttons,0,1)
+        self.withbuttons.addWidget(QRedExpandableButton(None,"+",self.add),1,0)
+        self.mainView.setLayout(self.withbuttons)
+        self.mainView.sizePolicy().setVerticalPolicy(QSizePolicy.Policy.Minimum)
+        self.mainView.sizePolicy().setHorizontalPolicy(QSizePolicy.Policy.Preferred)
+        self.whole.addWidget(self.collapseButton)
+        self.whole.addWidget(self.mainView)
+        #self.whole.addWidget(QRedExpandableButton(None,"+",self.add))
+        self.setLayout(self.whole)
+        self.collapsed = False
+        self.whole.setAlignment(Qt.AlignmentFlag.AlignTop)
+        self.whole.setSizeConstraint(QVBoxLayout.SizeConstraint.SetNoConstraint)
+        #print(self.mainView.maximumHeight())
+        #self.setMaximumHeight(200)
+        self.mainView.setStyleSheet("border-width:0px; background:none;")
+    def collapse(self):
+        if self.collapsed:
+            self.mainView.setMaximumHeight(9999)
+            self.collapsed = False
+        else:
+            self.mainView.setMaximumHeight(0)
+            self.collapsed = True
+    def moveup(self,arow):
+        index = self.widgets.getLayoutPosition(arow)[0]
+        if index == 0:
+            return
+        self.thelist[index],self.thelist[index-1] = self.thelist[index-1],self.thelist[index]
+        self.entries[index].updatetextbox()
+        self.entries[index-1].updatetextbox()
+        window.updateviewport(window.playbackframe)
+    def movedown(self,arow):
+        index = self.widgets.getLayoutPosition(arow)[0]
+        if index == len(self.thelist)-1:
+            return
+        self.thelist[index],self.thelist[index+1] = self.thelist[index+1],self.thelist[index]
+        self.entries[index].updatetextbox()
+        self.entries[index+1].updatetextbox()
+        window.updateviewport(window.playbackframe)
+    def remove(self,arow):
+        index = self.widgets.getLayoutPosition(arow)[0] #no idea why it has to be [0]. it returns a tuple that looks like this (4, <ItemRole.FieldRole: 1>)
+        self.thelist.pop(index)
+        self.widgets.removeRow(index)
+        self.entries.pop(index)
+        window.updateviewport(window.playbackframe)
+    def add(self):
+        
+        self.thelist.append(self.baseparam.copy())
+        i = len(self.thelist)-1
+        self.entries.append(CzeKeyframeOptionCategory(None,"expand/collapse",self.thelist[i]))
+        arow = QHBoxLayout()
+        arow.addWidget(self.entries[i])
+        arow.addWidget(QRedButton(None,"/\\",0,0,self.moveup,CreateRedSmallButton,False,arow))
+        arow.addWidget(QRedButton(None,"\\/",0,0,self.movedown,CreateRedSmallButton,False,arow))
+        arow.addWidget(QRedButton(None,"-",0,0,self.remove,CreateRedSmallButton,False,arow))
+        self.widgets.addRow("button",arow)
+        window.updateviewport(window.playbackframe)
+"""class CzeKeyframeOptionCategoryList(QRedDropDownFrame):
+    def __init__(self,parent,name,parentclass,listofparams):
+        super().__init__(parent,name)
+        self.parentclass = parentclass
+        self.listofparams = listofparams
+        self.iterate(listofparams)
+    def iterate(self,listofparams):
+        for param in listofparams:
+            if isinstance(param,Params):
+                self.widgets()"""
 class CzeKeyframeOptions(QRedScrollArea):
     def __init__(self,parent,parentclass):
         self.params = keyframes[0].params
@@ -470,14 +573,17 @@ class CzeKeyframeOptions(QRedScrollArea):
         self.setMaximumWidth(self.widgets.contentsRect().width()+self.verticalScrollBar().width())
         return super().changeEvent(arg__1)
     def iterate(self,params):
-        for param in vars(params).values():
+        for key in vars(params).keys():
+            param = params[key]
             if isinstance(param,Params):
                 self.widgets.addWidget(CzeKeyframeOptionCategory(None,"Expand/Collapse",param)) #Make it display the actual name!
             elif isinstance(param,list):
-                for i in param:
-                    if isinstance(i,Params):
-                        self.widgets.addWidget(CzeKeyframeOptionCategory(None,"Expand/Collapse",i))
+                self.widgets.addWidget(CzeKeyframeOptionCategoryList(None,param,baseparams[key]))
+                #for i in param:
+                #    if isinstance(i,Params):
+                #        self.widgets.addWidget(CzeKeyframeOptionCategory(None,"Expand/Collapse",i))
                 #Add a + button here to add more entries
+    
     def rebuild(self):
         if self.parentclass.selectedframe:
             self.params = self.parentclass.selectedframe.params
@@ -488,38 +594,7 @@ class CzeKeyframeOptions(QRedScrollArea):
             for i in range(self.widgets.count()):
                 self.widgets.itemAt(0).widget().setParent(None)
 
-class CzeViewportDraggableHandle(QGraphicsItem):
-    def __init__(self,parent,parentclass,params,x,y):
-        super().__init__(parent)
-        self.params = params
-        self.xparam = x
-        self.yparam = y
-        self.parentclass = parentclass
-        #self.setPos(self.x,self.y)
-        self.setCursor(Qt.CursorShape.SizeAllCursor)
-    def boundingRect(self) -> QRectF:
-        return QRectF(-4,-4,7,7)
-    def paint(self, painter: QPainter, option, widget: Optional[QWidget] = ...) -> None:
-        #print(self.params)
-        self.setPos(self.params[self.xparam]/1280*self.parentclass.picture.width(),self.params[self.yparam]/720*self.parentclass.picture.height())
-        painter.setPen(QPen(QColor(255,255,255),1))
-        painter.drawEllipse(QRectF(-4,-4,7,7))
-        #return super().paint(painter, option, widget)
-    def mousePressEvent(self, event: QGraphicsSceneMouseEvent) -> None:
-        #print(event.buttons())
-        event.accept()
-        #return super().mousePressEvent(event)
-    def mouseMoveEvent(self, event:QGraphicsSceneMouseEvent) -> None:
-        #print(event.buttons())
-        if event.buttons() & Qt.MouseButton.LeftButton:
-            self.params[self.xparam] = int(event.scenePos().x()/self.parentclass.picture.width()*1280)
-            self.params[self.yparam] = int(event.scenePos().y()/self.parentclass.picture.height()*720)
-            self.setPos(self.params[self.xparam]/1280*self.parentclass.picture.width(),self.params[self.yparam]/720*self.parentclass.picture.height())
-        event.accept()
-        #return super().mouseMoveEvent(event)
-    def mouseReleaseEvent(self, event: QGraphicsSceneMouseEvent) -> None:
-        self.parentclass.updateviewportimage(self.parentclass.timestamp)
-        return super().mouseReleaseEvent(event)
+
 class CzeViewportDraggableBox(QGraphicsItem):
     def __init__(self,parent,parentclass,params,x,y):
         super().__init__(parent)
@@ -536,21 +611,26 @@ class CzeViewportDraggableBox(QGraphicsItem):
         painter.setPen(QPen(QColor(255,255,255),1))
         painter.drawEllipse(QRectF(-4,-4,7,7))
 class CzeViewport(QWidget):
-    def __init__(self,parent):
+    def __init__(self,parent,parentclass):
         super().__init__(parent)
         self.timestamp = 100
         self.scene = QGraphicsScene(self)
         self.graphicsview = QGraphicsView(self)
         self.graphicsview.setScene(self.scene)
         self.viewportimage = self.scene.addPixmap(QPixmap.fromImage(ImageQt.ImageQt(getviewportimage(self.timestamp))))
+        self.parentclass = parentclass
         self.updateviewportimage(self.timestamp)
         
         #self.thelayout = QHBoxLayout()
        # self.setLayout(self.thelayout)
         #self.setMaximumSize(1280,720)
         self.setSizePolicy(QSizePolicy.Policy.Expanding,QSizePolicy.Policy.Ignored)
-        self.somehandle = CzeViewportDraggableHandle(None,self,keyframes[0].params.compositing[0].params,"x","y")
-        self.scene.addItem(self.somehandle)
+        self.handles = []
+        #self.startTimer(0.01,Qt.TimerType.PreciseTimer)
+       # self.isplaying = False
+        #self.somehandle = CzeViewportDraggableHandle(None,self,ParamLink(keyframes[0].params.compositing[0].params,"x"),ParamLink(keyframes[0].params.compositing[0].params,"y"))
+        #self.scene.addItem(self.somehandle)
+    
     def updateviewportimage(self,i):
         image:Image.Image = getviewportimage(i)
         #image = image.resize(self.size().toTuple(),Image.Resampling.NEAREST)
@@ -558,6 +638,20 @@ class CzeViewport(QWidget):
         self.picture = self.picture.scaled(QSize(min(self.size().width(),1280),min(self.size().height(),720)),Qt.AspectRatioMode.KeepAspectRatio)
         self.timestamp = i
         self.viewportimage.setPixmap(self.picture)
+    def createhandle(self,keyframe,function,param):  #self , keyframe of the handle , function of the param , param itself
+        #print(vars(function))
+        if hasattr(function,"handle"):
+            handle = function.handle(keyframe,self,param)
+            self.handles.append(handle)
+            self.scene.addItem(handle)
+    def updatehandles(self):
+        for handle in self.handles:
+            self.scene.removeItem(handle)
+        self.createhandle(self.parentclass.selectedframe,self.parentclass.selectedframe.params.image.function(),self.parentclass.selectedframe.params)
+        for param in self.parentclass.selectedframe.params.compositing:
+            self.createhandle(self.parentclass.selectedframe,param.function(),param)
+        for param in self.parentclass.selectedframe.params.states:
+            self.createhandle(self.parentclass.selectedframe,param.function(),param)
         #self.viewportimage.setPos((self.width()-pic.width())/2,(self.height()-pic.height())/2)
     #def paintEvent(self, e):
     #    painter = QPainter(self)
@@ -596,7 +690,7 @@ class Window(QMainWindow):
         topsplitter = QSplitter(hozsplitter)
         
         self.keyframeoptions = CzeKeyframeOptions(topsplitter,self)
-        self.viewport = CzeViewport(topsplitter)
+        self.viewport = CzeViewport(topsplitter,self)
         self.presets = CzePresets(topsplitter,self)
         self.timeline = CzeTimeline(hozsplitter,self)
         self.selectedframe = None
@@ -604,11 +698,28 @@ class Window(QMainWindow):
         self.show()
         self.playbackframe = 100
         self.draggedpreset = None
+        self.startTimer(0.01,Qt.TimerType.PreciseTimer)
+        self.isplaying = False
+        self.starttime = time()
+        self.startframe = self.playbackframe
     def updateviewport(self,theframe):
         self.viewport.updateviewportimage(theframe)
-        self.viewport.update()
+        #self.viewport.update()
     def updatekeyframeoptions(self):
         self.keyframeoptions.rebuild()
+    def keyPressEvent(self, event: QKeyEvent) -> None:
+        print(event.text())
+        if event.text() == " ":
+            self.isplaying = not self.isplaying
+            self.starttime = time()
+            self.startframe = self.playbackframe
+        return super().keyPressEvent(event)
+    def timerEvent(self, event: QTimerEvent) -> None:
+        if self.isplaying:
+            self.playbackframe = self.startframe+int((time()-self.starttime)*60)
+            self.viewport.updateviewportimage(self.playbackframe)
+            self.timeline.updateplaybackcursor(self.playbackframe)
+        return super().timerEvent(event)
 app = QApplication([])
 window = Window()
 sys.exit(app.exec())

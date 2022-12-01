@@ -137,7 +137,7 @@ class CzeTimeline(QWidget):
             boundingrect = self.graphicsview.mapToScene(self.graphicsview.viewport().geometry()).boundingRect()
             self.playbackcursor.setLine(QLine(playbackframe,boundingrect.top(),playbackframe,boundingrect.bottom()))
         if self.draggedframe and self.graphicsview.geometry().contains(event.pos()):
-            keyframes.setframe(self.draggedframe,self.graphicsview.mapToScene(event.pos().x(),0).x())
+            keyframes.setframe(self.draggedframe,int(self.graphicsview.mapToScene(event.pos().x(),0).x()))
             self.keyframes[self.draggedframe].setPos(self.draggedframe.frame,0)
             self.parentclass.updateviewport(self.parentclass.playbackframe)
         return super().mouseMoveEvent(event)
@@ -158,6 +158,7 @@ class CzeTimeline(QWidget):
                     founditem.setBrush(self.selectedcoolgradient)
                     self.parentclass.selectedframe = founditem.data(0)
                     self.parentclass.updatekeyframeoptions()
+                    self.parentclass.viewport.updatehandles()
                 
             else:
                 self.parentclass.playbackframe = self.graphicsview.mapToScene(event.pos().x(),0).x()
@@ -179,7 +180,7 @@ class CzeTimeline(QWidget):
     def dropEvent(self, event: QDropEvent) -> None:
         #print(self.parentclass.draggedpreset)
         if self.parentclass.draggedpreset and not self.draggedframe:
-            keyframe = Keyframe(self.graphicsview.mapToScene(event.pos().x(),0).x(),self.parentclass.draggedpreset.copy())
+            keyframe = Keyframe(int(self.graphicsview.mapToScene(event.pos().x(),0).x()),self.parentclass.draggedpreset.copy())
             keyframes.add(keyframe)
             self.addKeyframe(keyframe)
             self.parentclass.draggedpreset = None
@@ -188,7 +189,7 @@ class CzeTimeline(QWidget):
     def releaseEvent(self, event:QMouseEvent) -> None:
         if event.button() == Qt.MouseButton.LeftButton:
             if self.draggedframe:
-                keyframes.setframe(self.draggedframe,self.graphicsview.mapToScene(event.pos().x(),0).x())
+                keyframes.setframe(self.draggedframe,int(self.graphicsview.mapToScene(event.pos().x(),0).x()))
                 self.keyframes[self.draggedframe].setPos(self.draggedframe.frame,0)
                 self.draggedframe = None
                 self.parentclass.updateviewport(self.parentclass.playbackframe)
