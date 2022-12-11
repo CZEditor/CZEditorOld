@@ -643,9 +643,10 @@ class CzeViewport(QWidget):
     def createhandle(self,keyframe,function,param):  #self , keyframe of the handle , function of the param , param itself
         #print(vars(function))
         if hasattr(function,"handle"):
-            handle = function.handle(keyframe,self,param)
-            self.handles.append(handle)
-            self.scene.addItem(handle)
+            handles = function.handle(keyframe,self,param)
+            for handle in handles:
+                self.handles.append(handle)
+                self.scene.addItem(handle)
     def updatehandles(self):
         for handle in self.handles:
             self.scene.removeItem(handle)
@@ -654,13 +655,8 @@ class CzeViewport(QWidget):
             self.createhandle(self.parentclass.selectedframe,param.function(),param)
         for param in self.parentclass.selectedframe.params.states:
             self.createhandle(self.parentclass.selectedframe,param.function(),param)
-        #self.viewportimage.setPos((self.width()-pic.width())/2,(self.height()-pic.height())/2)
-    #def paintEvent(self, e):
-    #    painter = QPainter(self)
-    #   # print(self.size(),QSize(self.size().width(),self.size().height()))
-    #    pic = self.picture.scaled(QSize(min(self.size().width(),1280),min(self.size().height(),720)),Qt.AspectRatioMode.KeepAspectRatio)
-    #    painter.drawPixmap((self.width()-pic.width())/2,(self.height()-pic.height())/2,pic)
-    #    self.somehandle.paint(painter)
+
+
     def resizeEvent(self, event:QResizeEvent) -> None:
         self.updateviewportimage(self.timestamp)
         self.graphicsview.setFixedSize(event.size())
