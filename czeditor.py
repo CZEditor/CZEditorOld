@@ -6,7 +6,7 @@ from imagefunctions import NormalImage,XPError
 from statefunctions import NormalKeyframe
 from compositingfunctions import ImageComposite
 from util import *
-from PySide6.QtWidgets import QAbstractButton,QMainWindow,QApplication,QFrame,QScrollArea,QSplitter,QWidget,QGraphicsScene,QGraphicsView,QGraphicsItem,QGraphicsSceneMouseEvent,QComboBox,QPlainTextEdit,QLabel,QVBoxLayout,QHBoxLayout,QSizePolicy,QFormLayout,QLineEdit,QGridLayout,QSpinBox,QGraphicsPixmapItem
+from PySide6.QtWidgets import QAbstractButton,QMainWindow,QApplication,QFrame,QScrollArea,QSplitter,QWidget,QGraphicsScene,QGraphicsView,QGraphicsItem,QGraphicsSceneMouseEvent,QComboBox,QPlainTextEdit,QLabel,QVBoxLayout,QHBoxLayout,QSizePolicy,QFormLayout,QLineEdit,QGridLayout,QSpinBox,QGraphicsPixmapItem,QStyle,QPushButton,QToolButton
 from PySide6.QtGui import QPixmap,QPainter,QPen,QBrush,QColor,QRadialGradient,QResizeEvent,QMouseEvent,QWheelEvent,QTextOption,QKeyEvent
 from PySide6.QtCore import QSize,Qt,QRectF,QPoint,QLine,SIGNAL,QTimerEvent
 from PIL import Image,ImageQt
@@ -84,84 +84,38 @@ def render(filename, length, keyframes):
 #render("video.mp4", 150, keyframes)
 def dummyfunction(*args,**kwargs):
     pass
-class QRedButton(QAbstractButton):
+class QRedButton(QToolButton):
 
-    def __init__(self,parent,text,x,y,onpress = dummyfunction, imagefunction = CreateRedButton,argself = False,*args,**kwargs):
+    def __init__(self,parent,text,x,y,onpress = dummyfunction,argself = False,*args,**kwargs):
         super().__init__(parent)
-        self.imagefunction = imagefunction
         self.state = 0
-        self.text = text
+        self.setText(text)
         self.pressedfunction = onpress
-        self.enterEvent = self.hoveredevent
-        self.leaveEvent = self.releasedevent
         self.pressed.connect(self.pressedevent)
-        self.released.connect(self.hoveredevent)
-        self.setPicture()
-        self.setFixedSize(self.picture.size())
         self.move(x,y)
         self.args = args
         self.kwargs = kwargs
+        self.setFixedHeight(24)
+        self.setBaseSize(24,24)
+        self.setStyleSheet("QToolButton { border-image:url(editor/Button.png) 3; border-width: 3; color: rgb(255,192,192);} QToolButton:hover {border-image:url(editor/Button Highlighted.png) 3; border-width: 3; color: rgb(255,192,192);} QToolButton:pressed {border-image:url(editor/Button Pressed.png) 3; border-width: 3;}")
         if argself:
             self.kwargs["callerButton"] = self
-    def setPicture(self):
-        qim = ImageQt.ImageQt(self.imagefunction(self.text,self.state))
-        self.picture = QPixmap.fromImage(qim) 
-        self.update()
-    def hoveredevent(self,notimportant=None):
-        self.state = 1
-        self.setPicture()
     def pressedevent(self):
-        self.state = 2
         self.pressedfunction(*self.args,**self.kwargs)
-        self.setPicture()
-    def releasedevent(self,notimportant=None): 
-        self.state = 0
-        self.setPicture()
-    def sizeHint(self):
-        return self.picture.size()
-    def paintEvent(self, e):
-        painter = QPainter(self)
-        painter.drawPixmap(0, 0, self.picture)
-class QRedExpandableButton(QAbstractButton):
-    def __init__(self,parent,text,onpress = dummyfunction, imagefunction = CreateRedStretchableButton,*args,**kwargs):
+class QRedExpandableButton(QPushButton):
+    def __init__(self,parent,text,onpress = dummyfunction,*args,**kwargs):
         super().__init__(parent)
-        self.imagefunction = imagefunction
         self.state = 0
-        self.text = text
+        self.setText(text)
         self.pressedfunction = onpress
-        self.enterEvent = self.hoveredevent
-        self.leaveEvent = self.releasedevent
         self.pressed.connect(self.pressedevent)
-        self.released.connect(self.hoveredevent)
+        self.setFixedHeight(24)
         self.setSizePolicy(QSizePolicy.Policy.Preferred,QSizePolicy.Policy.Preferred)
-        self.setPicture()
-        self.setFixedHeight(self.picture.height())
+        self.setStyleSheet("QPushButton { border-image:url(editor/Button.png) 3; border-width: 3; color: rgb(255,192,192);} QPushButton:hover {border-image:url(editor/Button Highlighted.png) 3; border-width: 3; color: rgb(255,192,192);} QPushButton:pressed {border-image:url(editor/Button Pressed.png) 3; border-width: 3;}")
         self.args = args
         self.kwargs = kwargs
-        
-    def setPicture(self):
-        qim = ImageQt.ImageQt(self.imagefunction(self.text,self.state,self.width()))
-        self.picture = QPixmap.fromImage(qim) 
-        self.update()
-    def hoveredevent(self,notimportant=None):
-        self.state = 1
-        self.setPicture()
     def pressedevent(self):
-        self.state = 2
         self.pressedfunction(*self.args,**self.kwargs)
-        self.setPicture()
-    def releasedevent(self,notimportant=None): 
-        self.state = 0
-        self.setPicture()
-    #def sizeHint(self):
-    #    return self.sizeHint()
-    def resizeEvent(self, event) -> None:
-        self.setPicture()
-        self.update()
-        return super().resizeEvent(event)
-    def paintEvent(self, e):
-        painter = QPainter(self)
-        painter.drawPixmap(0, 0, self.picture)
 class QRedFrame(QFrame):
     def __init__(self,parent):
         super().__init__(parent)
@@ -207,8 +161,11 @@ class QRedComboBox(QComboBox):
     def __init__(self,parent,elements=[],onchange=dummyfunction):
         super().__init__(parent)
         self.onchange = onchange
-        
-        self.setStyleSheet("border-image:url(editor/Text Box.png) 2; border-width:2;")
+        styl = QApplication.style()
+        p = styl.standardIcon(QStyle.SP_ArrowDown)
+        p.pixmap(16,16).save("arrow.png")
+        #self.setStyleSheet("border-image:url(editor/Text Box.png) 2; border-width:2;")
+        self.setStyleSheet("QComboBox { background:none; border-image:url(editor/Text Box.png); border-width:2;} QComboBox::drop-down { border-image:url(editor/Button.png); border-width:3; } QComboBox::down-arrow { image: url(editor/Arrow Down.png); }")
         self.addItems(elements)
         self.currentIndexChanged.connect(self.valuechanged)
     def valuechanged(self,index) -> None:
@@ -310,9 +267,9 @@ class QRedTextListProperty(QRedFrame):
             self.entries.append(QRedTextEntryListProperty(None,self.thelist,i))
             arow = QHBoxLayout()
             arow.addWidget(self.entries[i])
-            arow.addWidget(QRedButton(None,"/\\",0,0,self.moveup,CreateRedSmallButton,False,arow))
-            arow.addWidget(QRedButton(None,"\\/",0,0,self.movedown,CreateRedSmallButton,False,arow))
-            arow.addWidget(QRedButton(None,"-",0,0,self.remove,CreateRedSmallButton,False,arow))
+            arow.addWidget(QRedButton(None,"/\\",0,0,self.moveup,False,arow))
+            arow.addWidget(QRedButton(None,"\\/",0,0,self.movedown,False,arow))
+            arow.addWidget(QRedButton(None,"-",0,0,self.remove,False,arow))
             self.widgets.addRow("",arow)
         self.withbuttons.addLayout(self.widgets,0,0)
         self.withbuttons.addLayout(self.widgetbuttons,0,1)
@@ -366,9 +323,9 @@ class QRedTextListProperty(QRedFrame):
         self.entries.append(QRedTextEntryListProperty(None,self.thelist,i))
         arow = QHBoxLayout()
         arow.addWidget(self.entries[i])
-        arow.addWidget(QRedButton(None,"/\\",0,0,self.moveup,CreateRedSmallButton,False,arow))
-        arow.addWidget(QRedButton(None,"\\/",0,0,self.movedown,CreateRedSmallButton,False,arow))
-        arow.addWidget(QRedButton(None,"-",0,0,self.remove,CreateRedSmallButton,False,arow))
+        arow.addWidget(QRedButton(None,"/\\",0,0,self.moveup,False,arow))
+        arow.addWidget(QRedButton(None,"\\/",0,0,self.movedown,False,arow))
+        arow.addWidget(QRedButton(None,"-",0,0,self.remove,False,arow))
         self.widgets.addRow("button",arow)
         window.updateviewport(window.playbackframe)
         #print(self.thelist)
@@ -479,9 +436,9 @@ class CzeKeyframeOptionCategoryList(QRedFrame):
             self.entries.append(CzeKeyframeOptionCategory(None,"expand/collapse",self.thelist[i]))
             arow = QHBoxLayout()
             arow.addWidget(self.entries[i])
-            arow.addWidget(QRedButton(None,"/\\",0,0,self.moveup,CreateRedSmallButton,False,arow))
-            arow.addWidget(QRedButton(None,"\\/",0,0,self.movedown,CreateRedSmallButton,False,arow))
-            arow.addWidget(QRedButton(None,"-",0,0,self.remove,CreateRedSmallButton,False,arow))
+            arow.addWidget(QRedButton(None,"/\\",0,0,self.moveup,False,arow))
+            arow.addWidget(QRedButton(None,"\\/",0,0,self.movedown,False,arow))
+            arow.addWidget(QRedButton(None,"-",0,0,self.remove,False,arow))
             self.widgets.addRow("",arow)
         self.withbuttons.addLayout(self.widgets,0,0)
         self.withbuttons.addLayout(self.widgetbuttons,0,1)
@@ -536,9 +493,9 @@ class CzeKeyframeOptionCategoryList(QRedFrame):
         print([self.thelist[i].params],[self.baseparam.params])
         arow = QHBoxLayout()
         arow.addWidget(self.entries[i])
-        arow.addWidget(QRedButton(None,"/\\",0,0,self.moveup,CreateRedSmallButton,False,arow))
-        arow.addWidget(QRedButton(None,"\\/",0,0,self.movedown,CreateRedSmallButton,False,arow))
-        arow.addWidget(QRedButton(None,"-",0,0,self.remove,CreateRedSmallButton,False,arow))
+        arow.addWidget(QRedButton(None,"/\\",0,0,self.moveup,False,arow))
+        arow.addWidget(QRedButton(None,"\\/",0,0,self.movedown,False,arow))
+        arow.addWidget(QRedButton(None,"-",0,0,self.remove,False,arow))
         self.widgets.addRow("button",arow)
         window.updateviewport(window.playbackframe)
 """class CzeKeyframeOptionCategoryList(QRedDropDownFrame):
