@@ -28,7 +28,9 @@ The **source** dictates what is going to be the _media_ of a keyframe. It can be
  * generated media
  * nothing
 
-Basically anything you can imagine
+Basically anything you can imagine.
+
+#
 
 The **action** or rather **actions** are things that the keyframe does to other keyframes. And the action will only have an effect during and after the time it occurs in. And while the keyframe exists, of course.
 
@@ -39,6 +41,8 @@ Actions can
  * set states of keyframes
 
 And so on and so forth
+
+#
 
 The **effects** are the spark that lets your video come to life. They take the source, do something with it and give a new source. Effects include:
 
