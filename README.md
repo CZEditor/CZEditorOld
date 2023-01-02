@@ -3,10 +3,10 @@
 
 # What? Another editor?
 
-Yep. Another one,... but the first one to feature such an exotic way of editing!
+Yep. Another one... but hear me out.
 
 # Keyframes
-Keyframes. Dont we love keyframes? We usually use them for animation, but has anybody ever wondered: what if there was more things they could do?
+We usually use them for animation, but has anybody ever wondered: what if there was more things they could do?
 
 Thats right, this editor is FULL of keyframes. No clips here, they take up space and are very clunky to use. Its a relict of the 1920s back when film was the standard.
 
@@ -48,6 +48,8 @@ The **effects** are the spark that lets your video come to life. They take the s
 
  * Normal media
  * 3d transform
+ * Blurs
+ * Borders
  * Any per pixel color operation
  * Warps
  * Custom (shaders)
@@ -73,3 +75,22 @@ The point is to make an experimental, accessible, free, crazy, open-source, fun 
 It has been started out of nessecity. We do not realize how much our hardware is capable of. Just because it cant run Windows 10, does not mean it cant run a video editor.
 
 If it can run the Source Engine it can run this.
+
+# Is that it?
+
+No.
+
+* Animation presets
+** Make your own style. Anybody can do it!
+** Automatic application of animations
+* Special tools
+** Quick subtitling
+** Midi synchronization
+** Easy "crazy error" video making (you know who you are)
+* Things you really care about
+** Fisheye warp
+** Chromatic abberation
+** Realistic/stylized shake
+** Green screen
+* Things you might not care about but are cool nonetheless0
+** 
