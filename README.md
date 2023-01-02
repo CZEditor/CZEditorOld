@@ -81,16 +81,22 @@ If it can run the Source Engine it can run this.
 No.
 
 * Animation presets
-** Make your own style. Anybody can do it!
-** Automatic application of animations
+   * Make your own style. Anybody can do it!
+   * Automatic application of animations
 * Special tools
-** Quick subtitling
-** Midi synchronization
-** Easy "crazy error" video making (you know who you are)
+   * Quick subtitling
+   * Midi synchronization
+   * Easy "crazy error" video making (you know who you are)
 * Things you really care about
-** Fisheye warp
-** Chromatic abberation
-** Realistic/stylized shake
-** Green screen
-* Things you might not care about but are cool nonetheless0
-** 
+   * Fisheye warp
+   * Chromatic abberation
+   * Realistic/stylized shake
+   * Chroma key (green screen)
+   * Motion blur
+* Things you might not care about but are cool nonetheless
+   * 3D scene (a little bit more complex than (simpler than you think))
+   * .APNG export
+   * Pixel perfect rendering (no more chroma subsampling!)
+   * .PDN support
+   * Realistic message box creation.
+   * Transparency from two sources with a black and a white background
