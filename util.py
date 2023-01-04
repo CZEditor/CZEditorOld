@@ -1,7 +1,7 @@
 from PIL import Image
 openedimages = {}
 newimages = {}
-
+emptyimage = Image.new("RGBA",(1,1),(0,0,0,0))
 def openimage(s):
     if s not in openedimages:
         openedimages[s] = Image.open(s).convert("RGBA")

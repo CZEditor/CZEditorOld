@@ -9,6 +9,7 @@ from util import *
 from PySide6.QtWidgets import QAbstractButton,QMainWindow,QApplication,QFrame,QScrollArea,QSplitter,QWidget,QGraphicsScene,QGraphicsView,QGraphicsItem,QGraphicsSceneMouseEvent,QComboBox,QPlainTextEdit,QLabel,QVBoxLayout,QHBoxLayout,QSizePolicy,QFormLayout,QLineEdit,QGridLayout,QSpinBox,QGraphicsPixmapItem,QStyle,QPushButton,QToolButton
 from PySide6.QtGui import QPixmap,QPainter,QPen,QBrush,QColor,QRadialGradient,QResizeEvent,QMouseEvent,QWheelEvent,QTextOption,QKeyEvent
 from PySide6.QtCore import QSize,Qt,QRectF,QPoint,QLine,SIGNAL,QTimerEvent
+from PySide6.QtMultimedia import QMediaPlayer,QAudioOutput
 from PIL import Image,ImageQt
 from ui import *
 from typing import *
@@ -43,10 +44,10 @@ def stateprocessor(keyframes):
         state = keyframe.state(state)
     return state
 
-def composite(state):
+def composite(state,parentclass):
     canvas = newimage(1280, 720)
     for keyframe in state:
-        canvas = keyframe.composite(canvas, keyframe.imageparams)
+        canvas = keyframe.composite(canvas, keyframe.imageparams,parentclass)
     return canvas
 
 def frameprocessor(frame, keyframes):
@@ -68,11 +69,11 @@ def getframeimage(i):
     image:Image = composite(state)
     return np.asarray(image.convert("RGB"))
 
-def getviewportimage(i):
+def getviewportimage(i,parentclass):
     global keyframes
     processedkeyframes = frameprocessor(i, keyframes)
     state = stateprocessor(processedkeyframes)
-    image:Image = composite(state)
+    image:Image = composite(state,parentclass)
     return image
 mpyconfig.FFMPEG_BINARY = "ffmpeg"
 def render(filename, length, keyframes):
@@ -576,8 +577,8 @@ class CzeViewport(QWidget):
         self.scene = QGraphicsScene(self)
         self.graphicsview = QGraphicsView(self)
         self.graphicsview.setScene(self.scene)
-        self.viewportimage = self.scene.addPixmap(QPixmap.fromImage(ImageQt.ImageQt(getviewportimage(self.timestamp))))
         self.parentclass = parentclass
+        self.viewportimage = self.scene.addPixmap(QPixmap.fromImage(ImageQt.ImageQt(getviewportimage(self.timestamp,self.parentclass))))
         self.updateviewportimage(self.timestamp)
         
         #self.thelayout = QHBoxLayout()
@@ -591,7 +592,7 @@ class CzeViewport(QWidget):
         #self.scene.addItem(self.somehandle)
     
     def updateviewportimage(self,i):
-        image:Image.Image = getviewportimage(i)
+        image:Image.Image = getviewportimage(i,self.parentclass)
         #image = image.resize(self.size().toTuple(),Image.Resampling.NEAREST)
         self.picture = QPixmap.fromImage(ImageQt.ImageQt(image))
         self.picture = self.picture.scaled(QSize(min(self.size().width(),1280),min(self.size().height(),720)),Qt.AspectRatioMode.KeepAspectRatio)
@@ -636,6 +637,9 @@ class CzeViewport(QWidget):
 class Window(QMainWindow):
     def __init__(self):
         super().__init__()
+        self.player = QMediaPlayer()
+        self.audio_output = QAudioOutput()
+        self.player.setAudioOutput(self.audio_output)
         self.setWindowTitle("fgdf")
         self.setGeometry(100,100,1280,720)
         #button = QRedButton(self,"yeah",4,4,lambda: print("pressed"))
@@ -663,7 +667,7 @@ class Window(QMainWindow):
     def updatekeyframeoptions(self):
         self.keyframeoptions.rebuild()
     def keyPressEvent(self, event: QKeyEvent) -> None:
-        print(event.text())
+        #print(event.text())
         if event.text() == " ":
             self.isplaying = not self.isplaying
             self.starttime = time()

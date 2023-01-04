@@ -11,15 +11,15 @@ class Keyframe():
         self.imageparams = param.image
         self.stateparams = param.states
         self.compositingparams = param.compositing
-    def image(self):
-        return self.imageparams.function().image(self.imageparams.params)
+    def image(self,parentclass):
+        return self.imageparams.function().image(self.imageparams.params,parentclass)
     def state(self, statetomodify):
         for stateparam in self.stateparams:
             statetomodify = stateparam.function().state(statetomodify,self,stateparam)
         return statetomodify
-    def composite(self, canvas, image):
+    def composite(self, canvas, image,parentclass=None):
         for compositingparam in self.compositingparams:
-            canvas = compositingparam.function().composite(canvas,image,compositingparam)
+            canvas = compositingparam.function().composite(canvas,image,compositingparam,parentclass,self)
         return canvas
 
 class Keyframelist():
@@ -129,11 +129,16 @@ keyframes.append(Keyframe(20,Params(
                 {
                     "x":500,
                     "y":400,
+                    "width":1280,
+                    "height":720,
+                    "relativewidth":100,
+                    "relativeheight":100
+
                 }
             }
         ]
     })))
-keyframes.append(Keyframe(40,Params(
+"""keyframes.append(Keyframe(40,Params(
     {
         "image":
         {
@@ -210,7 +215,7 @@ keyframes.append(Keyframe(80,Params(
                 }
             }
         ]
-    })))
+    })))"""
 #keyframes.append(Keyframe(10, Params({"image":{"function":Selectable(1,imagefunctionsdropdown),"params":{"text":"smoke","buttons":["yeah","lets go","Cancel"]}},"states":[{"function":Selectable(0,statefunctionsdropdown),"params":{}}],"compositing":[{"function":Selectable(0,compositingfunctionsdropdown),"params":{"x":100,"y":200}}]})))
 #keyframes.append(Keyframe(70, Params({"image":{"function":Selectable(1,imagefunctionsdropdown),"params":{"text":"gdfgjdlgrgrelhjrtklhjgreg","buttons":["OK"]}},"states":[{"function":Selectable(0,statefunctionsdropdown),"params":{}}],"compositing":[{"function":Selectable(0,compositingfunctionsdropdown),"params":{"x":120,"y":220}}]})))
 #keyframes.append(Keyframe(130, Params({"image":{"function":Selectable(1,imagefunctionsdropdown),"params":{"title":"Error","erroricon":Selectable(1,[["Critical Error","xp/Critical Error.png"],["Exclamation","xp/Exclamation.png"],["Information","xp/Information.png"],["Question","xp/Question.png"],["None",""]]),"buttons":["Yes","No"]}},"states":[{"function":Selectable(0,statefunctionsdropdown),"params":{}}],"compositing":[{"function":Selectable(0,compositingfunctionsdropdown),"params":{"x":140,"y":240}}]})))

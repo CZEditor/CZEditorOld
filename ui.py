@@ -246,57 +246,7 @@ class CzePresets(QWidget):
         self.scene = QGraphicsScene(self)
         self.graphicsview = QGraphicsViewEvent(self)
         self.graphicsview.setScene(self.scene)
-        self.keyframes = [Params(
-    {
-        "image":
-        {
-            "function":Selectable(0,imagefunctionsdropdown),
-            "params":{"imagepath":"xp/Exclamation.png"}
-        },
-        "states":
-        [
-            {
-                "function":Selectable(0,statefunctionsdropdown),
-                "params":{}
-            }
-        ],
-        "compositing":
-        [
-            {
-                "function":Selectable(0,compositingfunctionsdropdown),
-                "params":
-                {
-                    "x":500,
-                    "y":400,
-                }
-            }
-        ]
-    }),Params(
-    {
-        "image":
-        {
-            "function":Selectable(0,imagefunctionsdropdown),
-            "params":{"imagepath":"xp/Exclamation.png"}
-        },
-        "states":
-        [
-            {
-                "function":Selectable(0,statefunctionsdropdown),
-                "params":{}
-            }
-        ],
-        "compositing":
-        [
-            {
-                "function":Selectable(0,compositingfunctionsdropdown),
-                "params":
-                {
-                    "x":500,
-                    "y":400,
-                }
-            }
-        ]
-    })]
+        self.keyframes = []
         self.drawnkeyframes = {}
         i = 0
         for keyframe in self.keyframes:

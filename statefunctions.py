@@ -47,4 +47,5 @@ class CascadeKeyframe():
         
     def __str__(self):
         return self.name
+
 statefunctionsdropdown = [["Media",NormalKeyframe],["Windows Error",ErrorKeyframe],["Cascade",CascadeKeyframe]]
