@@ -10,6 +10,7 @@ from PySide6.QtWidgets import QAbstractButton,QMainWindow,QApplication,QFrame,QS
 from PySide6.QtGui import QPixmap,QPainter,QPen,QBrush,QColor,QRadialGradient,QResizeEvent,QMouseEvent,QWheelEvent,QTextOption,QKeyEvent
 from PySide6.QtCore import QSize,Qt,QRectF,QPoint,QLine,SIGNAL,QTimerEvent
 from PySide6.QtMultimedia import QMediaPlayer,QAudioOutput
+from PySide6.QtOpenGLWidgets import QOpenGLWidget
 from PIL import Image,ImageQt
 from ui import *
 from typing import *
@@ -577,6 +578,7 @@ class CzeViewport(QWidget):
         self.scene = QGraphicsScene(self)
         self.graphicsview = QGraphicsView(self)
         self.graphicsview.setScene(self.scene)
+        
         self.parentclass = parentclass
         self.viewportimage = self.scene.addPixmap(QPixmap.fromImage(ImageQt.ImageQt(getviewportimage(self.timestamp,self.parentclass))))
         self.updateviewportimage(self.timestamp)
