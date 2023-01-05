@@ -7,10 +7,11 @@ from statefunctions import NormalKeyframe
 from compositingfunctions import ImageComposite
 from util import *
 from PySide6.QtWidgets import QAbstractButton,QMainWindow,QApplication,QFrame,QScrollArea,QSplitter,QWidget,QGraphicsScene,QGraphicsView,QGraphicsItem,QGraphicsSceneMouseEvent,QComboBox,QPlainTextEdit,QLabel,QVBoxLayout,QHBoxLayout,QSizePolicy,QFormLayout,QLineEdit,QGridLayout,QSpinBox,QGraphicsPixmapItem,QStyle,QPushButton,QToolButton
-from PySide6.QtGui import QPixmap,QPainter,QPen,QBrush,QColor,QRadialGradient,QResizeEvent,QMouseEvent,QWheelEvent,QTextOption,QKeyEvent
+from PySide6.QtGui import QPixmap,QPainter,QPen,QBrush,QColor,QRadialGradient,QResizeEvent,QMouseEvent,QWheelEvent,QTextOption,QKeyEvent,QOpenGLFunctions
 from PySide6.QtCore import QSize,Qt,QRectF,QPoint,QLine,SIGNAL,QTimerEvent
 from PySide6.QtMultimedia import QMediaPlayer,QAudioOutput
 from PySide6.QtOpenGLWidgets import QOpenGLWidget
+from OpenGL import GLU
 from PIL import Image,ImageQt
 from ui import *
 from typing import *
@@ -38,7 +39,7 @@ baseparams = Params({
         "params":Selectable(0,compositingfunctionsdropdown)().params.copy()
     }
 })
-
+dlist = 0
 def stateprocessor(keyframes):
     state = []
     for keyframe in keyframes:
@@ -74,7 +75,16 @@ def getviewportimage(i,parentclass):
     global keyframes
     processedkeyframes = frameprocessor(i, keyframes)
     state = stateprocessor(processedkeyframes)
-    image:Image = composite(state,parentclass)
+    if(dlist):
+        glNewList(dlist,GL_COMPILE)
+    try:
+        image:Image = composite(state,parentclass)
+    except:
+        if(dlist):
+            glEndList()
+    else:
+        if(dlist):
+            glEndList()
     return image
 mpyconfig.FFMPEG_BINARY = "ffmpeg"
 def render(filename, length, keyframes):
@@ -571,6 +581,30 @@ class CzeViewportDraggableBox(QGraphicsItem):
         self.setPos(self.params[self.xparam]/1280*self.parentclass.picture.width(),self.params[self.yparam]/720*self.parentclass.picture.height())
         painter.setPen(QPen(QColor(255,255,255),1))
         painter.drawEllipse(QRectF(-4,-4,7,7))
+class CzeVideoView(QOpenGLWidget,QOpenGLFunctions):
+    def initializeGL(self):
+        print("GSDJGKSGJ")
+        global dlist
+        #glClearColor(0.0,0.0,0.0,0.0)
+        glTranslatef(0.0,0.0,-5.0)
+        
+        dlist=glGenLists(1)
+    def sizeHint(self):
+        return QSize(1280,720)
+    def resizeGL(self,width,height):
+        print("AVBDBVDD",width,height)
+        glViewport(0,0,1280,720)
+        glMatrixMode(GL_PROJECTION)
+        glLoadIdentity()
+        glOrtho(0,1280,720,0,-10,10)
+        #GLU.gluPerspective(170,1280/720,0.1,10)
+        glMatrixMode(GL_MODELVIEW)
+    def paintGL(self):
+        glClearColor(0.0,0.0,0.0,0.0)
+        glClear(GL_COLOR_BUFFER_BIT)
+        glLoadIdentity()
+        glCallList(dlist)
+
 class CzeViewport(QWidget):
     def __init__(self,parent,parentclass):
         super().__init__(parent)
@@ -578,9 +612,10 @@ class CzeViewport(QWidget):
         self.scene = QGraphicsScene(self)
         self.graphicsview = QGraphicsView(self)
         self.graphicsview.setScene(self.scene)
-        
+        self.openglwidget = CzeVideoView(self)
+        #self.graphicsview.setViewport(self.openglwidget)
         self.parentclass = parentclass
-        self.viewportimage = self.scene.addPixmap(QPixmap.fromImage(ImageQt.ImageQt(getviewportimage(self.timestamp,self.parentclass))))
+        #self.viewportimage = self.scene.addPixmap(QPixmap.fromImage(ImageQt.ImageQt(getviewportimage(self.timestamp,self.parentclass))))
         self.updateviewportimage(self.timestamp)
         
         #self.thelayout = QHBoxLayout()
@@ -594,12 +629,14 @@ class CzeViewport(QWidget):
         #self.scene.addItem(self.somehandle)
     
     def updateviewportimage(self,i):
+        #print(dlist)
         image:Image.Image = getviewportimage(i,self.parentclass)
+        self.openglwidget.update()
         #image = image.resize(self.size().toTuple(),Image.Resampling.NEAREST)
         self.picture = QPixmap.fromImage(ImageQt.ImageQt(image))
         self.picture = self.picture.scaled(QSize(min(self.size().width(),1280),min(self.size().height(),720)),Qt.AspectRatioMode.KeepAspectRatio)
         self.timestamp = i
-        self.viewportimage.setPixmap(self.picture)
+        #self.viewportimage.setPixmap(self.picture)
     def createhandle(self,keyframe,function,param):  #self , keyframe of the handle , function of the param , param itself
         #print(vars(function))
         if hasattr(function,"handle"):
