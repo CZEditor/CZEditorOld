@@ -6,6 +6,7 @@ from PySide6.QtGui import QOpenGLContext
 from OpenGL.GL import *
 from time import time
 import numpy as np
+from ctypes import c_void_p
 imagecache = {}
 """def cachecomposite(func,parentclass,width,height):
     global imagecache
@@ -66,37 +67,70 @@ class Unholy():
         "width":1280,
         "height":720,
         "relativewidth":100,
-        "relativeheight":100
+        "relativeheight":100,
+        "textureid":0,
+        "vbo":0,
+        "vao":0
     })
     def composite(canvas,imageparam,params,parentclass,keyframe):
         img = imageparam.function().image(imageparam.params,parentclass)
-        #params.params.width = int(img.size[0]*params.params.relativewidth/100) #put this in the onupdate function! make sure that it gets called only after the image has been updated
-        #params.params.height = int(img.size[1]*params.params.relativeheight/100)
-        imgdata = np.array(img).flatten().tobytes()
+        imgdata = np.array(img).flatten()
+        params.params.textureid = int(params.params.textureid)
+        if(not params.params.vao):
+            params.params.textureid = glGenTextures(1)
+            glPixelStorei(GL_UNPACK_ALIGNMENT,1)
+            glBindTexture(GL_TEXTURE_2D,params.params.textureid)
+            glTexParameterf(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST)
+            glTexParameterf(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST)
+            glTexParameterf(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_BORDER)
+            glTexParameterf(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_BORDER)
+            glTexParameterf(GL_TEXTURE_2D,GL_TEXTURE_BASE_LEVEL,0)
+            glTexParameterf(GL_TEXTURE_2D,GL_TEXTURE_MAX_LEVEL,0)
+            glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,img.size[0],img.size[1],0,GL_RGBA,GL_UNSIGNED_BYTE,c_void_p(imgdata.ctypes.data))
+            glBindTexture(GL_TEXTURE_2D,0)
+            params.params.vao = glGenVertexArrays(1)
+            glBindVertexArray(params.params.vao)
+            params.params.vbo = glGenBuffers(1)
+            glBindBuffer(GL_ARRAY_BUFFER,params.params.vbo)
+            #[img.size[0],0,img.size[0],img.size[1],0,img.size[1],0,0]
+            glBufferData(GL_ARRAY_BUFFER,np.array([
+             0.0,  0.0, 0.0, 0.0,
+             img.size[0],  0.0, 1.0, 0.0,
+             img.size[0],  img.size[1], 1.0, 1.0,
+             0.0,  0.0, 0.0, 0.0,
+             0.0,  img.size[1], 0.0, 1.0,
+             img.size[0],  img.size[1], 1.0, 1.0],dtype=np.float32),GL_STATIC_DRAW)
+            glEnableVertexAttribArray(0)
+            glVertexAttribPointer(0,2,GL_FLOAT,GL_FALSE,16,c_void_p(0))
+            glEnableVertexAttribArray(1)
+            glVertexAttribPointer(1,2,GL_FLOAT,GL_FALSE,16,c_void_p(8))
+            glBindBuffer(GL_ARRAY_BUFFER,0)
+            glBindVertexArray(0)
+        else:
+            
+            """params.params.textureid = glGenTextures(1)
+            glPixelStorei(GL_UNPACK_ALIGNMENT,1)
+            glBindTexture(GL_TEXTURE_2D,params.params.textureid)
+            glTexParameterf(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST)
+            glTexParameterf(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST)
+            glTexParameterf(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_BORDER)
+            glTexParameterf(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_BORDER)
+            glTexParameterf(GL_TEXTURE_2D,GL_TEXTURE_BASE_LEVEL,0)
+            glTexParameterf(GL_TEXTURE_2D,GL_TEXTURE_MAX_LEVEL,0)
+            glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,img.size[0],img.size[1],0,GL_RGBA,GL_UNSIGNED_BYTE,c_void_p(imgdata.ctypes.data))
+            glBindTexture(GL_TEXTURE_2D,0)"""
+            #glBindTexture(GL_TEXTURE_2D,params.params.textureid)
+            #glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, img.size[0],img.size[1], GL_RGBA, GL_UNSIGNED_BYTE,c_void_p(imgdata.ctypes.data))
+            #glBindTexture(GL_TEXTURE_2D,0)
+        glUniform1i(glGetUniformLocation(parentclass.viewport.openglwidget.shader,"image"),0)
+        glActiveTexture(GL_TEXTURE0)
+        glBindTexture(GL_TEXTURE_2D,params.params.textureid)
+        glBindVertexArray(params.params.vao)
+        #print(params.params)
         
-        #pixels = bytearray(img.size[0]*img.size[1]*4)
-        textid = glGenTextures(1)
-        glPixelStorei(GL_UNPACK_ALIGNMENT,1)
-        glBindTexture(GL_TEXTURE_2D,textid)
-        glTexParameterf(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST)
-        glTexParameterf(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST)
-        glTexParameterf(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_BORDER)
-        glTexParameterf(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_BORDER)
-        glTexParameterf(GL_TEXTURE_2D,GL_TEXTURE_BASE_LEVEL,0)
-        glTexParameterf(GL_TEXTURE_2D,GL_TEXTURE_MAX_LEVEL,0)
-        glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,img.size[0],img.size[1],0,GL_RGBA,GL_UNSIGNED_BYTE,imgdata)
-        verts = ((1,0),(1,1),(0,1),(0,0))
-        texts = ((1,0),(1,1),(0,1),(0,0))
-        surf = (0,1,2,3)
-        glEnable(GL_TEXTURE_2D)
-        glBindTexture(GL_TEXTURE_2D,textid)
-        glBegin(GL_QUADS)
-        for i in surf:
-            glTexCoord2f(texts[i][0],texts[i][1])
-            glVertex2f(verts[i][0]*img.size[0],verts[i][1]*img.size[1])
-        glEnd()
-        #img.resize((params.params.width,params.params.height),Image.Resampling.NEAREST)
-        #canvas.alpha_composite(Image.frombytes("RGBA",(img.size[0],img.size[1]),pixels),(params.params.x,params.params.y))
+        glDrawArrays(GL_TRIANGLES,0,6)
+        glBindVertexArray(0)
+        glBindTexture(GL_TEXTURE_2D,0)
         return canvas
     def onupdate(self,imageparam,params,parentclass,keyframe):
         img = imageparam.function().image(imageparam.params,parentclass)

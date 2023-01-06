@@ -7,11 +7,12 @@ from statefunctions import NormalKeyframe
 from compositingfunctions import ImageComposite
 from util import *
 from PySide6.QtWidgets import QAbstractButton,QMainWindow,QApplication,QFrame,QScrollArea,QSplitter,QWidget,QGraphicsScene,QGraphicsView,QGraphicsItem,QGraphicsSceneMouseEvent,QComboBox,QPlainTextEdit,QLabel,QVBoxLayout,QHBoxLayout,QSizePolicy,QFormLayout,QLineEdit,QGridLayout,QSpinBox,QGraphicsPixmapItem,QStyle,QPushButton,QToolButton
-from PySide6.QtGui import QPixmap,QPainter,QPen,QBrush,QColor,QRadialGradient,QResizeEvent,QMouseEvent,QWheelEvent,QTextOption,QKeyEvent,QOpenGLFunctions
+from PySide6.QtGui import QPixmap,QPainter,QPen,QBrush,QColor,QRadialGradient,QResizeEvent,QMouseEvent,QWheelEvent,QTextOption,QKeyEvent,QOpenGLFunctions,QMatrix4x4,QSurfaceFormat
 from PySide6.QtCore import QSize,Qt,QRectF,QPoint,QLine,SIGNAL,QTimerEvent
 from PySide6.QtMultimedia import QMediaPlayer,QAudioOutput
 from PySide6.QtOpenGLWidgets import QOpenGLWidget
-from OpenGL import GLU
+from PySide6.QtOpenGL import QOpenGLVersionProfile
+from OpenGL.GL.shaders import compileProgram,compileShader
 from PIL import Image,ImageQt
 from ui import *
 from typing import *
@@ -79,7 +80,8 @@ def getviewportimage(i,parentclass):
         glNewList(dlist,GL_COMPILE)
     try:
         image:Image = composite(state,parentclass)
-    except:
+    except Exception as e:
+        print("UH OH!\n",e)
         if(dlist):
             glEndList()
     else:
@@ -583,26 +585,51 @@ class CzeViewportDraggableBox(QGraphicsItem):
         painter.drawEllipse(QRectF(-4,-4,7,7))
 class CzeVideoView(QOpenGLWidget,QOpenGLFunctions):
     def initializeGL(self):
-        print("GSDJGKSGJ")
         global dlist
-        #glClearColor(0.0,0.0,0.0,0.0)
         glTranslatef(0.0,0.0,-5.0)
+        self.shader = compileProgram(compileShader("""#version 330 core
+
+layout (location=0) in vec2 vertexPos;
+layout (location=1) in vec2 vertexColor;
+uniform highp mat4 matrix;
+out vec2 fragmentColor;
+
+void main()
+{
+    gl_Position = matrix*vec4(vertexPos, 0.0, 1.0);
+    fragmentColor = vertexColor;
+}""",GL_VERTEX_SHADER),
+compileShader("""#version 330 core
+
+in vec2 fragmentColor;
+uniform sampler2D image;
+out vec4 color;
+
+void main()
+{
+    color = texture(image,fragmentColor);
+}""",GL_FRAGMENT_SHADER))
         
         dlist=glGenLists(1)
     def sizeHint(self):
         return QSize(1280,720)
     def resizeGL(self,width,height):
-        print("AVBDBVDD",width,height)
         glViewport(0,0,1280,720)
-        glMatrixMode(GL_PROJECTION)
-        glLoadIdentity()
-        glOrtho(0,1280,720,0,-10,10)
-        #GLU.gluPerspective(170,1280/720,0.1,10)
-        glMatrixMode(GL_MODELVIEW)
+        
+
+        #glMatrixMode(GL_PROJECTION)
+        #glLoadIdentity()
+        #glOrtho(0,1280,720,0,-10,10)
+        #glMatrixMode(GL_MODELVIEW)
     def paintGL(self):
-        glClearColor(0.0,0.0,0.0,0.0)
+        glClearColor(0.1,0.2,0.2,1.0)
         glClear(GL_COLOR_BUFFER_BIT)
         glLoadIdentity()
+        glUseProgram(self.shader)
+        projection = QMatrix4x4()
+        projection.frustum(0,1280,720,0,0.1,3.0)
+        projection.translate(0,0,-0.1001)
+        glUniformMatrix4fv(glGetUniformLocation(self.shader,"matrix"),1,GL_FALSE,np.array(projection.data(),dtype=np.float32))
         glCallList(dlist)
 
 class CzeViewport(QWidget):
@@ -613,6 +640,9 @@ class CzeViewport(QWidget):
         self.graphicsview = QGraphicsView(self)
         self.graphicsview.setScene(self.scene)
         self.openglwidget = CzeVideoView(self)
+        format = QSurfaceFormat()
+        format.setVersion(3,3)
+        self.openglwidget.setFormat(format)
         #self.graphicsview.setViewport(self.openglwidget)
         self.parentclass = parentclass
         #self.viewportimage = self.scene.addPixmap(QPixmap.fromImage(ImageQt.ImageQt(getviewportimage(self.timestamp,self.parentclass))))
@@ -676,6 +706,8 @@ class CzeViewport(QWidget):
 class Window(QMainWindow):
     def __init__(self):
         super().__init__()
+        
+        
         self.player = QMediaPlayer()
         self.audio_output = QAudioOutput()
         self.player.setAudioOutput(self.audio_output)
