@@ -2,9 +2,7 @@ from PIL import Image
 from util import ParamLink,Params
 from handles import CzeViewportDraggableHandle
 from PySide6.QtCore import QUrl
-from PySide6.QtGui import QOpenGLContext
 from OpenGL.GL import *
-from time import time
 import numpy as np
 from ctypes import c_void_p
 imagecache = {}
@@ -26,9 +24,9 @@ class ImageComposite():
         "relativeheight":100
     }
     def composite(canvas,imageparam,params,parentclass,keyframe):
-        img = imageparam.function().image(imageparam.params,parentclass)
-        params.params.width = int(img.size[0]*params.params.relativewidth/100) #put this in the onupdate function! make sure that it gets called only after the image has been updated
-        params.params.height = int(img.size[1]*params.params.relativeheight/100)
+        img,size = imageparam.function().image(imageparam.params,parentclass)
+        params.params.width = int(size[0]*params.params.relativewidth/100) #put this in the onupdate function! make sure that it gets called only after the image has been updated
+        params.params.height = int(size[1]*params.params.relativeheight/100)
         canvas.alpha_composite(img.resize((params.params.width,params.params.height),Image.Resampling.NEAREST),(params.params.x,params.params.y))
         return canvas
     def onupdate(self,imageparam,params,parentclass,keyframe):
@@ -74,16 +72,17 @@ class Unholy():
         "pbo":0
     })
     def composite(canvas,imageparam,params,parentclass,keyframe):
-        img = imageparam.function().image(imageparam.params,parentclass)
+        img,size = imageparam.function().image(imageparam.params,parentclass)
         imgdata = np.array(img).flatten()
         if(not params.params.vao):
             #Create a pbo
+            
             params.params.pbo = glGenBuffers(1)
             glBindBuffer(GL_PIXEL_UNPACK_BUFFER, params.params.pbo)
-            glBufferData(GL_PIXEL_UNPACK_BUFFER, img.size[0]*img.size[1]*4,None, GL_STREAM_DRAW)
+            glBufferData(GL_PIXEL_UNPACK_BUFFER, size[0]*size[1]*4,None, GL_STREAM_DRAW)
             data = glMapBuffer(GL_PIXEL_UNPACK_BUFFER,GL_WRITE_ONLY)
-            array = (GLubyte*img.size[0]*img.size[1]*4).from_address(data)
-            ctypes.memmove(array,imgdata.ctypes.data,img.size[0]*img.size[1]*4)
+            array = (GLubyte*size[0]*size[1]*4).from_address(data)
+            ctypes.memmove(array,imgdata.ctypes.data,size[0]*size[1]*4)
             glUnmapBuffer(GL_PIXEL_UNPACK_BUFFER)
             #Generate a texture
             params.params.textureid = glGenTextures(1)
@@ -98,7 +97,7 @@ class Unholy():
             glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_BASE_LEVEL,0)
             glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAX_LEVEL,0)
             
-            glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,img.size[0],img.size[1],0,GL_RGBA,GL_UNSIGNED_BYTE,c_void_p(0))
+            glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,size[0],size[1],0,GL_RGBA,GL_UNSIGNED_BYTE,c_void_p(0))
             glBindTexture(GL_TEXTURE_2D,0)
             glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0)
             #Generate a vertex array
@@ -133,13 +132,13 @@ class Unholy():
              params.params.width,  params.params.height, 1.0, 1.0],dtype=np.float32),GL_STATIC_DRAW)
             glBindBuffer(GL_ARRAY_BUFFER,0)"""
             glBindBuffer(GL_PIXEL_UNPACK_BUFFER, params.params.pbo)
-            glBufferData(GL_PIXEL_UNPACK_BUFFER, img.size[0]*img.size[1]*4,None, GL_STREAM_DRAW)
+            glBufferData(GL_PIXEL_UNPACK_BUFFER, size[0]*size[1]*4,None, GL_STREAM_DRAW)
             glBindTexture(GL_TEXTURE_2D,params.params.textureid)
             data = glMapBuffer(GL_PIXEL_UNPACK_BUFFER,GL_WRITE_ONLY)
-            array = (GLubyte*img.size[0]*img.size[1]*4).from_address(data)
-            ctypes.memmove(array,imgdata.ctypes.data,img.size[0]*img.size[1]*4)
+            array = (GLubyte*size[0]*size[1]*4).from_address(data)
+            ctypes.memmove(array,imgdata.ctypes.data,size[0]*size[1]*4)
             glUnmapBuffer(GL_PIXEL_UNPACK_BUFFER)
-            glTexSubImage2D(GL_TEXTURE_2D,0,0,0,img.size[0],img.size[1],GL_RGBA,GL_UNSIGNED_BYTE,c_void_p(0))
+            glTexSubImage2D(GL_TEXTURE_2D,0,0,0,size[0],size[1],GL_RGBA,GL_UNSIGNED_BYTE,c_void_p(0))
             glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0)
         #Draw the quad
         glUniform1i(glGetUniformLocation(parentclass.viewport.openglwidget.shader,"image"),0)

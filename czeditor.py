@@ -1,4 +1,3 @@
-from multiprocessing import dummy
 import numpy as np
 import moviepy.editor as mpy
 import moviepy.config as mpyconfig
@@ -19,6 +18,9 @@ from typing import *
 import sys
 from keyframes import *
 from time import time
+import traceback
+
+
 
 
 UIDropdownLists = [
@@ -80,9 +82,9 @@ def getviewportimage(i,parentclass):
         glNewList(dlist,GL_COMPILE)
     try:
         image:Image = composite(state,parentclass)
-    except Exception as e:
+    except Exception:
         print("UH OH!")
-        print(e)
+        traceback.print_exc()
     if(dlist):
         glEndList()
     return image
@@ -655,14 +657,14 @@ class CzeViewport(QWidget):
        # self.isplaying = False
         #self.somehandle = CzeViewportDraggableHandle(None,self,ParamLink(keyframes[0].params.compositing[0].params,"x"),ParamLink(keyframes[0].params.compositing[0].params,"y"))
         #self.scene.addItem(self.somehandle)
-    
     def updateviewportimage(self,i):
         #print(dlist)
         image:Image.Image = getviewportimage(i,self.parentclass)
         self.openglwidget.update()
+
         #image = image.resize(self.size().toTuple(),Image.Resampling.NEAREST)
-        self.picture = QPixmap.fromImage(ImageQt.ImageQt(image))
-        self.picture = self.picture.scaled(QSize(min(self.size().width(),1280),min(self.size().height(),720)),Qt.AspectRatioMode.KeepAspectRatio)
+        #self.picture = QPixmap.fromImage(ImageQt.ImageQt(image))
+        #self.picture = self.picture.scaled(QSize(min(self.size().width(),1280),min(self.size().height(),720)),Qt.AspectRatioMode.KeepAspectRatio)
         self.timestamp = i
         #self.viewportimage.setPixmap(self.picture)
     def createhandle(self,keyframe,function,param):  #self , keyframe of the handle , function of the param , param itself
@@ -685,7 +687,7 @@ class CzeViewport(QWidget):
     def resizeEvent(self, event:QResizeEvent) -> None:
         self.updateviewportimage(self.timestamp)
         self.graphicsview.setFixedSize(event.size())
-        self.scene.setSceneRect(0,0,self.picture.width()-2,self.picture.height()-2)
+        #self.scene.setSceneRect(0,0,self.picture.width()-2,self.picture.height()-2)
         #size = event.size()
         #croppedevent = QResizeEvent(QSize(min(size.width(),size.height()/self.picture.size().width()*self.picture.size().height()),min(size.height(),size.width()/self.picture.size().height()*self.picture.size().width())),event.oldSize())
         return super().resizeEvent(event)

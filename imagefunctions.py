@@ -4,7 +4,7 @@ from generate import CreateXPWindow
 from graphics import *
 #import ffmpeg
 from PySide6.QtCore import QByteArray,QBuffer,QIODevice
-
+import pims
 class NormalImage():
     name = "Image"
     params = Params(
@@ -13,7 +13,8 @@ class NormalImage():
         }
     )
     def image(param:Params,parentclass):
-        return openimage(param.imagepath)
+        img = openimage(param.imagepath)
+        return img,img.size
     def __str__(self):
         return self.name
     def gethashstring(self,param:Params,parentclass):
@@ -72,11 +73,16 @@ class SoundFile():
 class ImageSequence():
     name = "Image Sequence"
     params = Params({
-        "imagespath":""
+        "imagespath":"",
+        "PIMS":None,
+        "loaded":""
     })
     def image(param:Params,parentclass):
-        return Image.open(param.imagespath.replace("*",str(int(parentclass.playbackframe))))
-
+        if(param.loaded != param.imagespath):
+            param.PIMS = pims.ImageSequence(param.imagespath)
+            param.loaded = param.imagespath
+        #return Image.open(param.imagespath.replace("*",str(int(parentclass.playbackframe))))
+        return param.PIMS.get_frame(int(parentclass.playbackframe)),(param.PIMS.frame_shape[1],param.PIMS.frame_shape[0])
     def __str__(self):
         return self.name
     def gethashstring(self,param:Params,parentclass):

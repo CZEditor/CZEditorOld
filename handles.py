@@ -16,7 +16,7 @@ class CzeViewportDraggableHandle(QGraphicsItem):
         return QRectF(-4,-4,7,7)
     def paint(self, painter: QPainter, option, widget: Optional[QWidget] = ...) -> None:
         #print(self.params)
-        self.setPos(self.xlink()/1280*self.parentclass.picture.width(),self.ylink()/720*self.parentclass.picture.height())
+        self.setPos(self.xlink()/1280,self.ylink()/720)
         painter.setPen(QPen(QColor(255,255,255),1))
         painter.drawEllipse(QRectF(-4,-4,7,7))
         #return super().paint(painter, option, widget)
@@ -50,7 +50,7 @@ class CzeViewportDraggableOffset(QGraphicsItem):
     def boundingRect(self) -> QRectF:
         return QRectF(-5,-5,9,9)
     def paint(self, painter, option, widget):
-        self.setPos((self.xlink())/1280*self.parentclass.picture.width(),(self.ylink())/720*self.parentclass.picture.height())
+        self.setPos((self.xlink())/1280,(self.ylink())/720)
         painter.setPen(QPen(QColor(255,255,255),1))
         #draw ellipse at the end
         painter.drawEllipse(QRectF(-5,-5,9,9))
