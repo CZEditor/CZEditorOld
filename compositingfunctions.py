@@ -70,16 +70,25 @@ class Unholy():
         "relativeheight":100,
         "textureid":0,
         "vbo":0,
-        "vao":0
+        "vao":0,
+        "pbo":0
     })
     def composite(canvas,imageparam,params,parentclass,keyframe):
         img = imageparam.function().image(imageparam.params,parentclass)
         imgdata = np.array(img).flatten()
         if(not params.params.vao):
+            #Create a pbo
+            params.params.pbo = glGenBuffers(1)
+            glBindBuffer(GL_PIXEL_UNPACK_BUFFER, params.params.pbo)
+            glBufferData(GL_PIXEL_UNPACK_BUFFER, img.size[0]*img.size[1]*4,None, GL_STREAM_DRAW)
+            data = glMapBuffer(GL_PIXEL_UNPACK_BUFFER,GL_WRITE_ONLY)
+            array = (GLubyte*img.size[0]*img.size[1]*4).from_address(data)
+            ctypes.memmove(array,imgdata.ctypes.data,img.size[0]*img.size[1]*4)
+            glUnmapBuffer(GL_PIXEL_UNPACK_BUFFER)
             #Generate a texture
             params.params.textureid = glGenTextures(1)
-            
             glPixelStorei(GL_UNPACK_ALIGNMENT,1)
+            
             glBindTexture(GL_TEXTURE_2D,params.params.textureid)
 
             glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST)
@@ -88,8 +97,10 @@ class Unholy():
             glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_BORDER)
             glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_BASE_LEVEL,0)
             glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAX_LEVEL,0)
-            glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,img.size[0],img.size[1],0,GL_RGBA,GL_UNSIGNED_BYTE,c_void_p(imgdata.ctypes.data))
+            
+            glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,img.size[0],img.size[1],0,GL_RGBA,GL_UNSIGNED_BYTE,c_void_p(0))
             glBindTexture(GL_TEXTURE_2D,0)
+            glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0)
             #Generate a vertex array
             params.params.vao = glGenVertexArrays(1)
             glBindVertexArray(params.params.vao)
@@ -121,8 +132,14 @@ class Unholy():
              0.0,  params.params.height, 0.0, 1.0,
              params.params.width,  params.params.height, 1.0, 1.0],dtype=np.float32),GL_STATIC_DRAW)
             glBindBuffer(GL_ARRAY_BUFFER,0)"""
+            glBindBuffer(GL_PIXEL_UNPACK_BUFFER, params.params.pbo)
             glBindTexture(GL_TEXTURE_2D,params.params.textureid)
-            glTexSubImage2D(GL_TEXTURE_2D,0,0,0,img.size[0],img.size[1],GL_RGBA,GL_UNSIGNED_BYTE,c_void_p(imgdata.ctypes.data))
+            data = glMapBuffer(GL_PIXEL_UNPACK_BUFFER,GL_WRITE_ONLY)
+            array = (GLubyte*img.size[0]*img.size[1]*4).from_address(data)
+            ctypes.memmove(array,imgdata.ctypes.data,img.size[0]*img.size[1]*4)
+            glUnmapBuffer(GL_PIXEL_UNPACK_BUFFER)
+            glTexSubImage2D(GL_TEXTURE_2D,0,0,0,img.size[0],img.size[1],GL_RGBA,GL_UNSIGNED_BYTE,c_void_p(0))
+            glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0)
         #Draw the quad
         glUniform1i(glGetUniformLocation(parentclass.viewport.openglwidget.shader,"image"),0)
         glActiveTexture(GL_TEXTURE0)

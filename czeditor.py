@@ -81,12 +81,10 @@ def getviewportimage(i,parentclass):
     try:
         image:Image = composite(state,parentclass)
     except Exception as e:
-        print("UH OH!\n",e)
-        if(dlist):
-            glEndList()
-    else:
-        if(dlist):
-            glEndList()
+        print("UH OH!")
+        print(e)
+    if(dlist):
+        glEndList()
     return image
 mpyconfig.FFMPEG_BINARY = "ffmpeg"
 def render(filename, length, keyframes):
