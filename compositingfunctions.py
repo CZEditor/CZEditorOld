@@ -70,7 +70,7 @@ class Unholy():
         "relativeheight":100,
         "textureid":0,
         "vbo":0,
-        "vao":0,
+        "vao":0
     })
     def composite(canvas,imageparam,params,parentclass,keyframe):
         img = imageparam.function().image(imageparam.params,parentclass)
@@ -99,11 +99,11 @@ class Unholy():
             #Set geometry of the quad
             glBufferData(GL_ARRAY_BUFFER,np.array([
              0.0,  0.0, 0.0, 0.0,
-             img.size[0],  0.0, 1.0, 0.0,
-             img.size[0],  img.size[1], 1.0, 1.0,
+             params.params.width,  0.0, 1.0, 0.0,
+             params.params.width,  params.params.height, 1.0, 1.0,
              0.0,  0.0, 0.0, 0.0,
-             0.0,  img.size[1], 0.0, 1.0,
-             img.size[0],  img.size[1], 1.0, 1.0],dtype=np.float32),GL_STATIC_DRAW)
+             0.0,  params.params.height, 0.0, 1.0,
+             params.params.width,  params.params.height, 1.0, 1.0],dtype=np.float32),GL_STATIC_DRAW)
             glEnableVertexAttribArray(0)
             glVertexAttribPointer(0,2,GL_FLOAT,GL_FALSE,16,c_void_p(0))
             glEnableVertexAttribArray(1)
@@ -111,24 +111,26 @@ class Unholy():
             glBindBuffer(GL_ARRAY_BUFFER,0)
             glBindVertexArray(0)
         else:
-            #SAVE ME FROM THIS GUAAAAA
+            """glBindBuffer(GL_ARRAY_BUFFER,params.params.vbo)
+            #Set geometry of the quad
+            glBufferData(GL_ARRAY_BUFFER,np.array([
+             0.0,  0.0, 0.0, 0.0,
+             params.params.width,  0.0, 1.0, 0.0,
+             params.params.width,  params.params.height, 1.0, 1.0,
+             0.0,  0.0, 0.0, 0.0,
+             0.0,  params.params.height, 0.0, 1.0,
+             params.params.width,  params.params.height, 1.0, 1.0],dtype=np.float32),GL_STATIC_DRAW)
+            glBindBuffer(GL_ARRAY_BUFFER,0)"""
             glBindTexture(GL_TEXTURE_2D,params.params.textureid)
-            glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST)
-            glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST)
-            glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_BORDER)
-            glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_BORDER)
-            glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_BASE_LEVEL,0)
-            glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAX_LEVEL,0)
-            glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,img.size[0],img.size[1],0,GL_RGBA,GL_UNSIGNED_BYTE,c_void_p(imgdata.ctypes.data))
-            glBindTexture(GL_TEXTURE_2D,0)
+            glTexSubImage2D(GL_TEXTURE_2D,0,0,0,img.size[0],img.size[1],GL_RGBA,GL_UNSIGNED_BYTE,c_void_p(imgdata.ctypes.data))
         #Draw the quad
         glUniform1i(glGetUniformLocation(parentclass.viewport.openglwidget.shader,"image"),0)
         glActiveTexture(GL_TEXTURE0)
-        glBindTexture(GL_TEXTURE_2D,params.params.textureid)
         glBindVertexArray(params.params.vao)
         glDrawArrays(GL_TRIANGLES,0,6)
         glBindVertexArray(0)
         glBindTexture(GL_TEXTURE_2D,0)
+        
         return canvas
     def onupdate(self,imageparam,params,parentclass,keyframe):
         img = imageparam.function().image(imageparam.params,parentclass)

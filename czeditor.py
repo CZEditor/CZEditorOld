@@ -728,12 +728,15 @@ class Window(QMainWindow):
         self.show()
         self.playbackframe = 100
         self.draggedpreset = None
+        self.needtoupdate = False
         self.startTimer(0.01,Qt.TimerType.PreciseTimer)
         self.isplaying = False
         self.starttime = time()
         self.startframe = self.playbackframe
+        
     def updateviewport(self,theframe):
-        self.viewport.updateviewportimage(theframe)
+        self.needtoupdate = True
+        #self.viewport.updateviewportimage(theframe)
         #self.viewport.update()
     def updatekeyframeoptions(self):
         self.keyframeoptions.rebuild()
@@ -749,6 +752,10 @@ class Window(QMainWindow):
             self.playbackframe = self.startframe+int((time()-self.starttime)*60)
             self.viewport.updateviewportimage(self.playbackframe)
             self.timeline.updateplaybackcursor(self.playbackframe)
+        if(self.needtoupdate):
+            self.needtoupdate = False
+            self.viewport.updateviewportimage(self.playbackframe)
+            
         return super().timerEvent(event)
 app = QApplication([])
 window = Window()
