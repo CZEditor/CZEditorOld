@@ -133,6 +133,7 @@ class Unholy():
              params.params.width,  params.params.height, 1.0, 1.0],dtype=np.float32),GL_STATIC_DRAW)
             glBindBuffer(GL_ARRAY_BUFFER,0)"""
             glBindBuffer(GL_PIXEL_UNPACK_BUFFER, params.params.pbo)
+            glBufferData(GL_PIXEL_UNPACK_BUFFER, img.size[0]*img.size[1]*4,None, GL_STREAM_DRAW)
             glBindTexture(GL_TEXTURE_2D,params.params.textureid)
             data = glMapBuffer(GL_PIXEL_UNPACK_BUFFER,GL_WRITE_ONLY)
             array = (GLubyte*img.size[0]*img.size[1]*4).from_address(data)
