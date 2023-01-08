@@ -121,16 +121,6 @@ class Unholy():
             glBindBuffer(GL_ARRAY_BUFFER,0)
             glBindVertexArray(0)
         else:
-            """glBindBuffer(GL_ARRAY_BUFFER,params.params.vbo)
-            #Set geometry of the quad
-            glBufferData(GL_ARRAY_BUFFER,np.array([
-             0.0,  0.0, 0.0, 0.0,
-             params.params.width,  0.0, 1.0, 0.0,
-             params.params.width,  params.params.height, 1.0, 1.0,
-             0.0,  0.0, 0.0, 0.0,
-             0.0,  params.params.height, 0.0, 1.0,
-             params.params.width,  params.params.height, 1.0, 1.0],dtype=np.float32),GL_STATIC_DRAW)
-            glBindBuffer(GL_ARRAY_BUFFER,0)"""
             glBindBuffer(GL_PIXEL_UNPACK_BUFFER, params.params.pbo)
             glBufferData(GL_PIXEL_UNPACK_BUFFER, size[0]*size[1]*4,None, GL_STREAM_DRAW)
             glBindTexture(GL_TEXTURE_2D,params.params.textureid)

@@ -4,7 +4,7 @@ from generate import CreateXPWindow
 from graphics import *
 #import ffmpeg
 from PySide6.QtCore import QByteArray,QBuffer,QIODevice
-import pims
+import pyspng
 class NormalImage():
     name = "Image"
     params = Params(
@@ -78,11 +78,14 @@ class ImageSequence():
         "loaded":""
     })
     def image(param:Params,parentclass):
-        if(param.loaded != param.imagespath):
-            param.PIMS = pims.ImageSequence(param.imagespath)
-            param.loaded = param.imagespath
+        #if(param.loaded != param.imagespath):
+        #    param.PIMS = pims.ImageSequence(param.imagespath)
+        #    param.loaded = param.imagespath
         #return Image.open(param.imagespath.replace("*",str(int(parentclass.playbackframe))))
-        return param.PIMS.get_frame(int(parentclass.playbackframe)),(param.PIMS.frame_shape[1],param.PIMS.frame_shape[0])
+        #return param.PIMS.get_frame(int(parentclass.playbackframe)),(param.PIMS.frame_shape[1],param.PIMS.frame_shape[0])
+        with open(param.imagespath.replace("*",str(int(parentclass.playbackframe))),"rb") as file:
+            img = pyspng.load(file.read(),"RGBA")
+        return img,(img.shape[1],img.shape[0])
     def __str__(self):
         return self.name
     def gethashstring(self,param:Params,parentclass):
