@@ -72,7 +72,7 @@ Are they easy to use for everyone?
 
 The point is to make an experimental, accessible, free, crazy, open-source, fun video editor for everybody to just use.
 
-It has been started out of nessecity. We do not realize how much our hardware is capable of. Just because it cant run Windows 10, does not mean it cant run a video editor.
+It has been started out of necessity. We do not realize how much our hardware is capable of. Just because it cant run Windows 10, does not mean it cant run a video editor.
 
 If it can run the Source Engine it can run this.
 
