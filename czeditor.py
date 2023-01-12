@@ -1,9 +1,12 @@
+"""
+Main entry point
+"""
+
 import numpy as np
 import moviepy.editor as mpy
 import moviepy.config as mpyconfig
 from imagefunctions import NormalImage,XPError
 from statefunctions import NormalKeyframe
-from compositingfunctions import ImageComposite
 from util import *
 from PySide6.QtWidgets import QAbstractButton,QMainWindow,QApplication,QFrame,QScrollArea,QSplitter,QWidget,QGraphicsScene,QGraphicsView,QGraphicsItem,QGraphicsSceneMouseEvent,QComboBox,QPlainTextEdit,QLabel,QVBoxLayout,QHBoxLayout,QSizePolicy,QFormLayout,QLineEdit,QGridLayout,QSpinBox,QGraphicsPixmapItem,QStyle,QPushButton,QToolButton
 from PySide6.QtGui import QPixmap,QPainter,QPen,QBrush,QColor,QRadialGradient,QResizeEvent,QMouseEvent,QWheelEvent,QTextOption,QKeyEvent,QOpenGLFunctions,QMatrix4x4,QSurfaceFormat
@@ -16,18 +19,11 @@ from PIL import Image,ImageQt
 from ui import *
 from typing import *
 import sys
-from keyframes import *
+from keyframes import * # TODO : change the name to something better
 from time import time
 import traceback
 
 
-
-
-UIDropdownLists = [
-    [NormalImage,XPError],
-    [NormalKeyframe],
-    [ImageComposite]
-]
 baseparams = Params({
     "image":{
         "function":Selectable(0,imagefunctionsdropdown),
@@ -42,7 +38,9 @@ baseparams = Params({
         "params":Selectable(0,compositingfunctionsdropdown)().params.copy()
     }
 })
+
 dlist = 0
+
 def stateprocessor(keyframes):
     state = []
     for keyframe in keyframes:
@@ -50,10 +48,8 @@ def stateprocessor(keyframes):
     return state
 
 def composite(state,parentclass):
-    canvas = newimage(1280, 720)
     for keyframe in state:
-        canvas = keyframe.composite(canvas, keyframe.imageparams,parentclass)
-    return canvas
+        keyframe.composite(keyframe.imageparams,parentclass)
 
 def frameprocessor(frame, keyframes):
     returnkeyframes = []
@@ -64,14 +60,12 @@ def frameprocessor(frame, keyframes):
             break
     return returnkeyframes
 
-
-
 def getframeimage(i):
     global keyframes
     i = i * 60
     processedkeyframes = frameprocessor(i, keyframes)
     state = stateprocessor(processedkeyframes)
-    image:Image = composite(state)
+    image:Image = composite(state) # TODO : Its opengl now, make it render with it
     return np.asarray(image.convert("RGB"))
 
 def getviewportimage(i,parentclass):
@@ -81,13 +75,13 @@ def getviewportimage(i,parentclass):
     if(dlist):
         glNewList(dlist,GL_COMPILE)
     try:
-        image:Image = composite(state,parentclass)
+        composite(state,parentclass)
     except Exception:
-        print("UH OH!")
+        print("==================\n<UH OH!>")
         traceback.print_exc()
+        print("</UH OH!>\n==================")
     if(dlist):
         glEndList()
-    return image
 mpyconfig.FFMPEG_BINARY = "ffmpeg"
 def render(filename, length, keyframes):
 
@@ -98,92 +92,7 @@ def render(filename, length, keyframes):
 #render("video.mp4", 150, keyframes)
 def dummyfunction(*args,**kwargs):
     pass
-class QRedButton(QToolButton):
 
-    def __init__(self,parent,text,x,y,onpress = dummyfunction,argself = False,*args,**kwargs):
-        super().__init__(parent)
-        self.state = 0
-        self.setText(text)
-        self.pressedfunction = onpress
-        self.pressed.connect(self.pressedevent)
-        self.move(x,y)
-        self.args = args
-        self.kwargs = kwargs
-        self.setFixedHeight(24)
-        self.setBaseSize(24,24)
-        self.setStyleSheet("QToolButton { border-image:url(editor/Button.png) 3; border-width: 3; color: rgb(255,192,192);} QToolButton:hover {border-image:url(editor/Button Highlighted.png) 3; border-width: 3; color: rgb(255,192,192);} QToolButton:pressed {border-image:url(editor/Button Pressed.png) 3; border-width: 3;}")
-        if argself:
-            self.kwargs["callerButton"] = self
-    def pressedevent(self):
-        self.pressedfunction(*self.args,**self.kwargs)
-class QRedExpandableButton(QPushButton):
-    def __init__(self,parent,text,onpress = dummyfunction,*args,**kwargs):
-        super().__init__(parent)
-        self.state = 0
-        self.setText(text)
-        self.pressedfunction = onpress
-        self.pressed.connect(self.pressedevent)
-        self.setFixedHeight(24)
-        self.setSizePolicy(QSizePolicy.Policy.Preferred,QSizePolicy.Policy.Preferred)
-        self.setStyleSheet("QPushButton { border-image:url(editor/Button.png) 3; border-width: 3; color: rgb(255,192,192);} QPushButton:hover {border-image:url(editor/Button Highlighted.png) 3; border-width: 3; color: rgb(255,192,192);} QPushButton:pressed {border-image:url(editor/Button Pressed.png) 3; border-width: 3;}")
-        self.args = args
-        self.kwargs = kwargs
-    def pressedevent(self):
-        self.pressedfunction(*self.args,**self.kwargs)
-class QRedFrame(QFrame):
-    def __init__(self,parent):
-        super().__init__(parent)
-        self.setStyleSheet("border-image:url(editor/Square Frame.png) 2; border-width:2;")
-
-class QRedScrollArea(QScrollArea):
-    def __init__(self,parent):
-        super().__init__(parent)
-        self.setStyleSheet("border-image:url(editor/Square Frame.png) 2; border-width:2;")
-
-class QRedTextBox(QPlainTextEdit):
-    def __init__(self,parent,onchange=dummyfunction):
-        super().__init__(parent)
-        self.onchange = onchange
-        self.setStyleSheet("border-image:url(editor/Text Box.png) 2; border-width:2;")
-        self.setWordWrapMode(QTextOption.WrapMode.NoWrap)
-        #self.setMaximumHeight(150)
-        self.textChanged.connect(self.change)
-    def change(self) -> None:
-        self.onchange(self.toPlainText())
-
-class QRedTextEntry(QLineEdit):
-    def __init__(self,parent,onchange=dummyfunction):
-        super().__init__(parent)
-        self.onchange = onchange
-        self.setStyleSheet("border-image:url(editor/Text Box.png) 2; border-width:2;")
-        #self.setWordWrapMode(QTextOption.WrapMode.NoWrap)
-        #self.setMaximumHeight(150)
-        self.textChanged.connect(self.change)
-    def change(self) -> None:
-        self.onchange(self.text())   
-class QRedSpinBox(QSpinBox):
-    def __init__(self,parent,onchange=dummyfunction):
-        super().__init__(parent)
-        self.onchange = onchange
-        self.setStyleSheet("border-image:url(editor/Text Box.png) 2; border-width:2;")
-        self.setMaximum(50000)
-        self.setMinimum(-50000)
-        self.valueChanged.connect(self.change)
-    def change(self) -> None:
-        self.onchange(self.value()) 
-class QRedComboBox(QComboBox):
-    def __init__(self,parent,elements=[],onchange=dummyfunction):
-        super().__init__(parent)
-        self.onchange = onchange
-        styl = QApplication.style()
-        p = styl.standardIcon(QStyle.SP_ArrowDown)
-        p.pixmap(16,16).save("arrow.png")
-        #self.setStyleSheet("border-image:url(editor/Text Box.png) 2; border-width:2;")
-        self.setStyleSheet("QComboBox { background:none; border-image:url(editor/Text Box.png); border-width:2;} QComboBox::drop-down { border-image:url(editor/Button.png); border-width:3; } QComboBox::down-arrow { image: url(editor/Arrow Down.png); }")
-        self.addItems(elements)
-        self.currentIndexChanged.connect(self.valuechanged)
-    def valuechanged(self,index) -> None:
-        self.onchange(self.currentText(),self.currentIndex()) 
 class QRedTextProperty(QRedFrame):
     def __init__(self,parent,param:Params,index):
         super().__init__(parent)
@@ -522,29 +431,35 @@ class CzeKeyframeOptionCategoryList(QRedFrame):
         for param in listofparams:
             if isinstance(param,Params):
                 self.widgets()"""
+
+
 class CzeKeyframeOptions(QRedScrollArea):
+    """
+    Entire left panel.
+    """
     def __init__(self,parent,parentclass):
         self.params = keyframes[0].params
         super().__init__(parent)
         self.parentclass = parentclass
-        self.viewframe = QRedFrame(None)
-        #self.alayout = QVBoxLayout()
+
+        # VBoxLayout with keyframe parameters
         self.widgets = QVBoxLayout()
-        #dropdo = QRedDropDownFrame(None,"yo")
-        self.iterate(self.params)
-        #dropdo2 = QRedDropDownListFrame(None)
-        #self.widgets.addWidget(dropdo2)
-        self.viewframe.setLayout(self.widgets)
         self.widgets.setAlignment(Qt.AlignmentFlag.AlignTop)
-        self.setWidget(self.viewframe)
         self.setSizePolicy(QSizePolicy.Policy.Maximum,QSizePolicy.Policy.Preferred)
-        
-        #self.widgets.setAlignment(Qt.AlignmentFlag.AlignTop)
-        #self.alayout.addWidget(self.viewframe)
+        self.iterate(self.params) #populate it
+
+        # Entire scrollable section of left panel
+        self.viewframe = QRedFrame(None)
+        self.viewframe.setLayout(self.widgets)
+        self.setWidget(self.viewframe)
+
         self.setWidgetResizable(True)
+        
+    # Resize view port
     def changeEvent(self, arg__1) -> None:
         self.setMaximumWidth(self.widgets.contentsRect().width()+self.verticalScrollBar().width())
         return super().changeEvent(arg__1)
+
     def iterate(self,params):
         for key in vars(params).keys():
             param = params[key]
@@ -552,20 +467,24 @@ class CzeKeyframeOptions(QRedScrollArea):
                 self.widgets.addWidget(CzeKeyframeOptionCategory(None,"Expand/Collapse",param)) #Make it display the actual name!
             elif isinstance(param,list):
                 self.widgets.addWidget(CzeKeyframeOptionCategoryList(None,param,baseparams[key]))
-                #for i in param:
-                #    if isinstance(i,Params):
-                #        self.widgets.addWidget(CzeKeyframeOptionCategory(None,"Expand/Collapse",i))
-                #Add a + button here to add more entries
+
     
-    def rebuild(self):
+    def rebuild(self): # VERY SLOW, TODO : Make fast
         if self.parentclass.selectedframe:
             self.params = self.parentclass.selectedframe.params
             for i in range(self.widgets.count()):
                 self.widgets.itemAt(0).widget().setParent(None)
+                
             self.iterate(self.params)
         else:
             for i in range(self.widgets.count()):
                 self.widgets.itemAt(0).widget().setParent(None)
+
+
+
+
+
+
 
 
 class CzeViewportDraggableBox(QGraphicsItem):
@@ -583,11 +502,18 @@ class CzeViewportDraggableBox(QGraphicsItem):
         self.setPos(self.params[self.xparam]/1280*self.parentclass.picture.width(),self.params[self.yparam]/720*self.parentclass.picture.height())
         painter.setPen(QPen(QColor(255,255,255),1))
         painter.drawEllipse(QRectF(-4,-4,7,7))
-class CzeVideoView(QOpenGLWidget,QOpenGLFunctions):
-    def initializeGL(self):
+
+        
+class CzeVideoView(QGraphicsItem):
+    def __init__(self,parent=None):
+        super().__init__(parent)
+    def boundingRect(self):
+        return QSize(1280,720)
+    def paint(self, painter: QPainter, option, widget):
         global dlist
-        glTranslatef(0.0,0.0,-5.0)
-        self.shader = compileProgram(compileShader("""#version 330 core
+        painter.beginNativePainting()
+        if(not dlist):
+            self.shader = compileProgram(compileShader("""#version 330 core
 
 layout (location=0) in vec2 vertexPos;
 layout (location=1) in vec2 vertexColor;
@@ -610,43 +536,43 @@ void main()
     color = texture(image,fragmentColor);
 }""",GL_FRAGMENT_SHADER))
         
-        dlist=glGenLists(1)
-    def sizeHint(self):
-        return QSize(1280,720)
-    def resizeGL(self,width,height):
-        glViewport(0,0,1280,720)
+            dlist=glGenLists(1)
+        else:
+            glViewport(0,0,1280,720)
+            glClearColor(0.1,0.2,0.2,1.0)
+            glTranslatef(0.0,0.0,-5.0)
+            glClear(GL_COLOR_BUFFER_BIT)
+            glLoadIdentity()
+            glUseProgram(self.shader)
+            projection = QMatrix4x4()
+            projection.frustum(0,1280,720,0,0.1,3.0)
+            projection.translate(0,0,-0.1001)
+            glUniformMatrix4fv(glGetUniformLocation(self.shader,"matrix"),1,GL_FALSE,np.array(projection.data(),dtype=np.float32))
+            glCallList(dlist)
+        painter.endNativePainting()
         
 
-        #glMatrixMode(GL_PROJECTION)
-        #glLoadIdentity()
-        #glOrtho(0,1280,720,0,-10,10)
-        #glMatrixMode(GL_MODELVIEW)
-    def paintGL(self):
-        glClearColor(0.1,0.2,0.2,1.0)
-        glClear(GL_COLOR_BUFFER_BIT)
-        glLoadIdentity()
-        glUseProgram(self.shader)
-        projection = QMatrix4x4()
-        projection.frustum(0,1280,720,0,0.1,3.0)
-        projection.translate(0,0,-0.1001)
-        glUniformMatrix4fv(glGetUniformLocation(self.shader,"matrix"),1,GL_FALSE,np.array(projection.data(),dtype=np.float32))
-        glCallList(dlist)
-
 class CzeViewport(QWidget):
+    """
+    Main view port to hold canvas/screen
+    """
     def __init__(self,parent,parentclass):
         super().__init__(parent)
         self.timestamp = 100
         self.scene = QGraphicsScene(self)
         self.graphicsview = QGraphicsView(self)
         self.graphicsview.setScene(self.scene)
-        self.openglwidget = CzeVideoView(self)
+        self.openglwidget = QOpenGLWidget()
+        self.graphicsview.setViewport(self.openglwidget)
         format = QSurfaceFormat()
         format.setVersion(3,3)
         self.openglwidget.setFormat(format)
         #self.graphicsview.setViewport(self.openglwidget)
         self.parentclass = parentclass
+        self.videoview = CzeVideoView()
+        self.scene.addItem(self.videoview)
         #self.viewportimage = self.scene.addPixmap(QPixmap.fromImage(ImageQt.ImageQt(getviewportimage(self.timestamp,self.parentclass))))
-        self.updateviewportimage(self.timestamp)
+        #self.updateviewportimage(self.timestamp)
         
         #self.thelayout = QHBoxLayout()
        # self.setLayout(self.thelayout)
@@ -659,12 +585,12 @@ class CzeViewport(QWidget):
         #self.scene.addItem(self.somehandle)
     def updateviewportimage(self,i):
         #print(dlist)
-        image:Image.Image = getviewportimage(i,self.parentclass)
-        self.openglwidget.update()
-
+        getviewportimage(i,self.parentclass)
+        #self.openglwidget.update()
+        self.videoview.setPos(self.size().width()/2-1280/2,self.size().height()/2-720/2)
         #image = image.resize(self.size().toTuple(),Image.Resampling.NEAREST)
         #self.picture = QPixmap.fromImage(ImageQt.ImageQt(image))
-        #self.picture = self.picture.scaled(QSize(min(self.size().width(),1280),min(self.size().height(),720)),Qt.AspectRatioMode.KeepAspectRatio)
+        #(QSize(min(self.size().width(),1280),min(self.size().height(),720)),Qt.AspectRatioMode.KeepAspectRatio)
         self.timestamp = i
         #self.viewportimage.setPixmap(self.picture)
     def createhandle(self,keyframe,function,param):  #self , keyframe of the handle , function of the param , param itself
@@ -691,55 +617,62 @@ class CzeViewport(QWidget):
         #size = event.size()
         #croppedevent = QResizeEvent(QSize(min(size.width(),size.height()/self.picture.size().width()*self.picture.size().height()),min(size.height(),size.width()/self.picture.size().height()*self.picture.size().width())),event.oldSize())
         return super().resizeEvent(event)
-
-
-
-
-
-
     
     #def paintEvent(self, event) -> None:
     #    painter = QPainter(self)
     #    painter.setViewport()
         #self.scene.render(painter,aspectRatioMode=Qt.AspectRatioMode.KeepAspectRatio)
         #return super().paintEvent(event)
+
+
 class Window(QMainWindow):
     def __init__(self):
         super().__init__()
         
-        
+        # Initialize audio player
+        #[
         self.player = QMediaPlayer()
         self.audio_output = QAudioOutput()
         self.player.setAudioOutput(self.audio_output)
+        #] - this is temporary until we get a proper way to handle audio
+        
+        # Window creation
         self.setWindowTitle("fgdf")
         self.setGeometry(100,100,1280,720)
-        #button = QRedButton(self,"yeah",4,4,lambda: print("pressed"))
+
+        #Set the style
         self.setStyleSheet("background-color: qradialgradient(spread:pad, cx:4.5, cy:4.5, radius:7, fx:4.5, fy:4.5, stop:0 rgba(255, 0, 0, 255), stop:1 rgba(0, 0, 0, 255));  color: rgb(255,192,192);")
+        
+        # Setup panels
         hozsplitter = QSplitter(Qt.Orientation.Vertical,self)
-        #rightsplitter = QSplitter(hozsplitter)
         topsplitter = QSplitter(hozsplitter)
         
         self.keyframeoptions = CzeKeyframeOptions(topsplitter,self)
         self.viewport = CzeViewport(topsplitter,self)
         self.presets = CzePresets(topsplitter,self)
         self.timeline = CzeTimeline(hozsplitter,self)
+
         self.selectedframe = None
         self.setCentralWidget(hozsplitter)
-        self.show()
-        self.playbackframe = 100
-        self.draggedpreset = None
-        self.needtoupdate = False
+        self.show() # Show the window
+
+        self.playbackframe = 100  # Cursor position
+        self.draggedpreset = None  
+        self.needtoupdate = False  # Synchronize updating viewport
+        
         self.startTimer(0.016,Qt.TimerType.PreciseTimer)
         self.isplaying = False
         self.starttime = time()
         self.startframe = self.playbackframe
         
-    def updateviewport(self,theframe):
+    def updateviewport(self,theframe): # TODO : Remove theframe parameter
         self.needtoupdate = True
         #self.viewport.updateviewportimage(theframe)
         #self.viewport.update()
+
     def updatekeyframeoptions(self):
-        self.keyframeoptions.rebuild()
+        self.keyframeoptions.rebuild() 
+
     def keyPressEvent(self, event: QKeyEvent) -> None:
         #print(event.text())
         if event.text() == " ":
@@ -747,16 +680,19 @@ class Window(QMainWindow):
             self.starttime = time()
             self.startframe = self.playbackframe
         return super().keyPressEvent(event)
+        
     def timerEvent(self, event: QTimerEvent) -> None:
         if self.isplaying:
             self.playbackframe = self.startframe+int((time()-self.starttime)*60)
             self.viewport.updateviewportimage(self.playbackframe)
             self.timeline.updateplaybackcursor(self.playbackframe)
-        if self.needtoupdate :
+        if self.needtoupdate:
             self.needtoupdate = False
             self.viewport.updateviewportimage(self.playbackframe)
             
         return super().timerEvent(event)
+
+        
 app = QApplication([])
 window = Window()
 sys.exit(app.exec())

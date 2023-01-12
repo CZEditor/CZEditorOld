@@ -1,3 +1,7 @@
+"""
+Template functions for compositing
+"""
+
 from PIL import Image,ImageFilter,ImageChops
 import numpy as np
 from generate import put

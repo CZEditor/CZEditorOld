@@ -2,8 +2,8 @@ from generate import *
 from PIL import Image
 from functools import cache
 from util import *
-from PySide6.QtWidgets import QWidget,QGraphicsScene,QGraphicsView,QGraphicsItem,QGraphicsRectItem
-from PySide6.QtGui import QPen,QColor,QRadialGradient,QResizeEvent,QMouseEvent,QWheelEvent,QDrag,QDragEnterEvent,QDragLeaveEvent,QDragMoveEvent,QDropEvent
+from PySide6.QtWidgets import QWidget,QGraphicsScene,QGraphicsView,QGraphicsItem,QGraphicsRectItem,QFrame,QPushButton,QScrollArea,QPlainTextEdit,QToolButton,QLineEdit,QSpinBox,QComboBox,QSizePolicy,QApplication,QStyle
+from PySide6.QtGui import QPen,QColor,QRadialGradient,QResizeEvent,QMouseEvent,QWheelEvent,QDrag,QDragEnterEvent,QDragLeaveEvent,QDragMoveEvent,QDropEvent,QTextOption
 from PySide6.QtCore import QSize,Qt,QRectF,QPoint,QLine,QMimeData,Qt
 from keyframes import *
 playbackframe = 100
@@ -17,37 +17,125 @@ def CreateRedButton(text,style):
     styles = ["editor/Button.png","editor/Button Highlighted.png","editor/Button Pressed.png"]
     Button = Image.open(styles[style]).convert("RGBA")
     col = (0,0,0,255)
-    textsize = measuretext7(text,"7\\fonts\\text\\",kerningadjust=-1)
+    textsize = measuretext7(text,"7/fonts/text/",kerningadjust=-1)
     Button = resize(Button,max(textsize[0]+16,86),max(24,textsize[1]+9),3,3,3,3,Image.NEAREST)
-    Button = createtext7(Button,w(Button)//2-textsize[0]//2,4,text,"7\\fonts\\text\\",color=(255,128,128),kerningadjust=-1)
+    Button = createtext7(Button,w(Button)//2-textsize[0]//2,4,text,"7/fonts/text/",color=(255,128,128),kerningadjust=-1)
     return Button
 @cache
 def CreateRedStretchableButton(text,style,width):
     styles = ["editor/Button.png","editor/Button Highlighted.png","editor/Button Pressed.png"]
     Button = Image.open(styles[style]).convert("RGBA")
     col = (0,0,0,255)
-    textsize = measuretext7(text,"7\\fonts\\text\\",kerningadjust=-1)
+    textsize = measuretext7(text,"7/fonts/text/",kerningadjust=-1)
     Button = resize(Button,max(textsize[0]+16,width),max(24,textsize[1]+9),3,3,3,3,Image.NEAREST)
-    Button = createtext7(Button,w(Button)//2-textsize[0]//2,4,text,"7\\fonts\\text\\",color=(255,128,128),kerningadjust=-1)
+    Button = createtext7(Button,w(Button)//2-textsize[0]//2,4,text,"7/fonts/text/",color=(255,128,128),kerningadjust=-1)
     return Button
 @cache
 def CreateRedSmallButton(text,style):
     styles = ["editor/Button.png","editor/Button Highlighted.png","editor/Button Pressed.png"]
     Button = Image.open(styles[style]).convert("RGBA")
     col = (0,0,0,255)
-    textsize = measuretext7(text,"7\\fonts\\text\\",kerningadjust=-1)
+    textsize = measuretext7(text,"7/fonts/text/",kerningadjust=-1)
     Button = resize(Button,textsize[0]+16,max(24,textsize[1]+9),3,3,3,3,Image.NEAREST)
-    Button = createtext7(Button,w(Button)//2-textsize[0]//2,4,text,"7\\fonts\\text\\",color=(255,128,128),kerningadjust=-1)
+    Button = createtext7(Button,w(Button)//2-textsize[0]//2,4,text,"7/fonts/text/",color=(255,128,128),kerningadjust=-1)
     return Button
 def CreateRedTab(text,active=True):
     if active:
         TabImg = Image.open("editor/Selected Tab.png").convert("RGBA").transpose(Image.ROTATE_90)
     else:
         TabImg = Image.open("editor/Unselected Tab.png").convert("RGBA").transpose(Image.ROTATE_90)
-    textsize = measuretext7(text,"7\\fonts\\text\\",kerningadjust=-1)
+    textsize = measuretext7(text,"7/fonts/text/",kerningadjust=-1)
     Tab = resize(TabImg,textsize[0]+10,textsize[1]+9,3,3,3,3,Image.NEAREST)
-    Tab = createtext7(Tab,5,4,text,"7\\fonts\\text\\",color=(255,128,128),kerningadjust=-1)
+    Tab = createtext7(Tab,5,4,text,"7/fonts/text/",color=(255,128,128),kerningadjust=-1)
     return Tab.transpose(Image.ROTATE_270)
+
+class QRedButton(QToolButton):
+
+    def __init__(self,parent,text,x,y,onpress = dummyfunction,argself = False,*args,**kwargs):
+        super().__init__(parent)
+        self.state = 0
+        self.setText(text)
+        self.pressedfunction = onpress
+        self.pressed.connect(self.pressedevent)
+        self.move(x,y)
+        self.args = args
+        self.kwargs = kwargs
+        self.setFixedHeight(24)
+        self.setBaseSize(24,24)
+        self.setStyleSheet("QToolButton { border-image:url(editor/Button.png) 3; border-width: 3; color: rgb(255,192,192);} QToolButton:hover {border-image:url(editor/Button Highlighted.png) 3; border-width: 3; color: rgb(255,192,192);} QToolButton:pressed {border-image:url(editor/Button Pressed.png) 3; border-width: 3;}")
+        if argself:
+            self.kwargs["callerButton"] = self
+    def pressedevent(self):
+        self.pressedfunction(*self.args,**self.kwargs)
+class QRedExpandableButton(QPushButton):
+    def __init__(self,parent,text,onpress = dummyfunction,*args,**kwargs):
+        super().__init__(parent)
+        self.state = 0
+        self.setText(text)
+        self.pressedfunction = onpress
+        self.pressed.connect(self.pressedevent)
+        self.setFixedHeight(24)
+        self.setSizePolicy(QSizePolicy.Policy.Preferred,QSizePolicy.Policy.Preferred)
+        self.setStyleSheet("QPushButton { border-image:url(editor/Button.png) 3; border-width: 3; color: rgb(255,192,192);} QPushButton:hover {border-image:url(editor/Button Highlighted.png) 3; border-width: 3; color: rgb(255,192,192);} QPushButton:pressed {border-image:url(editor/Button Pressed.png) 3; border-width: 3;}")
+        self.args = args
+        self.kwargs = kwargs
+    def pressedevent(self):
+        self.pressedfunction(*self.args,**self.kwargs)
+
+class QRedFrame(QFrame):
+    def __init__(self,parent):
+        super().__init__(parent)
+        self.setStyleSheet("border-image:url(editor/Square Frame.png) 2; border-width:2;")
+
+class QRedScrollArea(QScrollArea):
+    def __init__(self,parent):
+        super().__init__(parent)
+        self.setStyleSheet("border-image:url(editor/Square Frame.png) 2; border-width:2;")
+
+class QRedTextBox(QPlainTextEdit):
+    def __init__(self,parent,onchange=dummyfunction):
+        super().__init__(parent)
+        self.onchange = onchange
+        self.setStyleSheet("border-image:url(editor/Text Box.png) 2; border-width:2;")
+        self.setWordWrapMode(QTextOption.WrapMode.NoWrap)
+        #self.setMaximumHeight(150)
+        self.textChanged.connect(self.change)
+    def change(self) -> None:
+        self.onchange(self.toPlainText())
+
+class QRedTextEntry(QLineEdit):
+    def __init__(self,parent,onchange=dummyfunction):
+        super().__init__(parent)
+        self.onchange = onchange
+        self.setStyleSheet("border-image:url(editor/Text Box.png) 2; border-width:2;")
+        #self.setWordWrapMode(QTextOption.WrapMode.NoWrap)
+        #self.setMaximumHeight(150)
+        self.textChanged.connect(self.change)
+    def change(self) -> None:
+        self.onchange(self.text())   
+class QRedSpinBox(QSpinBox):
+    def __init__(self,parent,onchange=dummyfunction):
+        super().__init__(parent)
+        self.onchange = onchange
+        self.setStyleSheet("border-image:url(editor/Text Box.png) 2; border-width:2;")
+        self.setMaximum(50000)
+        self.setMinimum(-50000)
+        self.valueChanged.connect(self.change)
+    def change(self) -> None:
+        self.onchange(self.value()) 
+class QRedComboBox(QComboBox):
+    def __init__(self,parent,elements=[],onchange=dummyfunction):
+        super().__init__(parent)
+        self.onchange = onchange
+        styl = QApplication.style()
+        p = styl.standardIcon(QStyle.SP_ArrowDown)
+        p.pixmap(16,16).save("arrow.png")
+        #self.setStyleSheet("border-image:url(editor/Text Box.png) 2; border-width:2;")
+        self.setStyleSheet("QComboBox { background:none; border-image:url(editor/Text Box.png); border-width:2;} QComboBox::drop-down { border-image:url(editor/Button.png); border-width:3; } QComboBox::down-arrow { image: url(editor/Arrow Down.png); }")
+        self.addItems(elements)
+        self.currentIndexChanged.connect(self.valuechanged)
+    def valuechanged(self,index) -> None:
+        self.onchange(self.currentText(),self.currentIndex()) 
 
 class QGraphicsViewEvent(QGraphicsView):
     def __init__(self,*args,**kwargs):
@@ -83,7 +171,11 @@ class QGraphicsViewEvent(QGraphicsView):
         self.dragmove(event)
     def dropEvent(self, event:QDropEvent) -> None:
         self.dragdrop(event)
+
 class CzeTimeline(QWidget):
+    """
+    Displays the main timeline.
+    """
     coolgradient = QRadialGradient(50,50,90)
     coolgradient.setColorAt(1,QColor(255,255,255))
     coolgradient.setColorAt(0,QColor(255,0,0))
@@ -234,6 +326,9 @@ class CzeTimeline(QWidget):
         self.playbackcursor.setLine(QLine(playbackframe,boundingrect.top(),playbackframe,boundingrect.bottom()))
 
 class CzePresets(QWidget):
+    """
+    Keyframe presets, drag and drop on the timeline and this
+    """
     coolgradient = QRadialGradient(50,50,90)
     coolgradient.setColorAt(1,QColor(255,255,255))
     coolgradient.setColorAt(0,QColor(255,0,0))

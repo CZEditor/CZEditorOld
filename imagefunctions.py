@@ -73,9 +73,7 @@ class SoundFile():
 class ImageSequence():
     name = "Image Sequence"
     params = Params({
-        "imagespath":"",
-        "PIMS":None,
-        "loaded":""
+        "imagespath":""
     })
     def image(param:Params,parentclass):
         #if(param.loaded != param.imagespath):
