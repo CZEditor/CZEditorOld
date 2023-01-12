@@ -586,7 +586,7 @@ class CzeViewport(QWidget):
     def updateviewportimage(self,i):
         #print(dlist)
         getviewportimage(i,self.parentclass)
-        #self.openglwidget.update()
+        self.openglwidget.update()
         self.videoview.setPos(self.size().width()/2-1280/2,self.size().height()/2-720/2)
         #image = image.resize(self.size().toTuple(),Image.Resampling.NEAREST)
         #self.picture = QPixmap.fromImage(ImageQt.ImageQt(image))

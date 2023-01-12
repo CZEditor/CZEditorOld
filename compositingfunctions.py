@@ -150,24 +150,25 @@ class Unholy():
 
             #Make a new buffer
             params.params.pbo = glGenBuffers(1)
-            glBindBuffer(GL_PIXEL_UNPACK_BUFFER, params.params.pbo)
-            glBufferData(GL_PIXEL_UNPACK_BUFFER, size[0]*size[1]*4,None, GL_STREAM_DRAW)
-            data = glMapBuffer(GL_PIXEL_UNPACK_BUFFER,GL_WRITE_ONLY)
-            array = (GLubyte*size[0]*size[1]*4).from_address(data)
-            ctypes.memmove(array,imgdata.ctypes.data,size[0]*size[1]*4)
-            glUnmapBuffer(GL_PIXEL_UNPACK_BUFFER)
+            #glBindBuffer(GL_PIXEL_UNPACK_BUFFER, params.params.pbo)
+            #glBufferData(GL_PIXEL_UNPACK_BUFFER, size[0]*size[1]*4,None, GL_STREAM_DRAW)
+            #data = glMapBuffer(GL_PIXEL_UNPACK_BUFFER,GL_WRITE_ONLY)
+            #array = (GLubyte*size[0]*size[1]*4).from_address(data)
+            #ctypes.memmove(array,imgdata.ctypes.data,size[0]*size[1]*4)
+            #glUnmapBuffer(GL_PIXEL_UNPACK_BUFFER)
             
             #Generate a new texture
             print(params.params.textureid)
-            params.params.textureid = (GLuint * 1)()
-            glGenTextures(1,params.params.textureid)
-            print(params.params.textureid)
-            params.params.textureid = params.params.textureid[0]
-            print(params.params.textureid)
+            print("is valid: ",glIsTexture(params.params.textureid))
+            #params.params.textureid = (GLuint * 1)()
+            #glGenTextures(1,params.params.textureid)
+            #print(params.params.textureid)
+            #params.params.textureid = params.params.textureid[0]
+            #print(params.params.textureid)
             glPixelStorei(GL_UNPACK_ALIGNMENT,1)
             
+            #print("is valid: ",glIsTexture(params.params.textureid))
             glBindTexture(GL_TEXTURE_2D,params.params.textureid)
-            print("is valid: ",glIsTexture(params.params.textureid))
             glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST)
             glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST)
             glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_BORDER)
@@ -179,6 +180,7 @@ class Unholy():
             glBindTexture(GL_TEXTURE_2D,0)
 
             glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0)
+            print("is valid: ",glIsTexture(params.params.textureid))
             params.params.lastsize = size
         else:
             #print(glIsTexture(params.params.textureid))
@@ -199,7 +201,9 @@ class Unholy():
             array = (GLubyte*size[0]*size[1]*4).from_address(data)
             ctypes.memmove(array,imgdata.ctypes.data,size[0]*size[1]*4)
             glUnmapBuffer(GL_PIXEL_UNPACK_BUFFER)
-            glTexSubImage2D(GL_TEXTURE_2D,0,0,0,size[0],size[1],GL_RGBA,GL_UNSIGNED_BYTE,c_void_p(0))
+            #glTexSubImage2D(GL_TEXTURE_2D,0,0,0,size[0],size[1],GL_RGBA,GL_UNSIGNED_BYTE,c_void_p(0))
+            glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,size[0],size[1],0,GL_RGBA,GL_UNSIGNED_BYTE,c_void_p(0))
+            
             glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0)
             #Draw the quad
             glUniform1i(glGetUniformLocation(parentclass.viewport.videoview.shader,"image"),0)
