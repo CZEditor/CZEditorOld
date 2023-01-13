@@ -11,6 +11,7 @@ from PySide6.QtGui import QPixmap,QPainter,QPen,QBrush,QColor,QRadialGradient,QR
 from PySide6.QtCore import QSize,Qt,QRectF,QPoint,QLine,SIGNAL,QTimerEvent
 from PySide6.QtMultimedia import QMediaPlayer,QAudioOutput
 from PySide6.QtOpenGLWidgets import QOpenGLWidget
+from OpenGL.GL.shaders import compileProgram,compileShader
 from PIL import Image,ImageQt
 from ui import *
 from typing import *
@@ -575,8 +576,28 @@ class CzeViewportDraggableBox(QGraphicsItem):
 class CzeVideoView(QGraphicsItem):
     def __init__(self,parent=None):
         super().__init__(parent)
-    
-
+        self.shader = compileProgram(compileShader("""#version 330 core
+layout (location=0) in vec2 vertexPos;
+layout (location=1) in vec2 vertexColor;
+uniform highp mat4 matrix;
+out vec2 fragmentColor;
+void main()
+{
+    gl_Position = matrix*vec4(vertexPos, 0.0, 1.0);
+    fragmentColor = vertexColor;
+}""",GL_VERTEX_SHADER),
+compileShader("""#version 330 core
+in vec2 fragmentColor;
+uniform sampler2D image;
+out vec4 color;
+void main()
+{
+    color = texture(image,fragmentColor);
+}""",GL_FRAGMENT_SHADER))
+    def paint(self, painter: QPainter, option, widget):
+        painter.beginNativePainting()
+        glLoadIdentity()
+        painter.endNativePainting()
 class CzeViewport(QWidget):
     def __init__(self,parent,parentclass):
         super().__init__(parent)
