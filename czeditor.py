@@ -571,6 +571,12 @@ class CzeViewportDraggableBox(QGraphicsItem):
         self.setPos(self.params[self.xparam]/1280*self.parentclass.picture.width(),self.params[self.yparam]/720*self.parentclass.picture.height())
         painter.setPen(QPen(QColor(255,255,255),1))
         painter.drawEllipse(QRectF(-4,-4,7,7))
+
+class CzeVideoView(QGraphicsItem):
+    def __init__(self,parent=None):
+        super().__init__(parent)
+    
+
 class CzeViewport(QWidget):
     def __init__(self,parent,parentclass):
         super().__init__(parent)
@@ -578,7 +584,8 @@ class CzeViewport(QWidget):
         self.scene = QGraphicsScene(self)
         self.graphicsview = QGraphicsView(self)
         self.graphicsview.setScene(self.scene)
-        
+        self.openglwidget = QOpenGLWidget(self)
+        self.graphicsview.setViewport(self.openglwidget)
         self.parentclass = parentclass
         self.viewportimage = self.scene.addPixmap(QPixmap.fromImage(ImageQt.ImageQt(getviewportimage(self.timestamp,self.parentclass))))
         self.updateviewportimage(self.timestamp)
