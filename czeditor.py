@@ -563,11 +563,11 @@ class CzeViewport(QWidget):
         self.graphicsview = QGraphicsView(self)
         self.graphicsview.setScene(self.scene)
         self.openglwidget = QOpenGLWidget()
-        self.graphicsview.setViewport(self.openglwidget)
         format = QSurfaceFormat()
         format.setVersion(4,5)
         format.setProfile(QSurfaceFormat.CompatibilityProfile)
         self.openglwidget.setFormat(format)
+        self.graphicsview.setViewport(self.openglwidget)
         #self.graphicsview.setViewport(self.openglwidget)
         self.parentclass = parentclass
         self.videoview = CzeVideoView()
