@@ -566,6 +566,7 @@ class CzeViewport(QWidget):
         format = QSurfaceFormat()
         format.setVersion(4,5)
         format.setProfile(QSurfaceFormat.CompatibilityProfile)
+        format.setRenderableType(QSurfaceFormat.OpenGL)
         self.openglwidget.setFormat(format)
         self.graphicsview.setViewport(self.openglwidget)
         #self.graphicsview.setViewport(self.openglwidget)
