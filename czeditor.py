@@ -7,7 +7,7 @@ from statefunctions import NormalKeyframe
 from compositingfunctions import ImageComposite
 from util import *
 from PySide6.QtWidgets import QAbstractButton,QMainWindow,QApplication,QFrame,QScrollArea,QSplitter,QWidget,QGraphicsScene,QGraphicsView,QGraphicsItem,QGraphicsSceneMouseEvent,QComboBox,QPlainTextEdit,QLabel,QVBoxLayout,QHBoxLayout,QSizePolicy,QFormLayout,QLineEdit,QGridLayout,QSpinBox,QGraphicsPixmapItem,QStyle,QPushButton,QToolButton
-from PySide6.QtGui import QPixmap,QPainter,QPen,QBrush,QColor,QRadialGradient,QResizeEvent,QMouseEvent,QWheelEvent,QTextOption,QKeyEvent
+from PySide6.QtGui import QPixmap,QPainter,QPen,QBrush,QColor,QRadialGradient,QResizeEvent,QMouseEvent,QWheelEvent,QTextOption,QKeyEvent,QImage,QMatrix4x4
 from PySide6.QtCore import QSize,Qt,QRectF,QPoint,QLine,SIGNAL,QTimerEvent
 from PySide6.QtMultimedia import QMediaPlayer,QAudioOutput
 from PySide6.QtOpenGLWidgets import QOpenGLWidget
@@ -18,6 +18,7 @@ from typing import *
 import sys
 from keyframes import *
 from time import time
+from ctypes import c_void_p
 
 
 UIDropdownLists = [
@@ -47,10 +48,8 @@ def stateprocessor(keyframes):
     return state
 
 def composite(state,parentclass):
-    canvas = newimage(1280, 720)
     for keyframe in state:
-        canvas = keyframe.composite(canvas, keyframe.imageparams,parentclass)
-    return canvas
+        keyframe.composite(keyframe.imageparams,parentclass)
 
 def frameprocessor(frame, keyframes):
     returnkeyframes = []
@@ -75,8 +74,8 @@ def getviewportimage(i,parentclass):
     global keyframes
     processedkeyframes = frameprocessor(i, keyframes)
     state = stateprocessor(processedkeyframes)
-    image:Image = composite(state,parentclass)
-    return image
+    composite(state,parentclass)
+    #return image
 mpyconfig.FFMPEG_BINARY = "ffmpeg"
 def render(filename, length, keyframes):
 
@@ -164,9 +163,9 @@ class QRedComboBox(QComboBox):
     def __init__(self,parent,elements=[],onchange=dummyfunction):
         super().__init__(parent)
         self.onchange = onchange
-        styl = QApplication.style()
-        p = styl.standardIcon(QStyle.SP_ArrowDown)
-        p.pixmap(16,16).save("arrow.png")
+        #styl = QApplication.style()
+        #p = styl.standardIcon(QStyle.SP_ArrowDown)
+        #p.pixmap(16,16).save("arrow.png")
         #self.setStyleSheet("border-image:url(editor/Text Box.png) 2; border-width:2;")
         self.setStyleSheet("QComboBox { background:none; border-image:url(editor/Text Box.png); border-width:2;} QComboBox::drop-down { border-image:url(editor/Button.png); border-width:3; } QComboBox::down-arrow { image: url(editor/Arrow Down.png); }")
         self.addItems(elements)
@@ -572,10 +571,14 @@ class CzeViewportDraggableBox(QGraphicsItem):
         self.setPos(self.params[self.xparam]/1280*self.parentclass.picture.width(),self.params[self.yparam]/720*self.parentclass.picture.height())
         painter.setPen(QPen(QColor(255,255,255),1))
         painter.drawEllipse(QRectF(-4,-4,7,7))
-
-class CzeVideoView(QGraphicsItem):
-    def __init__(self,parent=None):
+rendered = None
+class CzeVideoView(QOpenGLWidget):
+    def __init__(self,parentclass,parent=None):
+        print(parentclass,parent)
         super().__init__(parent)
+        self.parentclass =parentclass
+    def initializeGL(self):
+        #super().initializeGL(self)
         self.shader = compileProgram(compileShader("""#version 330 core
 layout (location=0) in vec2 vertexPos;
 layout (location=1) in vec2 vertexColor;
@@ -594,23 +597,48 @@ void main()
 {
     color = texture(image,fragmentColor);
 }""",GL_FRAGMENT_SHADER))
-    def paint(self, painter: QPainter, option, widget):
-        painter.beginNativePainting()
+        #self.fbo = glGenFramebuffers(1)
+        #self.renderbuffer = glGenRenderbuffers(1)
+        #glBindRenderbuffer(GL_RENDERBUFFER,self.renderbuffer)
+        #glRenderbufferStorage(GL_RENDERBUFFER, GL_RGBA8, 1280,720)
+        #glBindFramebuffer(GL_DRAW_FRAMEBUFFER,self.fbo)
+        #glFramebufferRenderbuffer(GL_DRAW_FRAMEBUFFER,GL_COLOR_ATTACHMENT0,GL_RENDERBUFFER,self.renderbuffer)
+    def sizeHint(self):
+        return QSize(1280,720)
+    def resizeGL(self, w: int, h: int) -> None:
+        glViewport(0,0,1280,720)
+        #return super().resizeGL(1280, 720)
+    def paintGL(self):
+        global rendered
+        #glBindFramebuffer(GL_DRAW_FRAMEBUFFER,self.fbo)
+        
+        glClear(GL_COLOR_BUFFER_BIT)
+        glClearColor(0.1,0.2,0.2,1.0)
         glLoadIdentity()
-        painter.endNativePainting()
+        glUseProgram(self.shader)
+        projection = QMatrix4x4()
+        projection.frustum(0,1280,720,0,0.1,3.0)
+        projection.translate(0,0,-0.1001)
+        glUniformMatrix4fv(glGetUniformLocation(self.shader,"matrix"),1,GL_FALSE,np.array(projection.data(),dtype=np.float32))
+        getviewportimage(self.parentclass.playbackframe,self.parentclass)
+
+        rendered = glReadPixels(0,0,1280,720,GL_RGBA,GL_UNSIGNED_BYTE,None)
+
 class CzeViewport(QWidget):
     def __init__(self,parent,parentclass):
         super().__init__(parent)
+        self.videorenderer = CzeVideoView(parentclass,self)
         self.timestamp = 100
         self.scene = QGraphicsScene(self)
         self.graphicsview = QGraphicsView(self)
         self.graphicsview.setScene(self.scene)
-        self.openglwidget = QOpenGLWidget(self)
-        self.graphicsview.setViewport(self.openglwidget)
-        self.parentclass = parentclass
-        self.viewportimage = self.scene.addPixmap(QPixmap.fromImage(ImageQt.ImageQt(getviewportimage(self.timestamp,self.parentclass))))
-        self.updateviewportimage(self.timestamp)
         
+        self.parentclass = parentclass
+        
+        self.updateviewportimage(self.timestamp)
+        self.picture = QPixmap(1280,720)
+        #self.viewportimage = self.scene.addPixmap(QPixmap.fromImage(ImageQt.ImageQt(getviewportimage(self.timestamp,self.parentclass))))
+        self.viewportimage = self.scene.addPixmap(self.picture)
         #self.thelayout = QHBoxLayout()
        # self.setLayout(self.thelayout)
         #self.setMaximumSize(1280,720)
@@ -622,12 +650,17 @@ class CzeViewport(QWidget):
         #self.scene.addItem(self.somehandle)
     
     def updateviewportimage(self,i):
-        image:Image.Image = getviewportimage(i,self.parentclass)
+        global rendered
+        self.videorenderer.update()
+        #image:Image.Image = getviewportimage(i,self.parentclass)
         #image = image.resize(self.size().toTuple(),Image.Resampling.NEAREST)
-        self.picture = QPixmap.fromImage(ImageQt.ImageQt(image))
-        self.picture = self.picture.scaled(QSize(min(self.size().width(),1280),min(self.size().height(),720)),Qt.AspectRatioMode.KeepAspectRatio)
+        #self.picture = QPixmap.fromImage(ImageQt.ImageQt(image))
+        if(rendered):
+            
+            self.picture = QPixmap.fromImage(QImage(rendered,1280,720,QImage.Format_RGBA8888))
+            self.picture = self.picture.scaled(QSize(min(self.size().width(),1280),min(self.size().height(),720)),Qt.AspectRatioMode.KeepAspectRatio)
+            self.viewportimage.setPixmap(self.picture)
         self.timestamp = i
-        self.viewportimage.setPixmap(self.picture)
     def createhandle(self,keyframe,function,param):  #self , keyframe of the handle , function of the param , param itself
         #print(vars(function))
         if hasattr(function,"handle"):

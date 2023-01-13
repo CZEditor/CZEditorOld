@@ -389,7 +389,7 @@ def CreateXPButton(text,style=0):
     col = (0,0,0,255)
     if(style==3):
         col = (161,161,146,255)
-    textgraphic = createtext(text,".\\xp\\fonts\\text\\",col)
+    textgraphic = createtext(text,"./xp/fonts/text/",col)
     Button = resize(Button,max(w(textgraphic)+16,75),max(23,h(textgraphic)+10),8,8,9,9,Image.NEAREST)
     Button = put(Button,textgraphic,w(Button)//2-w(textgraphic)//2,5)
     return Button
@@ -400,10 +400,10 @@ def CreateMacButton(text,style=0):
     col = (0,0,0,255)
     if(style==1):
         col = (161,161,146,255)
-        textgraphic = createtextmac(text,".\\mac\\fonts\\caption\\",col)
+        textgraphic = createtextmac(text,"./mac/fonts/caption/",col)
         Button = resize(Button,max(w(textgraphic)+10,60),max(20,h(textgraphic)+4),2,2,2,2,Image.NEAREST)
     else:
-        textgraphic = createtextmac(text,".\\mac\\fonts\\caption\\",col)
+        textgraphic = createtextmac(text,"./mac/fonts/caption/",col)
         Button = resize(Button,max(w(textgraphic)+10,60),max(20,h(textgraphic)+4),4,4,4,4,Image.NEAREST)
     Button = put(Button,textgraphic,floor(w(Button)/2-w(textgraphic)/2),2)
     return Button
@@ -414,10 +414,10 @@ def Create7Button(text,style=0):
     col = (0,0,0,255)
     #if(style==3):
     #    col = (161,161,146,255)
-    #textgraphic = createtext(text,".\\7\\fonts\\text\\",col)
-    textsize = measuretext7(text,"7\\fonts\\text\\",kerningadjust=-1)
+    #textgraphic = createtext(text,"./7/fonts/text/",col)
+    textsize = measuretext7(text,"7/fonts/text/",kerningadjust=-1)
     Button = resize(Button,max(textsize[0]+16,86),max(24,textsize[1]+9),3,3,3,3,Image.NEAREST)
-    Button = createtext7(Button,w(Button)//2-textsize[0]//2,4,text,"7\\fonts\\text\\",kerningadjust=-1)
+    Button = createtext7(Button,w(Button)//2-textsize[0]//2,4,text,"7/fonts/text/",kerningadjust=-1)
     return Button
 
 def Create7TaskDialogButton(text,style=0):
@@ -426,10 +426,10 @@ def Create7TaskDialogButton(text,style=0):
     col = (0,0,0,255)
     #if(style==3):
     #    col = (161,161,146,255)
-    #textgraphic = createtext(text,".\\7\\fonts\\text\\",col)
-    textsize = measuretext7(text,"7\\fonts\\text\\",kerningadjust=-1)
+    #textgraphic = createtext(text,"./7/fonts/text/",col)
+    textsize = measuretext7(text,"7/fonts/text/",kerningadjust=-1)
     Button = resize(Button,max(textsize[0]+30,66),max(21,textsize[1]+6),3,3,3,3,Image.NEAREST)
-    Button = createtext7(Button,w(Button)//2-textsize[0]//2,3,text,"7\\fonts\\text\\",kerningadjust=-1)
+    Button = createtext7(Button,w(Button)//2-textsize[0]//2,3,text,"7/fonts/text/",kerningadjust=-1)
     return Button
 
 def Create3_1Button(text,style=0,underline=False):
@@ -515,12 +515,8 @@ def Create2000Button(text,style=0,underline=False):
 def CreateXPWindow(param):
     width = 0
     height = 0
+
     if param.active:
-        TopFrame = Image.open("xp/Frame Up Active.png").convert("RGBA")
-        LeftFrame = Image.open("xp/Frame Left Active.png").convert("RGBA")
-        RightFrame = Image.open("xp/Frame Right Active.png").convert("RGBA")
-        BottomFrame = Image.open("xp/Frame Bottom Active.png").convert("RGBA")
-        CloseButton = Image.open("xp/Close button.png").convert("RGBA")
         if param.buttonstyles:
             button1style = param.buttonstyles[0]
             button2style = param.buttonstyles[1]
@@ -529,19 +525,20 @@ def CreateXPWindow(param):
             button1style = 0
             button2style = 0
             button3style = 0
-    else:
-        TopFrame = Image.open("xp/Frame Up Inactive.png").convert("RGBA")
-        LeftFrame = Image.open("xp/Frame Left Inactive.png").convert("RGBA")
-        RightFrame = Image.open("xp/Frame Right Inactive.png").convert("RGBA")
-        BottomFrame = Image.open("xp/Frame Bottom Inactive.png").convert("RGBA")
-        CloseButton = Image.open("xp/Close button Inactive.png").convert("RGBA")
+
+    path_activity = "Active" if param.active else "Inactive"
+    TopFrame = Image.open(f"xp/Frame Up {path_activity}.png").convert("RGBA")
+    LeftFrame = Image.open(f"xp/Frame Left {path_activity}.png").convert("RGBA")
+    RightFrame = Image.open(f"xp/Frame Right {path_activity}.png").convert("RGBA")
+    BottomFrame = Image.open(f"xp/Frame Bottom {path_activity}.png").convert("RGBA")
+    CloseButton = Image.open(f"xp/Close button {path_activity}.png").convert("RGBA")
         
     textposx = 15+3
     textposy = 11+h(TopFrame)
-    captiontextimg = createtext(param.title,".\\xp\\fonts\\caption\\")
+    captiontextimg = createtext(param.title,"./xp/fonts/caption/")
     captiontextwidth = w(captiontextimg)
     width = max(width,captiontextwidth+43)
-    createdtext = createtext(param.text,".\\xp\\fonts\\text\\",(0,0,0,255))
+    createdtext = createtext(param.text,"./xp/fonts/text/",(0,0,0,255))
     #textposy -= min(15,h(createdtext)//2)
     width = max(width,w(createdtext)+textposx+8+3)
     height = max(height,h(createdtext)+h(TopFrame)+3+25)
@@ -598,10 +595,10 @@ def CreateXPWindow(param):
     IMAGE = put(IMAGE,Image.new("RGBA", (width-6,height-3-h(TopFrame)), (236,233,216,255)),3,h(TopFrame),"00")
     IMAGE = put(IMAGE,CloseButton,width-5,5,"20")
     if param.active:
-        IMAGE = put(IMAGE,createtext(param.title,".\\xp\\fonts\\captionshadow\\",(10,24,131,255)),8,8,"00")
+        IMAGE = put(IMAGE,createtext(param.title,"./xp/fonts/captionshadow/",(10,24,131,255)),8,8,"00")
         IMAGE = put(IMAGE,captiontextimg,7,7,"00")
     else:
-        IMAGE = put(IMAGE,createtext(param.title,".\\xp\\fonts\\caption\\",(216,228,248,255)),7,7,"00")
+        IMAGE = put(IMAGE,createtext(param.title,"./xp/fonts/caption/",(216,228,248,255)),7,7,"00")
     #if(insideimagepath != ""):
     #    IMAGE = put(IMAGE,insideimage,3,h(TopFrame))
     if(param.erroricon() != ""):
@@ -618,28 +615,33 @@ def CreateMacAlertDialog(width,height,title="",bar=True,icon="",errortext="",sub
     TextHeight = 0
     IconPadding = 0
     Paddingwidth = 7
+
     if(bar):
         Paddingheight = 29+4
         Barheight = 29
     else:
         Paddingheight = 3+4
         Barheight = 0
+
     if(errortext != ""):
         ErrorTextImg = createtextmac(errortext,"mac//fonts//caption//")
         width = max(width,w(ErrorTextImg)+79+90)
         #height = max(height,h(ErrorTextImg)+Paddingheight+20)
         TextHeight += h(ErrorTextImg)
+
     if(subtext != ""):
         SubTextImg = createtextmac(subtext,"mac//fonts//text//")
         SubTextPos = TextHeight
         width = max(width,w(SubTextImg)+79+90)
         TextHeight += h(SubTextImg)
+
     height += TextHeight + Paddingheight
     if(icon != ""):
         IconImg = Image.open(icon).convert("RGBA")
         height = max(height,h(IconImg)+Paddingheight)
         width += w(IconImg)
         IconPadding = w(IconImg)
+
     buttonswidth = 0
     if(button1 != ""):
         height += 60
@@ -651,6 +653,7 @@ def CreateMacAlertDialog(width,height,title="",bar=True,icon="",errortext="",sub
             if(button3 != ""):
                 button3img = CreateMacButton(button3,button3style)
                 buttonswidth += w(button3img)
+
     width = max(width,buttonswidth+79+90)
     IMAGE = Image.new("RGBA", (width,height), (236,233,216,0))
     if(bar):
@@ -706,6 +709,7 @@ def CreateMacWindow(width,height,title="",icon="",errortext="",button1="",button
         width = max(width,w(ErrorTextImg)+iconsize+20+20)
         #height = max(height,h(ErrorTextImg)+Paddingheight+20)
         TextHeight += h(ErrorTextImg)+36
+
     #if(subtext != ""):
     #    SubTextImg = createtextmac(subtext,"mac//fonts//text//")
     #    width = max(width,w(SubTextImg)+79+90)
@@ -800,8 +804,6 @@ def mix(a,b,c):     #smoothly mixes between two values.
 def stretch(size,amount,c):   
     result = size-size*(size/(size-size/amount)) #this is needed because deform() does the opposite of what you would think it will do, it takes 4 points, and then squishes them into a rectangle.
     return mix(result,0,c)
-
-
 
 def Create7Glass(width,height,active=True):
     #print(time)
@@ -1514,33 +1516,33 @@ def FrameXPWindow(image,title,active=True,close=1,maximize=1,minimize=1,question
         buttonsoffset += w(Buttons)+2
     if title:
         if active:
-            IMAGE = put(IMAGE,createtext(title,".\\xp\\fonts\\captionshadow\\",(10,24,131,255)),8,8,"00")
-            IMAGE = put(IMAGE,createtext(title,".\\xp\\fonts\\caption\\"),7,7,"00")
+            IMAGE = put(IMAGE,createtext(title,"./xp/fonts/captionshadow/",(10,24,131,255)),8,8,"00")
+            IMAGE = put(IMAGE,createtext(title,"./xp/fonts/caption/"),7,7,"00")
         else:
-            IMAGE = put(IMAGE,createtext(title,".\\xp\\fonts\\caption\\",(216,228,248,255)),7,7,"00")
+            IMAGE = put(IMAGE,createtext(title,"./xp/fonts/caption/",(216,228,248,255)),7,7,"00")
     return IMAGE
 # Example XP windows:
 #o = CreateXPWindow(0,0,"Notepad",errortext="The text in the Untitled file has changed.\n\nDo you want to save the changes?",button1="Yes",button2="No",button3="Cancel",button1style=4)
 
-#o = CreateXPWindow(0,0,"Notepad",erroriconpath="xp\\Exclamation.png",errortext="The text in the Untitled file has changed.\n\nDo you want to save the changes?",button1="Yes",button1style=4)
+#o = CreateXPWindow(0,0,"Notepad",erroriconpath="xp/Exclamation.png",errortext="The text in the Untitled file has changed.\n\nDo you want to save the changes?",button1="Yes",button1style=4)
 
-#o = CreateXPWindow(0,0,"Notepad",erroriconpath="xp\\Exclamation.png",errortext="The text in the Untitled file has changed.\n\nDo you want to save the changes?")
+#o = CreateXPWindow(0,0,"Notepad",erroriconpath="xp/Exclamation.png",errortext="The text in the Untitled file has changed.\n\nDo you want to save the changes?")
 
 #o = CreateXPWindow(0,0,"Notepad",errortext="The text in the Untitled file has changed.\n\nDo you want to save the changes?")
 
 #o = CreateXPWindow(0,0,"LOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOONG",errortext="short",button1="OK",button1style=4)
 
-#o = CreateXPWindow(0,0,"Notepad",erroriconpath="xp\\Exclamation.png",errortext="The text in the Untitled file has changed.\n\nDo you want to save the changes?",button1="Yes",button2="No",button3="Cancel",button1style=4)
+#o = CreateXPWindow(0,0,"Notepad",erroriconpath="xp/Exclamation.png",errortext="The text in the Untitled file has changed.\n\nDo you want to save the changes?",button1="Yes",button2="No",button3="Cancel",button1style=4)
 
 # Example 7 windows:
-#o = Create7Window(icon="7\\Question Mark.png",text="text",title="title",buttons=[["Cancel",0],["No",0],["Yes",4]])
-#o = Create7Window(icon="7\\Question Mark.png",text="text",title="title",buttons=[["Cancel",0],["No",0],["Yes",4]],wallpaper="7\\wallpaper.png",pos=(400,400))
+#o = Create7Window(icon="7/Question Mark.png",text="text",title="title",buttons=[["Cancel",0],["No",0],["Yes",4]])
+#o = Create7Window(icon="7/Question Mark.png",text="text",title="title",buttons=[["Cancel",0],["No",0],["Yes",4]],wallpaper="7/wallpaper.png",pos=(400,400))
 
-#o = CreateXPWindow(0,0,captiontext="Question",erroriconpath="xp\\Question.png",errortext="Multiple buttons with different styles\nAnd showing off the multiline capabilities\n.\n.\n.\n.",button1="OK",button1style=4,button2="Cancel",button3="This button is disabled and long\nand has a double line!",button3style=3)
+#o = CreateXPWindow(0,0,captiontext="Question",erroriconpath="xp/Question.png",errortext="Multiple buttons with different styles\nAnd showing off the multiline capabilities\n.\n.\n.\n.",button1="OK",button1style=4,button2="Cancel",button3="This button is disabled and long\nand has a double line!",button3style=3)
 
-#o = Create7Window(icon="7\\Critical Error.png",text="Example error.",buttons=[["OK",4],["Disabled button",3]])
+#o = Create7Window(icon="7/Critical Error.png",text="Example error.",buttons=[["OK",4],["Disabled button",3]])
 
-#o = CreateXPWindow(0,0,captiontext="Error",erroriconpath="xp\\Exclamation.png",errortext="This error has no buttons")
+#o = CreateXPWindow(0,0,captiontext="Error",erroriconpath="xp/Exclamation.png",errortext="This error has no buttons")
 #CreateMacAlertDialog(width,height,title="",bar=True,icon="",errortext="",subtext="",button1="",button2="",button3="",button1default=False,button2default=False,button3default=False,button1style=0,button2style=0,button3style=0)
 #CreateMacWindoid(icon="",text="",collapsed=False):
 #o = CreateMacWindow(0,0,title="Window",icon="mac//Speech Bubble.png",errortext="Mac OS 9 error",button1="OK",button1default=True)
@@ -1559,21 +1561,21 @@ def FrameXPWindow(image,title,active=True,close=1,maximize=1,minimize=1,question
 #
 #o = Create7TaskDialog(icon="7/Exclamation.png",textbig="An error has occured",textsmall="That's all we know.",buttons=[["Close",4],["Help",0]],title="Windows",closebutton=False)
 #o=CreateMacWindow(0,0,icon="mac/Exclamation.png",errortext="This is named 'errortext'",button1="guh")
-#o = CreateXPWindow(0,0,captiontext="Windows",erroriconpath="xp\\Exclamation.png",errortext="An error has occured.",button1="Cancel",button2="Retry",button3="Debug",button2style=4)
+#o = CreateXPWindow(0,0,captiontext="Windows",erroriconpath="xp/Exclamation.png",errortext="An error has occured.",button1="Cancel",button2="Retry",button3="Debug",button2style=4)
 #Export7Animation(o,"7//animoutput//")
 #o = Create3_1Window(icon="3.1//Exclamation.png",text="cos",title="gfdgdf",buttons=[["Yes",1,True],["No",0,True],["Cancel",0]])
 #o = Create95Window(icon="95/Exclamation.png",text="Save changes to Document?",title="WordPad",buttons=[["Yes",1,True],["No",0,True],["Cancel",0]])
-#o = Create95Window(icon="95/Exclamation.png",text="The file C:\\WINDOWS\\SYSTEM\\Krnl386.exe contains no icons.\n\nChoose an icon from the list or specify a different file.",title="Change Icon",buttons=[["OK",1]],closebutton=False)
-#o = Create95Window(icon="95/Exclamation.png",text="The file C:\\New Shortcut.lnk cannot be found.",title="Create Shortcut",buttons=[["OK",1]],closebutton=False,active=True)
+#o = Create95Window(icon="95/Exclamation.png",text="The file C:/WINDOWS/SYSTEM/Krnl386.exe contains no icons.\n\nChoose an icon from the list or specify a different file.",title="Change Icon",buttons=[["OK",1]],closebutton=False)
+#o = Create95Window(icon="95/Exclamation.png",text="The file C:/New Shortcut.lnk cannot be found.",title="Create Shortcut",buttons=[["OK",1]],closebutton=False,active=True)
 #o = Create95Window(icon="95/Exclamation.png",text="Setup has finished configuring your system.\n\nYou must restart your computer before the new settings will take \neffect.\n\nClick OK to restart your computer now.",buttons=[["OK",1]],closebutton=False,active=True,title="Windows 95 Setup")
 #o = Create95Window(icon="95/Critical Error.png",text="Please insert the disk labeled 'Windows 95 Disk1', and then click \nOK.",buttons=[["OK",1]],closebutton=False,active=True,title="Insert Disk")
 #o = Create95Window(icon="95/Information.png",text="You must provide computer and workgroup names that will identify \nthis computer on the network.",buttons=[["OK",1]],closebutton=False,active=True,title="Network")
-#o = Create95Window(icon="95/Critical Error.png",text="G:\\\n\nA device attached to the system is not functioning.",title="G:\\",buttons=[["OK",1]],closebutton=False,active=True)
+#o = Create95Window(icon="95/Critical Error.png",text="G:/\n\nA device attached to the system is not functioning.",title="G:/",buttons=[["OK",1]],closebutton=False,active=True)
 #o = Create95Button(text="Yes",underline=True,style=1)
 #o = Create3_1Button("OK",0)
 #o = Create98Window(icon="95/Exclamation.png",text="Look how fancy",title="amazing",buttons=[["OK",1]],closebutton=False,gradient1active=(181,60,10),gradient2active=(230,154,40))
 #o = FrameXPWindow(image="output - Copy.png",title="how cool",maximize=4)
-#o = Create7Window(icon="7\\Question Mark.png",text="text",title="title",buttons=[["Cancel",0],["No",0],["Yes",4]],wallpaper="tempdesktop.png",pos=(400,400))
+#o = Create7Window(icon="7/Question Mark.png",text="text",title="title",buttons=[["Cancel",0],["No",0],["Yes",4]],wallpaper="tempdesktop.png",pos=(400,400))
 #o.show()
 #o.save("output.png")
 

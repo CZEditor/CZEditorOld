@@ -17,10 +17,9 @@ class Keyframe():
         for stateparam in self.stateparams:
             statetomodify = stateparam.function().state(statetomodify,self,stateparam)
         return statetomodify
-    def composite(self, canvas, image,parentclass=None):
+    def composite(self, image,parentclass=None):
         for compositingparam in self.compositingparams:
-            canvas = compositingparam.function().composite(canvas,image,compositingparam,parentclass,self)
-        return canvas
+            compositingparam.function().composite(image,compositingparam,parentclass,self)
 
 class Keyframelist():
     def __init__(self):
@@ -124,15 +123,20 @@ keyframes.append(Keyframe(20,Params(
         "compositing":
         [
             {
-                "function":Selectable(0,compositingfunctionsdropdown),
+                "function":Selectable(1,compositingfunctionsdropdown),
                 "params":
                 {
-                    "x":500,
-                    "y":400,
+                    "x":0,
+                    "y":0,
                     "width":1280,
                     "height":720,
                     "relativewidth":100,
-                    "relativeheight":100
+                    "relativeheight":100,
+                    "textureid":0,
+                    "vbo":0,
+                    "vao":0,
+                    "pbo":0,
+                    "lastsize":(32,32)
 
                 }
             }
@@ -143,7 +147,7 @@ keyframes.append(Keyframe(20,Params(
         "image":
         {
             "function":Selectable(0,imagefunctionsdropdown),
-            "params":{"imagepath":"xp/Close button.png"}
+            "params":{"imagepath":"xp/Close button Active.png"}
         },
         "states":
         [

@@ -4,7 +4,7 @@ from generate import CreateXPWindow
 from graphics import *
 #import ffmpeg
 from PySide6.QtCore import QByteArray,QBuffer,QIODevice
-
+import pyspng
 class NormalImage():
     name = "Image"
     params = Params(
@@ -13,7 +13,9 @@ class NormalImage():
         }
     )
     def image(param:Params,parentclass):
-        return openimage(param.imagepath)
+        with open(param.imagepath,"rb") as file:
+            img = pyspng.load(file.read())
+        return img,(img.shape[1],img.shape[0])
     def __str__(self):
         return self.name
     def gethashstring(self,param:Params,parentclass):
@@ -75,8 +77,10 @@ class ImageSequence():
         "imagespath":""
     })
     def image(param:Params,parentclass):
-        return Image.open(param.imagespath.replace("*",str(int(parentclass.playbackframe))))
-
+        #return Image.open(param.imagespath.replace("*",str(int(parentclass.playbackframe))))
+        with open(param.imagespath.replace("*",str(int(parentclass.playbackframe))),"rb") as file:
+            img = pyspng.load(file.read())
+        return img,(img.shape[1],img.shape[0])
     def __str__(self):
         return self.name
     def gethashstring(self,param:Params,parentclass):

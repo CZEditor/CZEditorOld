@@ -1,11 +1,14 @@
 from PIL import Image
+
 openedimages = {}
 newimages = {}
 emptyimage = Image.new("RGBA",(1,1),(0,0,0,0))
+
 def openimage(s):
     if s not in openedimages:
         openedimages[s] = Image.open(s).convert("RGBA")
     return openedimages[s].copy()
+
 def newimage(w,h,r=0,g=0,b=0,a=255):
     cachestr = f"{w},{h},{r},{g},{b},{a}"
     if cachestr not in newimages:
@@ -28,6 +31,7 @@ class Params(object):
                 setattr(self,k,Params(kwargs[k]))
             else:
                 setattr(self,k,kwargs[k])
+
     def iterateoverlist(self,l:list):
         returnal = []
         for i in l:
@@ -38,8 +42,10 @@ class Params(object):
             else:
                 returnal.append(i)
         return returnal
+
     def __getattr__(self,param:str):
         return None
+        
     def iterate(self,toiterate:dict):
         out = {}
         for k,v in toiterate.items():
@@ -86,8 +92,6 @@ class Selectable():
         return Selectable(self.index,self.options)
     def name(self):
         return self.names[self.index]
-        
-
 
 def fillindefaults(param,defaults):
     for key in defaults.keys():
