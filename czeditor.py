@@ -586,7 +586,8 @@ uniform highp mat4 matrix;
 out vec2 fragmentColor;
 void main()
 {
-    gl_Position = matrix*vec4(vertexPos, 1.0);
+    gl_Position = round(matrix*vec4(vertexPos, 1.0)*256)/256;
+    //gl_Position = matrix*vec4(vertexPos, 1.0);
     fragmentColor = vertexColor;
 }""",GL_VERTEX_SHADER),
 compileShader("""#version 330 core
@@ -618,8 +619,8 @@ void main()
         glLoadIdentity()
         glUseProgram(self.shader)
         projection = QMatrix4x4()
-        projection.frustum(-1280/4,1280/4,720/4,-720/4,0.5,3.0) # TODO : use a better projection that doesnt clip near Z
-        projection.translate(0,0,-1)
+        projection.frustum(-1280/16,1280/16,720/16,-720/16,64,4000) # TODO : use a better projection that doesnt clip near Z
+        projection.translate(0,0,-512)
         glUniformMatrix4fv(glGetUniformLocation(self.shader,"matrix"),1,GL_FALSE,np.array(projection.data(),dtype=np.float32))
         getviewportimage(self.parentclass.playbackframe,self.parentclass)
 
@@ -727,8 +728,9 @@ class Window(QMainWindow):
         self.isplaying = False
         self.starttime = time()
         self.startframe = self.playbackframe
+        self.needtoupdate = False
     def updateviewport(self,theframe):
-        self.viewport.updateviewportimage(theframe)
+        self.needtoupdate = True
         #self.viewport.update()
     def updatekeyframeoptions(self):
         self.keyframeoptions.rebuild()
@@ -744,6 +746,10 @@ class Window(QMainWindow):
             self.playbackframe = self.startframe+int((time()-self.starttime)*60)
             self.viewport.updateviewportimage(self.playbackframe)
             self.timeline.updateplaybackcursor(self.playbackframe)
+            self.needtoupdate = False
+        if(self.needtoupdate):
+            self.viewport.updateviewportimage(self.playbackframe)
+            self.needtoupdate = False
         return super().timerEvent(event)
 app = QApplication([])
 window = Window()

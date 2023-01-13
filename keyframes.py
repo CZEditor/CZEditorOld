@@ -128,8 +128,12 @@ keyframes.append(Keyframe(20,Params(
                 {
                     "x":0,
                     "y":0,
+                    "z":0,
                     "width":1280,
                     "height":720,
+                    "Xrotation":0,
+                    "Yrotation":0,
+                    "Zrotation":0,
                     "relativewidth":100,
                     "relativeheight":100,
                     "textureid":0,

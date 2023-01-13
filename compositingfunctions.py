@@ -6,7 +6,10 @@ from PySide6.QtGui import QOpenGLContext
 from OpenGL.GL import *
 from time import time
 import numpy as np
+from math import *
 from ctypes import c_void_p
+from random import random
+from scipy.spatial.transform import Rotation
 imagecache = {}
 """def cachecomposite(func,parentclass,width,height):
     global imagecache
@@ -64,8 +67,12 @@ class Unholy():
     params = {
         "x":0,
         "y":0,
+        "z":0,
         "width":1280,
         "height":720,
+        "Xrotation":0,
+        "Yrotation":0,
+        "Zrotation":0,
         "relativewidth":100,
         "relativeheight":100,
         "textureid":0,
@@ -78,13 +85,43 @@ class Unholy():
     def composite(imageparam,params,parentclass,keyframe):
         img,size = imageparam.function().image(imageparam.params,parentclass)
         imgdata = np.array(img).flatten()
+        """vertexes = np.array([
+             params.params.x-1280/2,  params.params.y-720/2, sin(parentclass.playbackframe/10)/20, 0.0, 0.0,
+             params.params.width+params.params.x-1280/2,  params.params.y-720/2, sin(parentclass.playbackframe/11.9)/20, 1.0, 0.0,
+             params.params.width+params.params.x-1280/2,  params.params.height+params.params.y-720/2, cos(parentclass.playbackframe/12.5)/20, 1.0, 1.0,
+             params.params.x-1280/2,  params.params.y-720/2, sin(parentclass.playbackframe/10)/20, 0.0, 0.0,
+             params.params.x-1280/2,  params.params.height+params.params.y-720/2, cos(parentclass.playbackframe/13.1)/20, 0.0, 1.0,
+             params.params.width+params.params.x-1280/2,  params.params.height+params.params.y-720/2, cos(parentclass.playbackframe/12.5)/20, 1.0, 1.0],dtype=np.float32)"""
+        """def r():
+            return (random()-0.5)/64
+        topleftx = r()
+        toplefty = r()
+        topleftz = r()
+        bottomrightx = r()
+        bottomrighty = r()
+        bottomrightz = r()
         vertexes = np.array([
-             params.params.x-1280/2,  params.params.y-720/2, -0.01, 0.0, 0.0,
-             params.params.width+params.params.x-1280/2,  params.params.y-720/2, -0.01, 1.0, 0.0,
-             params.params.width+params.params.x-1280/2,  params.params.height+params.params.y-720/2, 0.01, 1.0, 1.0,
-             params.params.x-1280/2,  params.params.y-720/2, -0.01, 0.0, 0.0,
-             params.params.x-1280/2,  params.params.height+params.params.y-720/2, 0.01, 0.0, 1.0,
-             params.params.width+params.params.x-1280/2,  params.params.height+params.params.y-720/2, 0.01, 1.0, 1.0],dtype=np.float32)
+             params.params.x-1280/2+topleftx,  params.params.y-720/2+toplefty, topleftz, 0.0, 0.0,
+             params.params.width+params.params.x-1280/2+r(),  params.params.y-720/2+r(), r(), 1.0, 0.0,
+             params.params.width+params.params.x-1280/2+bottomrightx,  params.params.height+params.params.y-720/2+bottomrighty, bottomrightz, 1.0, 1.0,
+             params.params.x-1280/2+topleftx,  params.params.y-720/2+toplefty, topleftz, 0.0, 0.0,
+             params.params.x-1280/2+r(),  params.params.height+params.params.y-720/2+r(), r(), 0.0, 1.0,
+             params.params.width+params.params.x-1280/2+bottomrightx,  params.params.height+params.params.y-720/2+bottomrighty, bottomrightz, 1.0, 1.0],dtype=np.float32)"""
+        positions = np.array([[0.0,0.0,0.0],
+        [params.params.width,  0.0, 0.0],
+        [params.params.width,  params.params.height, 0.0],
+        [0.0,  0.0, 0.0],
+        [0.0,  params.params.height, 0.0],
+        [params.params.width,  params.params.height, 0.0]])
+        positions = Rotation.from_euler("xyz",(params.params.Xrotation,params.params.Yrotation,params.params.Zrotation),True).apply(positions)
+        #print(positions)
+        vertexes = np.array([
+             positions[0][0]-1280/2+params.params.x,  positions[0][1]-720/2+params.params.y, positions[0][2]+params.params.z, 0.0, 0.0,
+             positions[1][0]-1280/2+params.params.x,  positions[1][1]-720/2+params.params.y, positions[1][2]+params.params.z, 1.0, 0.0,
+             positions[2][0]-1280/2+params.params.x,  positions[2][1]-720/2+params.params.y, positions[2][2]+params.params.z, 1.0, 1.0,
+             positions[3][0]-1280/2+params.params.x,  positions[3][1]-720/2+params.params.y, positions[3][2]+params.params.z, 0.0, 0.0,
+             positions[4][0]-1280/2+params.params.x,  positions[4][1]-720/2+params.params.y, positions[4][2]+params.params.z, 0.0, 1.0,
+             positions[5][0]-1280/2+params.params.x,  positions[5][1]-720/2+params.params.y, positions[5][2]+params.params.z, 1.0, 1.0],dtype=np.float32)
         if(not params.params.vao):
             #Create a pbo
             params.params.width = size[0]
