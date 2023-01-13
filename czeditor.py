@@ -580,13 +580,13 @@ class CzeVideoView(QOpenGLWidget):
     def initializeGL(self):
         #super().initializeGL(self)
         self.shader = compileProgram(compileShader("""#version 330 core
-layout (location=0) in vec2 vertexPos;
+layout (location=0) in vec3 vertexPos;
 layout (location=1) in vec2 vertexColor;
 uniform highp mat4 matrix;
 out vec2 fragmentColor;
 void main()
 {
-    gl_Position = matrix*vec4(vertexPos, 0.0, 1.0);
+    gl_Position = matrix*vec4(vertexPos, 1.0);
     fragmentColor = vertexColor;
 }""",GL_VERTEX_SHADER),
 compileShader("""#version 330 core
@@ -596,6 +596,7 @@ out vec4 color;
 void main()
 {
     color = texture(image,fragmentColor);
+    //color = vec4(fragmentColor,0.0,1.0);
 }""",GL_FRAGMENT_SHADER))
         #self.fbo = glGenFramebuffers(1)
         #self.renderbuffer = glGenRenderbuffers(1)
@@ -606,7 +607,7 @@ void main()
     def sizeHint(self):
         return QSize(1280,720)
     def resizeGL(self, w: int, h: int) -> None:
-        glViewport(0,0,1280,720)
+        glViewport(-1280/2,-720/2,1280,720)
         #return super().resizeGL(1280, 720)
     def paintGL(self):
         global rendered
@@ -617,8 +618,8 @@ void main()
         glLoadIdentity()
         glUseProgram(self.shader)
         projection = QMatrix4x4()
-        projection.frustum(0,1280,720,0,0.1,3.0)
-        projection.translate(0,0,-0.1001)
+        projection.frustum(-1280/4,1280/4,720/4,-720/4,0.5,3.0) # TODO : use a better projection that doesnt clip near Z
+        projection.translate(0,0,-1)
         glUniformMatrix4fv(glGetUniformLocation(self.shader,"matrix"),1,GL_FALSE,np.array(projection.data(),dtype=np.float32))
         getviewportimage(self.parentclass.playbackframe,self.parentclass)
 
@@ -631,6 +632,7 @@ class CzeViewport(QWidget):
         self.timestamp = 100
         self.scene = QGraphicsScene(self)
         self.graphicsview = QGraphicsView(self)
+        
         self.graphicsview.setScene(self.scene)
         
         self.parentclass = parentclass
@@ -656,8 +658,9 @@ class CzeViewport(QWidget):
         #image = image.resize(self.size().toTuple(),Image.Resampling.NEAREST)
         #self.picture = QPixmap.fromImage(ImageQt.ImageQt(image))
         if(rendered):
-            
-            self.picture = QPixmap.fromImage(QImage(rendered,1280,720,QImage.Format_RGBA8888))
+            img = QImage(rendered,1280,720,QImage.Format_RGBA8888)
+            img.mirror(False,True)
+            self.picture = QPixmap.fromImage(img)
             self.picture = self.picture.scaled(QSize(min(self.size().width(),1280),min(self.size().height(),720)),Qt.AspectRatioMode.KeepAspectRatio)
             self.viewportimage.setPixmap(self.picture)
         self.timestamp = i

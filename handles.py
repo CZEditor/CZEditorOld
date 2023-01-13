@@ -31,6 +31,7 @@ class CzeViewportDraggableHandle(QGraphicsItem):
             self.ylink.set(int(event.scenePos().y()/self.parentclass.picture.height()*720))
             self.setPos(self.xlink()/1280*self.parentclass.picture.width(),self.ylink()/720*self.parentclass.picture.height())
         event.accept()
+        self.parentclass.updateviewportimage(self.parentclass.timestamp)
         #return super().mouseMoveEvent(event)
     def mouseReleaseEvent(self, event: QGraphicsSceneMouseEvent) -> None:
         self.parentclass.updateviewportimage(self.parentclass.timestamp)
