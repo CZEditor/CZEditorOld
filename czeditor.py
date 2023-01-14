@@ -188,7 +188,7 @@ class QRedTextProperty(QRedFrame):
         #print("setting:",value)
         self.param[self.index] = value
         self.parentclass.updateviewport(self.parentclass.playbackframe)
-    def updatetextbox(self):
+    def updateself(self):
         self.textbox.onchange = dummyfunction
         self.textbox.setPlainText(self.param[self.index])
         self.textbox.onchange = self.updateproperty
@@ -208,7 +208,7 @@ class QRedNumberProperty(QRedFrame):
         #print("setting:",value)
         self.param[self.index] = value
         self.parentclass.updateviewport(self.parentclass.playbackframe)
-    def updatetextbox(self):
+    def updateself(self):
         self.textbox.onchange = dummyfunction
         self.textbox.setValue(self.param[self.index])
         self.textbox.onchange = self.updateproperty
@@ -250,7 +250,7 @@ class QRedTextEntryListProperty(QRedFrame):
         #print("setting:",value)
         self.param[self.index] = value
         self.parentclass.updateviewport(self.parentclass.playbackframe)
-    def updatetextbox(self):
+    def updateself(self):
         self.textbox.onchange = dummyfunction
         self.textbox.setText(self.param[self.index])
         self.textbox.onchange = self.updateproperty
@@ -382,6 +382,9 @@ class CzeKeyframeOptionCategory(QRedDropDownFrame):
         self.iterate(self.params.function().params.copy())
         
         self.parentclass.updateviewport(self.parentclass.playbackframe)
+    def updateParam(self):
+        for i in range(self.widgets.rowCount()):
+            self.widgets.itemAt(i,QFormLayout.FieldRole).widget().updateself()
     def changekeyframe(self,name,params):
 
         self.whole.removeWidget(self.whole.children()[0])
@@ -466,6 +469,9 @@ class CzeKeyframeOptionCategoryList(QRedFrame):
         #print(self.mainView.maximumHeight())
         #self.setMaximumHeight(200)
         self.mainView.setStyleSheet("border-width:0px; background:none;")
+    def updateParam(self):
+        for widgets in self.entries:
+            widgets.updateParam()
     def collapse(self):
         if self.collapsed:
             self.mainView.setMaximumHeight(9999)
@@ -553,7 +559,7 @@ class CzeKeyframeOptions(QRedScrollArea):
                 #    if isinstance(i,Params):
                 #        self.widgets.addWidget(CzeKeyframeOptionCategory(None,"Expand/Collapse",i))
                 #Add a + button here to add more entries
-    
+
     def rebuild(self):
         if self.parentclass.selectedframe:
             self.params = self.parentclass.selectedframe.params
@@ -563,7 +569,14 @@ class CzeKeyframeOptions(QRedScrollArea):
         else:
             for i in range(self.widgets.count()):
                 self.widgets.itemAt(0).widget().setParent(None)
-
+    def update(self):
+        if self.parentclass.selectedframe:
+            self.params = self.parentclass.selectedframe.params
+            for i in range(self.widgets.count()):
+                self.widgets.itemAt(i).widget().updateParam()
+        else:
+            for i in range(self.widgets.count()):
+                self.widgets.itemAt(0).widget().setParent(None)
 
 class CzeViewportDraggableBox(QGraphicsItem):
     def __init__(self,parent,parentclass,params,x,y):
@@ -684,6 +697,7 @@ class CzeViewport(QWidget):
     def updatehandles(self):
         for handle in self.handles:
             self.scene.removeItem(handle)
+        self.handles = []
         self.createhandle(self.parentclass.selectedframe,self.parentclass.selectedframe.params.image.function(),self.parentclass.selectedframe.params)
         for param in self.parentclass.selectedframe.params.compositing:
             self.createhandle(self.parentclass.selectedframe,param.function(),param)
@@ -743,7 +757,7 @@ class Window(QMainWindow):
         self.needtoupdate = True
         #self.viewport.update()
     def updatekeyframeoptions(self):
-        self.keyframeoptions.rebuild()
+        self.keyframeoptions.update()
     def keyPressEvent(self, event: QKeyEvent) -> None:
         #print(event.text())
         if event.text() == " ":
