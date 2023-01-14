@@ -173,8 +173,9 @@ class QRedComboBox(QComboBox):
     def valuechanged(self,index) -> None:
         self.onchange(self.currentText(),self.currentIndex()) 
 class QRedTextProperty(QRedFrame):
-    def __init__(self,parent,param:Params,index):
+    def __init__(self,parent,param:Params,index,parentclass):
         super().__init__(parent)
+        self.parentclass = parentclass
         self.param = param
         self.widgets = QHBoxLayout()
         self.index = index
@@ -186,14 +187,15 @@ class QRedTextProperty(QRedFrame):
     def updateproperty(self,value:str):
         #print("setting:",value)
         self.param[self.index] = value
-        window.updateviewport(window.playbackframe)
+        self.parentclass.updateviewport(self.parentclass.playbackframe)
     def updatetextbox(self):
         self.textbox.onchange = dummyfunction
         self.textbox.setPlainText(self.param[self.index])
         self.textbox.onchange = self.updateproperty
 class QRedNumberProperty(QRedFrame):
-    def __init__(self,parent,param:Params,index):
+    def __init__(self,parent,param:Params,index,parentclass):
         super().__init__(parent)
+        self.parentclass = parentclass
         self.param = param
         self.widgets = QHBoxLayout()
         self.index = index
@@ -205,14 +207,15 @@ class QRedNumberProperty(QRedFrame):
     def updateproperty(self,value:int):
         #print("setting:",value)
         self.param[self.index] = value
-        window.updateviewport(window.playbackframe)
+        self.parentclass.updateviewport(self.parentclass.playbackframe)
     def updatetextbox(self):
         self.textbox.onchange = dummyfunction
         self.textbox.setValue(self.param[self.index])
         self.textbox.onchange = self.updateproperty
 class QRedSelectableProperty(QRedFrame):
-    def __init__(self,parent,param:Selectable,override=None):
+    def __init__(self,parent,param:Selectable,parentclass,override=None):
         super().__init__(parent)
+        self.parentclass = parentclass
         if override==None:
             override = self.updateproperty
         self.param = param
@@ -226,13 +229,13 @@ class QRedSelectableProperty(QRedFrame):
     def updateproperty(self,name,index):
         #print("setting:",value)
         self.param.index = index
-        window.updateviewport(window.playbackframe)
+        self.parentclass.updateviewport(self.parentclass.playbackframe)
     def updateself(self):
         self.combobox.onchange = dummyfunction
         self.combobox.setCurrentIndex(self.param.index)
         self.combobox.onchange = self.updateproperty
 class QRedTextEntryListProperty(QRedFrame):
-    def __init__(self,parent,param:Params,index):
+    def __init__(self,parent,param:Params,index,parentclass):
         super().__init__(parent)
         self.param = param
         self.widgets = QHBoxLayout()
@@ -242,19 +245,20 @@ class QRedTextEntryListProperty(QRedFrame):
         self.widgets.addWidget(self.textbox)
         self.setLayout(self.widgets)
         self.setStyleSheet("border-width:0px;")
+        self.parentclass = self.parentclass
     def updateproperty(self,value:str):
         #print("setting:",value)
         self.param[self.index] = value
-        window.updateviewport(window.playbackframe)
+        self.parentclass.updateviewport(self.parentclass.playbackframe)
     def updatetextbox(self):
         self.textbox.onchange = dummyfunction
         self.textbox.setText(self.param[self.index])
         self.textbox.onchange = self.updateproperty
-        window.updateviewport(window.playbackframe)
+        self.parentclass.updateviewport(self.parentclass.playbackframe)
 class QRedTextListProperty(QRedFrame):
-    def __init__(self,parent,thelist):
+    def __init__(self,parent,thelist,parentclass):
         super().__init__(parent)
-        
+        self.parentclass = parentclass
         self.whole = QVBoxLayout(self)
         self.collapseButton = QRedExpandableButton(None,"expand",self.collapse)
         self.collapseButton.sizePolicy().setHorizontalPolicy(QSizePolicy.Policy.MinimumExpanding)
@@ -329,7 +333,7 @@ class QRedTextListProperty(QRedFrame):
         arow.addWidget(QRedButton(None,"\\/",0,0,self.movedown,False,arow))
         arow.addWidget(QRedButton(None,"-",0,0,self.remove,False,arow))
         self.widgets.addRow("button",arow)
-        window.updateviewport(window.playbackframe)
+        self.parentclass.updateviewport(self.parentclass.playbackframe)
         #print(self.thelist)
 class QRedDropDownFrame(QRedFrame):
     def __init__(self,parent,name):
@@ -364,65 +368,68 @@ class QRedDropDownFrame(QRedFrame):
 
 
 class CzeKeyframeOptionCategory(QRedDropDownFrame):
-    def __init__(self,parent,name:str,params:Params):
+    def __init__(self,parent,name:str,params:Params,parentclass):
         super().__init__(parent,name)
-        self.whole.insertWidget(0,QRedSelectableProperty(None,params.function,self.rebuild))
+        self.parentclass = parentclass
         self.params = params
+        
+        self.whole.insertWidget(0,QRedSelectableProperty(None,params.function,self.parentclass,self.rebuild))
         self.iterate(self.params.params)
     def rebuild(self,name,index):
         #print(vars(self))
-        print([self.params])
         self.params.function.index = index
         for i in range(self.widgets.rowCount()):
             self.widgets.removeRow(0)
         self.params.params = self.params.function().params.copy()
         self.iterate(self.params.params)
-        window.updateviewport(window.playbackframe)
+        self.parentclass.updateviewport(self.parentclass.playbackframe)
     def changekeyframe(self,name,params):
         self.whole.removeWidget(self.whole.children()[0])
-        self.whole.insertWidget(0,QRedSelectableProperty(None,params.function,self.rebuild))
+        self.whole.insertWidget(0,QRedSelectableProperty(None,params.function,self.parentclass,self.rebuild))
         for i in range(self.widgets.rowCount()):
             self.widgets.removeRow(0)
         self.params = params
         self.iterate(self.params.params)
-        window.updateviewport(window.playbackframe)
+        self.parentclass.updateviewport(self.parentclass.playbackframe)
     def iterate(self,params):
+
         for key in vars(params).keys():     
             param = params[key]
             #print(key,type(param),param.__class__)
             if isinstance(param,str):
-                self.widgets.addRow(key,QRedTextProperty(None,params,key))
+                self.widgets.addRow(key,QRedTextProperty(None,params,key,self.parentclass))
             elif isinstance(param,StringList):
-                self.widgets.addRow(key,QRedTextListProperty(None,param))
+                self.widgets.addRow(key,QRedTextListProperty(None,param,self.parentclass))
             elif isinstance(param,list):
                 self.iteratelist(param)
             elif isinstance(param,Params):
                 self.iterate(param)
             elif isinstance(param,int):
-                self.widgets.addRow(key,QRedNumberProperty(None,params,key))
+                self.widgets.addRow(key,QRedNumberProperty(None,params,key,self.parentclass))
             elif isinstance(param,Selectable):
-                self.widgets.addRow(key,QRedSelectableProperty(None,param))
+                self.widgets.addRow(key,QRedSelectableProperty(None,param,self.parentclass))
     def iteratelist(self,thelist):
         i = 0
         for param in thelist:
             #print(type(param))
             if isinstance(param,str):
-                self.widgets.addRow("",QRedTextProperty(None,thelist,i))
+                self.widgets.addRow("",QRedTextProperty(None,thelist,i,self.parentclass))
             
             elif isinstance(param,StringList):
-                self.widgets.addRow("",QRedTextListProperty(None,param))
+                self.widgets.addRow("",QRedTextListProperty(None,param,self.parentclass))
             elif isinstance(param,list):
                 self.iteratelist(param)
             elif isinstance(param,Params):
                 self.iterate(param)
             elif isinstance(param,int):
-                self.widgets.addRow("",QRedNumberProperty(None,thelist,i))
+                self.widgets.addRow("",QRedNumberProperty(None,thelist,i,self.parentclass))
             elif isinstance(param,Selectable):
-                self.widgets.addRow("",QRedSelectableProperty(None,param))
+                self.widgets.addRow("",QRedSelectableProperty(None,param,self.parentclass))
             i+=1
 class CzeKeyframeOptionCategoryList(QRedFrame):
-    def __init__(self,parent,thelist,baseparam):
+    def __init__(self,parent,thelist,baseparam,parentclass):
         super().__init__(parent)
+        self.parentclass = parentclass
         self.baseparam = baseparam
         self.whole = QVBoxLayout(self)
         self.collapseButton = QRedExpandableButton(None,"expand",self.collapse)
@@ -435,7 +442,7 @@ class CzeKeyframeOptionCategoryList(QRedFrame):
         self.entries = []
         self.widgetbuttons = QGridLayout()
         for i in range(len(self.thelist)):
-            self.entries.append(CzeKeyframeOptionCategory(None,"expand/collapse",self.thelist[i]))
+            self.entries.append(CzeKeyframeOptionCategory(None,"expand/collapse",self.thelist[i],parentclass))
             arow = QHBoxLayout()
             arow.addWidget(self.entries[i])
             arow.addWidget(QRedButton(None,"/\\",0,0,self.moveup,False,arow))
@@ -491,7 +498,7 @@ class CzeKeyframeOptionCategoryList(QRedFrame):
         
         self.thelist.append(self.baseparam.copy())
         i = len(self.thelist)-1
-        self.entries.append(CzeKeyframeOptionCategory(None,"expand/collapse",self.thelist[i]))
+        self.entries.append(CzeKeyframeOptionCategory(None,"expand/collapse",self.thelist[i],self.parentclass))
         print([self.thelist[i].params],[self.baseparam.params])
         arow = QHBoxLayout()
         arow.addWidget(self.entries[i])
@@ -531,15 +538,16 @@ class CzeKeyframeOptions(QRedScrollArea):
         #self.alayout.addWidget(self.viewframe)
         self.setWidgetResizable(True)
     def changeEvent(self, arg__1) -> None:
-        self.setMaximumWidth(self.widgets.contentsRect().width()+self.verticalScrollBar().width())
+        if(hasattr(self,"widgets")):
+            self.setMaximumWidth(self.widgets.contentsRect().width()+self.verticalScrollBar().width())
         return super().changeEvent(arg__1)
     def iterate(self,params):
         for key in vars(params).keys():
             param = params[key]
             if isinstance(param,Params):
-                self.widgets.addWidget(CzeKeyframeOptionCategory(None,"Expand/Collapse",param)) #Make it display the actual name!
+                self.widgets.addWidget(CzeKeyframeOptionCategory(None,"Expand/Collapse",param,self.parentclass)) #Make it display the actual name!
             elif isinstance(param,list):
-                self.widgets.addWidget(CzeKeyframeOptionCategoryList(None,param,baseparams[key]))
+                self.widgets.addWidget(CzeKeyframeOptionCategoryList(None,param,baseparams[key],self.parentclass))
                 #for i in param:
                 #    if isinstance(i,Params):
                 #        self.widgets.addWidget(CzeKeyframeOptionCategory(None,"Expand/Collapse",i))
@@ -607,8 +615,8 @@ void main()
         #glFramebufferRenderbuffer(GL_DRAW_FRAMEBUFFER,GL_COLOR_ATTACHMENT0,GL_RENDERBUFFER,self.renderbuffer)
     def sizeHint(self):
         return QSize(1280,720)
-    def resizeGL(self, w: int, h: int) -> None:
-        glViewport(-1280/2,-720/2,1280,720)
+    #def resizeGL(self, w: int, h: int) -> None:
+        #glViewport(-1280/2,-720/2,1280,720)
         #return super().resizeGL(1280, 720)
     def paintGL(self):
         global rendered
@@ -619,8 +627,8 @@ void main()
         glLoadIdentity()
         glUseProgram(self.shader)
         projection = QMatrix4x4()
-        projection.frustum(-1280/16,1280/16,720/16,-720/16,64,4000) # TODO : use a better projection that doesnt clip near Z
-        projection.translate(0,0,-512)
+        projection.frustum(-1280/32,1280/32,720/32,-720/32,64,4096) # TODO : use a better projection that doesnt clip near Z
+        projection.translate(0,0,-1024)
         glUniformMatrix4fv(glGetUniformLocation(self.shader,"matrix"),1,GL_FALSE,np.array(projection.data(),dtype=np.float32))
         getviewportimage(self.parentclass.playbackframe,self.parentclass)
 
@@ -704,6 +712,7 @@ class CzeViewport(QWidget):
 class Window(QMainWindow):
     def __init__(self):
         super().__init__()
+        self.playbackframe = 100
         self.player = QMediaPlayer()
         self.audio_output = QAudioOutput()
         self.player.setAudioOutput(self.audio_output)
@@ -722,7 +731,7 @@ class Window(QMainWindow):
         self.selectedframe = None
         self.setCentralWidget(hozsplitter)
         self.show()
-        self.playbackframe = 100
+        
         self.draggedpreset = None
         self.startTimer(0.01,Qt.TimerType.PreciseTimer)
         self.isplaying = False

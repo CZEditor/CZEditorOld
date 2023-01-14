@@ -20,14 +20,14 @@ imagecache = {}
 
 class ImageComposite():
     name = "Normal Media"
-    params = {
+    params = Params({
         "x":0,
         "y":0,
         "width":1280,
         "height":720,
         "relativewidth":100,
         "relativeheight":100
-    }
+    })
     def composite(canvas,imageparam,params,parentclass,keyframe):
         img = imageparam.function().image(imageparam.params,parentclass)
         params.params.width = int(img.size[0]*params.params.relativewidth/100) #put this in the onupdate function! make sure that it gets called only after the image has been updated
@@ -64,7 +64,7 @@ class SoundFile():
         return self.name
 class Unholy():
     name = "Unholy"
-    params = {
+    params = Params({
         "x":0,
         "y":0,
         "z":0,
@@ -80,7 +80,7 @@ class Unholy():
         "vao":0,
         "pbo":0,
         "lastsize":(32,32)
-    }
+    })
     
     def composite(imageparam,params,parentclass,keyframe):
         img,size = imageparam.function().image(imageparam.params,parentclass)

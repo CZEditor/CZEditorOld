@@ -43,7 +43,7 @@ class Params(object):
                 returnal.append(i)
         return returnal
 
-    def __getattr__(self,param:str):
+    def __getattr__(self,param:str): #This is a failsafe
         return None
         
     def iterate(self,toiterate:dict):
