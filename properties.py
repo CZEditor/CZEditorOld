@@ -19,4 +19,22 @@ class IntProperty:
         self._val = value
     def set(self,value):
         self._val = value
-    
+
+class StringProperty:
+    def __init__(self,value):
+        self._val = value
+        self.propertywidget = None
+    def copy(self):
+        return StringProperty(self._val)
+    def __call__(self):
+        return self._val
+    def widget(self):
+        return StringPropertyWidget(self)
+    @property
+    def val(self):
+        return self._val
+    @val.setter
+    def val(self, value):
+        self._val = value
+    def set(self,value):
+        self._val = value
