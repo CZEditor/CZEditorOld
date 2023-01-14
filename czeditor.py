@@ -379,7 +379,7 @@ class CzeKeyframeOptionCategory(QRedDropDownFrame):
         for i in range(self.widgets.count()):
             self.widgets.removeRow(0)
         
-        self.iterate(self.params.function().params.copy())
+        self.iterate(self.params)
         
         self.parentclass.updateviewport(self.parentclass.playbackframe)
     def updateParam(self):
@@ -470,8 +470,9 @@ class CzeKeyframeOptionCategoryList(QRedFrame):
         #self.setMaximumHeight(200)
         self.mainView.setStyleSheet("border-width:0px; background:none;")
     def updateParam(self):
-        for widgets in self.entries:
-            widgets.updateParam()
+        for widget in self.entries:
+            widget.updateParam()
+           
     def collapse(self):
         if self.collapsed:
             self.mainView.setMaximumHeight(9999)
