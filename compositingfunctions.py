@@ -225,6 +225,8 @@ class Unholy():
             
             glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0)
             #Draw the quad
+            glEnable(GL_BLEND)
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
             glUniform1i(glGetUniformLocation(parentclass.viewport.videorenderer.shader,"image"),0)
             glActiveTexture(GL_TEXTURE0)
             glBindVertexArray(params.params.vao)
