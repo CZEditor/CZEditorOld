@@ -25,13 +25,15 @@ class FilledRectangle():
     name = "Filled Rectangle"
     params = Params(
         {
-            "width":100,
-            "height":100,
-            "color":[192,255,192]
+            "width":32,
+            "height":32,
+            "color":[192,255,192,255]
         }
     )
     def image(param:Params,parentclass):
-        return CreateFilledRectangle((param.width,param.height),tuple(param.color))
+        #return CreateFilledRectangle((param.width,param.height),tuple(param.color))
+        made = np.full((param.width,param.height,4),np.array(param.color,dtype=np.uint8))
+        return made,(param.width,param.height)
     def __str__(self):
         return self.name
     def gethashstring(self,param:Params,parentclass):
@@ -67,7 +69,7 @@ class SoundFile():
             "path":""
         }
     )
-    def image(param:Params):
+    def image(param:Params,parentclass):
         return np.array(emptyimage),(1,1)
     def __str__(self):
         return self.name
