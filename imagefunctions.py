@@ -6,22 +6,23 @@ from graphics import *
 from PySide6.QtCore import QByteArray,QBuffer,QIODevice
 import pyspng
 import numpy as np
+from properties import *
 loadedimages = {}
 class NormalImage():
     name = "Image"
     params = Params(
         {
-            "imagepath":""
+            "imagepath":StringProperty("")
         }
     )
     def image(param:Params,parentclass):
         if(param.imagepath in loadedimages):
-            img = loadedimages[param.imagepath]
+            img = loadedimages[param.imagepath()]
             return img,(img.shape[1],img.shape[0])
         try:
-            with open(param.imagepath,"rb") as file:
+            with open(param.imagepath(),"rb") as file:
                 img = pyspng.load(file.read())
-            loadedimages[param.imagepath] = img
+            loadedimages[param.imagepath()] = img
             if(len(loadedimages.keys()) > 300):
                 del loadedimages[loadedimages.keys()[0]]
 
@@ -36,15 +37,15 @@ class FilledRectangle():
     name = "Filled Rectangle"
     params = Params(
         {
-            "width":32,
-            "height":32,
+            "width":IntProperty(32),
+            "height":IntProperty(32),
             "color":[192,255,192,255]
         }
     )
     def image(param:Params,parentclass):
         #return CreateFilledRectangle((param.width,param.height),tuple(param.color))
-        made = np.full((param.width,param.height,4),np.array(param.color,dtype=np.uint8))
-        return made,(param.width,param.height)
+        made = np.full((param.width(),param.height(),4),np.array(param.color,dtype=np.uint8))
+        return made,(param.width(),param.height())
     def __str__(self):
         return self.name
     def gethashstring(self,param:Params,parentclass):
@@ -89,11 +90,11 @@ class SoundFile():
 class ImageSequence():
     name = "Image Sequence"
     params = Params({
-        "imagespath":""
+        "imagespath":StringProperty("")
     })
     def image(param:Params,parentclass):
         #return Image.open(param.imagespath.replace("*",str(int(parentclass.playbackframe))))
-        with open(param.imagespath.replace("*",str(int(parentclass.playbackframe))),"rb") as file:
+        with open(param.imagespath().replace("*",str(int(parentclass.playbackframe))),"rb") as file:
             img = pyspng.load(file.read())
         return img,(img.shape[1],img.shape[0])
     def __str__(self):

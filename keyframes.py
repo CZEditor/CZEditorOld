@@ -111,7 +111,7 @@ keyframes.append(Keyframe(20,Params(
         "image":
         {
             "function":Selectable(0,imagefunctionsdropdown),
-            "params":{"imagepath":"editor/icondark.png"}
+            "params":{"imagepath":StringProperty("editor/icondark.png")}
         },
         "states":
         [
