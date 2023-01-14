@@ -378,8 +378,8 @@ class CzeKeyframeOptionCategory(QRedDropDownFrame):
         self.params.function.index = index
         for i in range(self.widgets.count()):
             self.widgets.removeRow(0)
-        
-        self.iterate(self.params)
+        self.params.params = self.params.function().params.copy()
+        self.iterate(self.params.params)
         
         self.parentclass.updateviewport(self.parentclass.playbackframe)
     def updateParam(self):
