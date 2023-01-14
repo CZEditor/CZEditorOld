@@ -5,6 +5,7 @@ from graphics import *
 #import ffmpeg
 from PySide6.QtCore import QByteArray,QBuffer,QIODevice
 import pyspng
+import numpy as np
 class NormalImage():
     name = "Image"
     params = Params(
@@ -53,7 +54,8 @@ class XPError():
     )
     def image(param:Params,parentclass):
         #fillindefaults(param,{"text":"","title":"","buttons":[],"buttonstyles":emptylist(0),"erroricon":Selectable(1,[["Critical Error","xp/Critical Error.png"],["Exclamation","xp/Exclamation.png"],["Information","xp/Information.png"],["Question","xp/Question.png"],["None",""]])})
-        return CreateXPWindow(param)
+        generated = CreateXPWindow(param)
+        return np.array(generated),generated.size
     def __str__(self):
         return self.name
     def gethashstring(self,param:Params,parentclass):
@@ -66,7 +68,7 @@ class SoundFile():
         }
     )
     def image(param:Params):
-        return emptyimage
+        return np.array(emptyimage),(1,1)
     def __str__(self):
         return self.name
     def gethashstring(self,param:Params,parentclass):
