@@ -84,7 +84,7 @@ class Unholy():
     
     def composite(imageparam,params,parentclass,keyframe):
         img,size = imageparam.function().image(imageparam.params,parentclass)
-        imgdata = np.array(img).flatten()
+        imgdata = img.flatten()
         """vertexes = np.array([
              params.params.x-1280/2,  params.params.y-720/2, sin(parentclass.playbackframe/10)/20, 0.0, 0.0,
              params.params.width+params.params.x-1280/2,  params.params.y-720/2, sin(parentclass.playbackframe/11.9)/20, 1.0, 0.0,
@@ -107,12 +107,12 @@ class Unholy():
              params.params.x-1280/2+topleftx,  params.params.y-720/2+toplefty, topleftz, 0.0, 0.0,
              params.params.x-1280/2+r(),  params.params.height+params.params.y-720/2+r(), r(), 0.0, 1.0,
              params.params.width+params.params.x-1280/2+bottomrightx,  params.params.height+params.params.y-720/2+bottomrighty, bottomrightz, 1.0, 1.0],dtype=np.float32)"""
-        positions = np.array([[0.0,0.0,0.0],
-        [params.params.width,  0.0, 0.0],
-        [params.params.width,  params.params.height, 0.0],
-        [0.0,  0.0, 0.0],
-        [0.0,  params.params.height, 0.0],
-        [params.params.width,  params.params.height, 0.0]])
+        positions = np.array([[-params.params.width/2,-params.params.height/2,0.0],
+        [params.params.width/2,  -params.params.height/2, 0.0],
+        [params.params.width/2,  params.params.height/2, 0.0],
+        [-params.params.width/2,  -params.params.height/2, 0.0],
+        [-params.params.width/2,  params.params.height/2, 0.0],
+        [params.params.width/2,  params.params.height/2, 0.0]])
         positions = Rotation.from_euler("xyz",(params.params.Xrotation,params.params.Yrotation,params.params.Zrotation),True).apply(positions)
         #print(positions)
         vertexes = np.array([
@@ -167,32 +167,14 @@ class Unholy():
         elif params.params.lastsize[0] != size[0] or params.params.lastsize[1] != size[1]:
             params.params.width = size[0]
             params.params.height = size[1]
-            #print(size)
             glBindTexture(GL_TEXTURE_2D,0)
-            #Delete the buffer and texture
+            #Delete the buffer
             glDeleteBuffers(1,[params.params.pbo])
-            #glDeleteTextures(1,[params.params.textureid])
 
             #Make a new buffer
             params.params.pbo = glGenBuffers(1)
-            #glBindBuffer(GL_PIXEL_UNPACK_BUFFER, params.params.pbo)
-            #glBufferData(GL_PIXEL_UNPACK_BUFFER, size[0]*size[1]*4,None, GL_STREAM_DRAW)
-            #data = glMapBuffer(GL_PIXEL_UNPACK_BUFFER,GL_WRITE_ONLY)
-            #array = (GLubyte*size[0]*size[1]*4).from_address(data)
-            #ctypes.memmove(array,imgdata.ctypes.data,size[0]*size[1]*4)
-            #glUnmapBuffer(GL_PIXEL_UNPACK_BUFFER)
-            
-            #Generate a new texture
-            #print(params.params.textureid)
-            #print("is valid: ",glIsTexture(params.params.textureid))
-            #params.params.textureid = (GLuint * 1)()
-            #glGenTextures(1,params.params.textureid)
-            #print(params.params.textureid)
-            #params.params.textureid = params.params.textureid[0]
-            #print(params.params.textureid)
             glPixelStorei(GL_UNPACK_ALIGNMENT,1)
             
-            #print("is valid: ",glIsTexture(params.params.textureid))
             glBindTexture(GL_TEXTURE_2D,params.params.textureid)
             glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST)
             glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST)
@@ -205,7 +187,6 @@ class Unholy():
             glBindTexture(GL_TEXTURE_2D,0)
 
             glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0)
-            #print("is valid: ",glIsTexture(params.params.textureid))
             params.params.lastsize = size
         else:
             #print(glIsTexture(params.params.textureid))
@@ -220,8 +201,8 @@ class Unholy():
             array = (GLubyte*size[0]*size[1]*4).from_address(data)
             ctypes.memmove(array,imgdata.ctypes.data,size[0]*size[1]*4)
             glUnmapBuffer(GL_PIXEL_UNPACK_BUFFER)
-            #glTexSubImage2D(GL_TEXTURE_2D,0,0,0,size[0],size[1],GL_RGBA,GL_UNSIGNED_BYTE,c_void_p(0))
-            glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,size[0],size[1],0,GL_RGBA,GL_UNSIGNED_BYTE,c_void_p(0))
+            glTexSubImage2D(GL_TEXTURE_2D,0,0,0,size[0],size[1],GL_RGBA,GL_UNSIGNED_BYTE,c_void_p(0))
+            #glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,size[0],size[1],0,GL_RGBA,GL_UNSIGNED_BYTE,c_void_p(0))
             
             glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0)
             #Draw the quad

@@ -6,6 +6,7 @@ from graphics import *
 from PySide6.QtCore import QByteArray,QBuffer,QIODevice
 import pyspng
 import numpy as np
+loadedimages = {}
 class NormalImage():
     name = "Image"
     params = Params(
@@ -14,9 +15,19 @@ class NormalImage():
         }
     )
     def image(param:Params,parentclass):
-        with open(param.imagepath,"rb") as file:
-            img = pyspng.load(file.read())
-        return img,(img.shape[1],img.shape[0])
+        if(param.imagepath in loadedimages):
+            img = loadedimages[param.imagepath]
+            return img,(img.shape[1],img.shape[0])
+        try:
+            with open(param.imagepath,"rb") as file:
+                img = pyspng.load(file.read())
+            loadedimages[param.imagepath] = img
+            if(len(loadedimages.keys()) > 300):
+                del loadedimages[loadedimages.keys()[0]]
+
+            return img,(img.shape[1],img.shape[0])
+        except:
+            return np.array([[[0,0,0,0]]]),(1,1)
     def __str__(self):
         return self.name
     def gethashstring(self,param:Params,parentclass):

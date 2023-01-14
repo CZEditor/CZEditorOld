@@ -2,7 +2,7 @@ from generate import *
 from PIL import Image
 from functools import cache
 from util import *
-from PySide6.QtWidgets import QWidget,QGraphicsScene,QGraphicsView,QGraphicsItem,QGraphicsRectItem
+from PySide6.QtWidgets import QWidget,QGraphicsScene,QGraphicsView,QGraphicsItem,QGraphicsRectItem,QGraphicsLineItem
 from PySide6.QtGui import QPen,QColor,QRadialGradient,QResizeEvent,QMouseEvent,QWheelEvent,QDrag,QDragEnterEvent,QDragLeaveEvent,QDragMoveEvent,QDropEvent
 from PySide6.QtCore import QSize,Qt,QRectF,QPoint,QLine,QMimeData,Qt
 from keyframes import *
@@ -161,6 +161,8 @@ class CzeTimeline(QWidget):
     def pressEvent(self, event:QMouseEvent) -> None:
         if event.button() == Qt.MouseButton.LeftButton:
             founditem:QGraphicsItem = self.graphicsview.itemAt(event.pos().x(),event.pos().y())
+            if isinstance(founditem,QGraphicsLineItem):
+                return super().mousePressEvent(event)
             if founditem != None:
                 if event.pos() == self.lastm1pos:
                     self.parentclass.draggedpreset = founditem.data(0).params.copy()
