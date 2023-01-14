@@ -2,10 +2,11 @@ from generate import *
 from PIL import Image
 from functools import cache
 from util import *
-from PySide6.QtWidgets import QWidget,QGraphicsScene,QGraphicsView,QGraphicsItem,QGraphicsRectItem,QGraphicsLineItem
-from PySide6.QtGui import QPen,QColor,QRadialGradient,QResizeEvent,QMouseEvent,QWheelEvent,QDrag,QDragEnterEvent,QDragLeaveEvent,QDragMoveEvent,QDropEvent
+from PySide6.QtWidgets import QWidget,QGraphicsScene,QGraphicsView,QGraphicsItem,QGraphicsRectItem,QGraphicsLineItem,QToolButton,QPushButton,QComboBox,QFrame,QSizePolicy,QScrollArea,QPlainTextEdit,QSpinBox,QLineEdit
+from PySide6.QtGui import QPen,QColor,QRadialGradient,QResizeEvent,QMouseEvent,QWheelEvent,QDrag,QDragEnterEvent,QDragLeaveEvent,QDragMoveEvent,QDropEvent,QTextOption
 from PySide6.QtCore import QSize,Qt,QRectF,QPoint,QLine,QMimeData,Qt
 from keyframes import *
+from copy import deepcopy
 playbackframe = 100
 
 def updateplaybackframe(frame):
@@ -51,6 +52,8 @@ def CreateRedTab(text,active=True):
     Tab = resize(TabImg,textsize[0]+10,textsize[1]+9,3,3,3,3,Image.NEAREST)
     Tab = createtext7(Tab,5,4,text,"7/fonts/text/",color=(255,128,128),kerningadjust=-1)
     return Tab.transpose(Image.ROTATE_270)
+
+
 
 
 class QGraphicsViewEvent(QGraphicsView):
@@ -176,6 +179,7 @@ class CzeTimeline(QWidget):
                         self.keyframes[self.parentclass.selectedframe].setBrush(self.coolgradient)
                     founditem.setBrush(self.selectedcoolgradient)
                     self.parentclass.selectedframe = founditem.data(0)
+                    print(self.parentclass.selectedframe.params.compositing[0])
                     self.parentclass.regeneratekeyframeoptions()
                     self.parentclass.viewport.updatehandles()
                 
@@ -202,7 +206,7 @@ class CzeTimeline(QWidget):
     def dropEvent(self, event: QDropEvent) -> None:
         #print(self.parentclass.draggedpreset)
         if self.parentclass.draggedpreset and not self.draggedframe:
-            keyframe = Keyframe(int(self.graphicsview.mapToScene(event.pos().x(),0).x()),self.parentclass.draggedpreset.copy())
+            keyframe = Keyframe(int(self.graphicsview.mapToScene(event.pos().x(),0).x()),self.parentclass.draggedpreset)
             keyframes.add(keyframe)
             self.addKeyframe(keyframe)
             self.parentclass.draggedpreset = None

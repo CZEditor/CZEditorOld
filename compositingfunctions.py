@@ -10,6 +10,7 @@ from math import *
 from ctypes import c_void_p
 from random import random
 from scipy.spatial.transform import Rotation
+from properties import IntProperty
 imagecache = {}
 """def cachecomposite(func,parentclass,width,height):
     global imagecache
@@ -65,16 +66,16 @@ class SoundFile():
 class Unholy():
     name = "Unholy"
     params = Params({
-        "x":0,
-        "y":0,
-        "z":0,
-        "width":1280,
-        "height":720,
-        "Xrotation":0,
-        "Yrotation":0,
-        "Zrotation":0,
-        "relativewidth":100,
-        "relativeheight":100,
+        "x":IntProperty(0),
+        "y":IntProperty(0),
+        "z":IntProperty(0),
+        "width":IntProperty(1280),
+        "height":IntProperty(720),
+        "Xrotation":IntProperty(0),
+        "Yrotation":IntProperty(0),
+        "Zrotation":IntProperty(0),
+        "relativewidth":IntProperty(100),
+        "relativeheight":IntProperty(100),
         "textureid":0,
         "vbo":0,
         "vao":0,
@@ -107,25 +108,25 @@ class Unholy():
              params.params.x-1280/2+topleftx,  params.params.y-720/2+toplefty, topleftz, 0.0, 0.0,
              params.params.x-1280/2+r(),  params.params.height+params.params.y-720/2+r(), r(), 0.0, 1.0,
              params.params.width+params.params.x-1280/2+bottomrightx,  params.params.height+params.params.y-720/2+bottomrighty, bottomrightz, 1.0, 1.0],dtype=np.float32)"""
-        positions = np.array([[-params.params.width/2,-params.params.height/2,0.0],
-        [params.params.width/2,  -params.params.height/2, 0.0],
-        [params.params.width/2,  params.params.height/2, 0.0],
-        [-params.params.width/2,  -params.params.height/2, 0.0],
-        [-params.params.width/2,  params.params.height/2, 0.0],
-        [params.params.width/2,  params.params.height/2, 0.0]])
-        positions = Rotation.from_euler("xyz",(params.params.Xrotation,params.params.Yrotation,params.params.Zrotation),True).apply(positions)
+        positions = np.array([[-params.params.width()/2,-params.params.height()/2,0.0],
+        [params.params.width()/2,  -params.params.height()/2, 0.0],
+        [params.params.width()/2,  params.params.height()/2, 0.0],
+        [-params.params.width()/2,  -params.params.height()/2, 0.0],
+        [-params.params.width()/2,  params.params.height()/2, 0.0],
+        [params.params.width()/2,  params.params.height()/2, 0.0]])
+        positions = Rotation.from_euler("xyz",(params.params.Xrotation(),params.params.Yrotation(),params.params.Zrotation()),True).apply(positions)
         #print(positions)
         vertexes = np.array([
-             positions[0][0]-1280/2+params.params.x,  positions[0][1]-720/2+params.params.y, positions[0][2]+params.params.z, 0.0, 0.0,
-             positions[1][0]-1280/2+params.params.x,  positions[1][1]-720/2+params.params.y, positions[1][2]+params.params.z, 1.0, 0.0,
-             positions[2][0]-1280/2+params.params.x,  positions[2][1]-720/2+params.params.y, positions[2][2]+params.params.z, 1.0, 1.0,
-             positions[3][0]-1280/2+params.params.x,  positions[3][1]-720/2+params.params.y, positions[3][2]+params.params.z, 0.0, 0.0,
-             positions[4][0]-1280/2+params.params.x,  positions[4][1]-720/2+params.params.y, positions[4][2]+params.params.z, 0.0, 1.0,
-             positions[5][0]-1280/2+params.params.x,  positions[5][1]-720/2+params.params.y, positions[5][2]+params.params.z, 1.0, 1.0],dtype=np.float32)
+             positions[0][0]-1280/2+params.params.x(),  positions[0][1]-720/2+params.params.y(), positions[0][2]+params.params.z(), 0.0, 0.0,
+             positions[1][0]-1280/2+params.params.x(),  positions[1][1]-720/2+params.params.y(), positions[1][2]+params.params.z(), 1.0, 0.0,
+             positions[2][0]-1280/2+params.params.x(),  positions[2][1]-720/2+params.params.y(), positions[2][2]+params.params.z(), 1.0, 1.0,
+             positions[3][0]-1280/2+params.params.x(),  positions[3][1]-720/2+params.params.y(), positions[3][2]+params.params.z(), 0.0, 0.0,
+             positions[4][0]-1280/2+params.params.x(),  positions[4][1]-720/2+params.params.y(), positions[4][2]+params.params.z(), 0.0, 1.0,
+             positions[5][0]-1280/2+params.params.x(),  positions[5][1]-720/2+params.params.y(), positions[5][2]+params.params.z(), 1.0, 1.0],dtype=np.float32)
         if(not params.params.vao):
             #Create a pbo
-            params.params.width = size[0]
-            params.params.height = size[1]
+            params.params.width.set(size[0])
+            params.params.height.set(size[1])
             params.params.pbo = glGenBuffers(1)
             glBindBuffer(GL_PIXEL_UNPACK_BUFFER, params.params.pbo)
             glBufferData(GL_PIXEL_UNPACK_BUFFER, size[0]*size[1]*4,None, GL_STREAM_DRAW)
@@ -165,8 +166,8 @@ class Unholy():
             glBindVertexArray(0)
             params.params.lastsize = size
         elif params.params.lastsize[0] != size[0] or params.params.lastsize[1] != size[1]:
-            params.params.width = size[0]
-            params.params.height = size[1]
+            params.params.width.set(size[0])
+            params.params.height.set(size[1])
             glBindTexture(GL_TEXTURE_2D,0)
             #Delete the buffer
             glDeleteBuffers(1,[params.params.pbo])
@@ -216,11 +217,12 @@ class Unholy():
             glBindTexture(GL_TEXTURE_2D,0)
     def onupdate(self,imageparam,params,parentclass,keyframe):
         img = imageparam.function().image(imageparam.params,parentclass)
-        params.params.width = int(img.size[0]*params.params.relativewidth/100)
-        params.params.height = int(img.size[1]*params.params.relativeheight/100)
+        params.params.width.set(int(img.size[0]*params.params.relativewidth/100))
+        params.params.height.set(int(img.size[1]*params.params.relativeheight/100))
     def handle(keyframe,parentclass,params):
-        return [CzeViewportDraggableHandle(None,parentclass,ParamLink(params.params,"x"),ParamLink(params.params,"y"))]
+        return [CzeViewportDraggableHandle(None,parentclass,params.params.x,params.params.y)]
     def __str__(self):
         return self.name
+
 compositingfunctionsdropdown = [["Sound",SoundFile],["Unholy",Unholy]]
 #["Normal Media",ImageComposite],

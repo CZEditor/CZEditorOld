@@ -6,8 +6,8 @@ from typing import *
 class CzeViewportDraggableHandle(QGraphicsItem):
     def __init__(self,parent,parentclass,x,y):
         super().__init__(parent)
-        self.xlink = x
-        self.ylink = y
+        self.xproperty = x
+        self.yproperty = y
         self.parentclass = parentclass
         #self.setPos(self.x,self.y)
         
@@ -16,7 +16,7 @@ class CzeViewportDraggableHandle(QGraphicsItem):
         return QRectF(-4,-4,7,7)
     def paint(self, painter: QPainter, option, widget: Optional[QWidget] = ...) -> None:
         #print(self.params)
-        self.setPos(self.xlink()/1280*self.parentclass.picture.width(),self.ylink()/720*self.parentclass.picture.height())
+        self.setPos(self.xproperty()/1280*self.parentclass.picture.width(),self.yproperty()/720*self.parentclass.picture.height())
         painter.setPen(QPen(QColor(255,255,255),1))
         painter.drawEllipse(QRectF(-4,-4,7,7))
         #return super().paint(painter, option, widget)
@@ -27,9 +27,9 @@ class CzeViewportDraggableHandle(QGraphicsItem):
     def mouseMoveEvent(self, event:QGraphicsSceneMouseEvent) -> None:
         #print(event.buttons())
         if event.buttons() & Qt.MouseButton.LeftButton:
-            self.xlink.set(int(event.scenePos().x()/self.parentclass.picture.width()*1280))
-            self.ylink.set(int(event.scenePos().y()/self.parentclass.picture.height()*720))
-            self.setPos(self.xlink()/1280*self.parentclass.picture.width(),self.ylink()/720*self.parentclass.picture.height())
+            self.xproperty.set(int(event.scenePos().x()/self.parentclass.picture.width()*1280))
+            self.yproperty.set(int(event.scenePos().y()/self.parentclass.picture.height()*720))
+            self.setPos(self.xproperty()/1280*self.parentclass.picture.width(),self.yproperty()/720*self.parentclass.picture.height())
         event.accept()
         self.parentclass.updateviewportimage(self.parentclass.timestamp)
         self.parentclass.parentclass.updatekeyframeoptions()

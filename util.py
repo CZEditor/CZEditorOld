@@ -49,20 +49,20 @@ class Params(object):
     def iterate(self,toiterate:dict):
         out = {}
         for k,v in toiterate.items():
-            if isinstance(v,Params) or isinstance(v,Selectable):
-                out[k] = v.copy()
-            elif isinstance(v,list):
+            if isinstance(v,list):
                 out[k] = self.iteratelist(v)
+            elif hasattr(v,"copy"):
+                out[k] = v.copy()
             else:
                 out[k] = v
         return out
     def iteratelist(self,toiterate:list):
         out = []
         for v in toiterate:
-            if isinstance(v,Params) or isinstance(v,Selectable):
-                out.append(v.copy())
-            elif isinstance(v,list):
+            if isinstance(v,list):
                 out.append(self.iteratelist(v))
+            elif hasattr(v,"copy"):
+                out.append(v.copy())
             else:
                 out.append(v)
         return out
