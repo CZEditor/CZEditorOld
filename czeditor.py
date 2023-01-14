@@ -374,21 +374,22 @@ class CzeKeyframeOptionCategory(QRedDropDownFrame):
         self.params = params
         
         self.whole.insertWidget(0,QRedSelectableProperty(None,params.function,self.parentclass,self.rebuild))
-        self.iterate(self.params.params)
     def rebuild(self,name,index):
-        #print(vars(self))
         self.params.function.index = index
-        for i in range(self.widgets.rowCount()):
+        for i in range(self.widgets.count()):
             self.widgets.removeRow(0)
-        self.params.params = self.params.function().params.copy()
-        self.iterate(self.params.params)
+        
+        self.iterate(self.params.function().params.copy())
+        
         self.parentclass.updateviewport(self.parentclass.playbackframe)
     def changekeyframe(self,name,params):
+
         self.whole.removeWidget(self.whole.children()[0])
         self.whole.insertWidget(0,QRedSelectableProperty(None,params.function,self.parentclass,self.rebuild))
-        for i in range(self.widgets.rowCount()):
+        for i in range(self.widgets.count()):
             self.widgets.removeRow(0)
         self.params = params
+        
         self.iterate(self.params.params)
         self.parentclass.updateviewport(self.parentclass.playbackframe)
     def iterate(self,params):
@@ -499,7 +500,7 @@ class CzeKeyframeOptionCategoryList(QRedFrame):
         self.thelist.append(self.baseparam.copy())
         i = len(self.thelist)-1
         self.entries.append(CzeKeyframeOptionCategory(None,"expand/collapse",self.thelist[i],self.parentclass))
-        print([self.thelist[i].params],[self.baseparam.params])
+        #print([self.thelist[i].params],[self.baseparam.params])
         arow = QHBoxLayout()
         arow.addWidget(self.entries[i])
         arow.addWidget(QRedButton(None,"/\\",0,0,self.moveup,False,arow))
@@ -582,7 +583,7 @@ class CzeViewportDraggableBox(QGraphicsItem):
 rendered = None
 class CzeVideoView(QOpenGLWidget):
     def __init__(self,parentclass,parent=None):
-        print(parentclass,parent)
+        #print(parentclass,parent)
         super().__init__(parent)
         self.parentclass =parentclass
     def initializeGL(self):
@@ -737,7 +738,7 @@ class Window(QMainWindow):
         self.isplaying = False
         self.starttime = time()
         self.startframe = self.playbackframe
-        self.needtoupdate = False
+        self.needtoupdate = True
     def updateviewport(self,theframe):
         self.needtoupdate = True
         #self.viewport.update()
