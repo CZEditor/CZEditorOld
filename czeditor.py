@@ -220,8 +220,9 @@ class QRedSelectableProperty(QRedFrame):
             override = self.updateproperty
         self.param = param
         self.widgets = QHBoxLayout()
-        self.combobox = QRedComboBox(self,self.param.names,override)
+        self.combobox = QRedComboBox(self,self.param.names)
         self.combobox.setCurrentIndex(self.param.index)
+        self.combobox.onchange = override
         self.widgets.addWidget(self.combobox)
         
         self.setLayout(self.widgets)
@@ -376,7 +377,7 @@ class CzeKeyframeOptionCategory(QRedDropDownFrame):
         self.whole.insertWidget(0,QRedSelectableProperty(None,params.function,self.parentclass,self.rebuild))
     def rebuild(self,name,index):
         self.params.function.index = index
-        for i in range(self.widgets.count()):
+        for i in range(self.widgets.rowCount()):
             self.widgets.removeRow(0)
         self.params.params = self.params.function().params.copy()
         self.iterate(self.params.params)
@@ -385,11 +386,16 @@ class CzeKeyframeOptionCategory(QRedDropDownFrame):
     def updateParam(self):
         for i in range(self.widgets.rowCount()):
             self.widgets.itemAt(i,QFormLayout.FieldRole).widget().updateself()
-    def changekeyframe(self,name,params):
-
-        self.whole.removeWidget(self.whole.children()[0])
+            
+            
+            
+    def regenerate(self,params):
+        toremove = self.whole.itemAt(0).widget()
+        self.whole.removeItem(self.whole.itemAt(0))
+        toremove.setParent(None)
+        toremove.destroy()
         self.whole.insertWidget(0,QRedSelectableProperty(None,params.function,self.parentclass,self.rebuild))
-        for i in range(self.widgets.count()):
+        for i in range(self.widgets.rowCount()):
             self.widgets.removeRow(0)
         self.params = params
         
@@ -472,7 +478,14 @@ class CzeKeyframeOptionCategoryList(QRedFrame):
     def updateParam(self):
         for widget in self.entries:
             widget.updateParam()
-           
+    def regenerate(self,thelist,baseparam):
+        self.baseparam = baseparam
+        self.thelist = thelist
+        i = 0
+        
+        for element in thelist:
+            self.entries[i].regenerate(element)
+            i+=1
     def collapse(self):
         if self.collapsed:
             self.mainView.setMaximumHeight(9999)
@@ -560,7 +573,24 @@ class CzeKeyframeOptions(QRedScrollArea):
                 #    if isinstance(i,Params):
                 #        self.widgets.addWidget(CzeKeyframeOptionCategory(None,"Expand/Collapse",i))
                 #Add a + button here to add more entries
-
+    def iterateUpdate(self,params):
+        i = 0
+        for key in vars(params).keys():
+            param = params[key]
+            if isinstance(param,Params):
+                self.widgets.itemAt(i).widget().updateParam()
+            elif isinstance(param,list):
+                self.widgets.itemAt(i).widget().updateParam()
+            i += 1
+    def iterateRegenerate(self,params):
+        i = 0
+        for key in vars(params).keys():
+            param = params[key]
+            if isinstance(param,Params):
+                self.widgets.itemAt(i).widget().regenerate(param)
+            elif isinstance(param,list):
+                self.widgets.itemAt(i).widget().regenerate(param,baseparams[key])
+            i += 1
     def rebuild(self):
         if self.parentclass.selectedframe:
             self.params = self.parentclass.selectedframe.params
@@ -573,12 +603,17 @@ class CzeKeyframeOptions(QRedScrollArea):
     def update(self):
         if self.parentclass.selectedframe:
             self.params = self.parentclass.selectedframe.params
-            for i in range(self.widgets.count()):
-                self.widgets.itemAt(i).widget().updateParam()
+            self.iterateUpdate(self.params)
         else:
             for i in range(self.widgets.count()):
                 self.widgets.itemAt(0).widget().setParent(None)
-
+    def regenerate(self):
+        if self.parentclass.selectedframe:
+            self.params = self.parentclass.selectedframe.params
+            self.iterateRegenerate(self.params)
+        else:
+            for i in range(self.widgets.count()):
+                self.widgets.itemAt(0).widget().setParent(None)
 class CzeViewportDraggableBox(QGraphicsItem):
     def __init__(self,parent,parentclass,params,x,y):
         super().__init__(parent)
@@ -759,6 +794,8 @@ class Window(QMainWindow):
         #self.viewport.update()
     def updatekeyframeoptions(self):
         self.keyframeoptions.update()
+    def regeneratekeyframeoptions(self):
+        self.keyframeoptions.regenerate()
     def keyPressEvent(self, event: QKeyEvent) -> None:
         #print(event.text())
         if event.text() == " ":

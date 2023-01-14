@@ -174,7 +174,7 @@ class CzeTimeline(QWidget):
                         self.keyframes[self.parentclass.selectedframe].setBrush(self.coolgradient)
                     founditem.setBrush(self.selectedcoolgradient)
                     self.parentclass.selectedframe = founditem.data(0)
-                    self.parentclass.updatekeyframeoptions()
+                    self.parentclass.regeneratekeyframeoptions()
                     self.parentclass.viewport.updatehandles()
                 
             else:
