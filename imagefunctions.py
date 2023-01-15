@@ -5,8 +5,10 @@ from graphics import *
 #import ffmpeg
 from PySide6.QtCore import QByteArray,QBuffer,QIODevice
 import pyspng
+import pims
 import numpy as np
 from properties import *
+import os
 loadedimages = {}
 class NormalImage():
     name = "Image"
@@ -102,15 +104,27 @@ class ImageSequence():
         return self.name
     def gethashstring(self,param:Params,parentclass):
         return str(int(parentclass.playbackframe))+self.name+str(param)
-class FFMPEGInput():
-    name = "FFMPEG Input"
+class Video():
+    name = "Video"
     params = Params({
-        "path":""
+        "videopath":FileProperty(""),
+        "secrets":SecretProperty(Params({
+            "pimsobject":None,
+            "lastpath":""}))
     })
     def image(param:Params,parentclass):
-        return openimage(param.imagespath.replace("*",str(int(parentclass.playbackframe))))
+        #return Image.open(param.imagespath.replace("*",str(int(parentclass.playbackframe))))
+        secrets = param.secrets()
+        if(not os.path.exists(param.videopath())):
+            return np.array(emptyimage),(1,1)
+        if(param.videopath() != secrets.lastpath or secrets.pimsobject == None):
+            secrets.pimsobject = pims.PyAVReaderIndexed(param.videopath())
+            secrets.lastpath = param.videopath()
+        img = secrets.pimsobject[int(parentclass.playbackframe)]
+        img = np.pad(img,((0,0),(0,0),(0,1)),mode="constant",constant_values=255) # TODO : Maybe support alpha videos?
+        return img,(img.shape[1],img.shape[0])
     def __str__(self):
         return self.name
     def gethashstring(self,param:Params,parentclass):
         return str(int(parentclass.playbackframe))+self.name+str(param)
-imagefunctionsdropdown = [["Image",NormalImage],["Windows XP Error",XPError],["Filled Rectangle",FilledRectangle],["Sound",SoundFile],["Image Sequence",ImageSequence]]
+imagefunctionsdropdown = [["Image",NormalImage],["Windows XP Error",XPError],["Filled Rectangle",FilledRectangle],["Sound",SoundFile],["Image Sequence",ImageSequence],["Video",Video]]

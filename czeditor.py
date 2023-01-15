@@ -605,7 +605,7 @@ void main()
         glLoadIdentity()
         glUseProgram(self.shader)
         projection = QMatrix4x4()
-        projection.frustum(-1280/32,1280/32,720/32,-720/32,64,4096) # TODO : use a better projection that doesnt clip near Z
+        projection.frustum(-1280/32,1280/32,720/32,-720/32,64,4096)
         projection.translate(0,0,-1024)
         glUniformMatrix4fv(glGetUniformLocation(self.shader,"matrix"),1,GL_FALSE,np.array(projection.data(),dtype=np.float32))
         getviewportimage(self.parentclass.playbackframe,self.parentclass)
