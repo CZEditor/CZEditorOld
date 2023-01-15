@@ -12,14 +12,14 @@ class Keyframe():
         self.stateparams = param.states
         self.compositingparams = param.compositing
     def image(self,parentclass):
-        return self.imageparams.function().image(self.imageparams.params,parentclass)
+        return self.imageparams.function().image(self.imageparams.params,parentclass,parentclass.playbackframe-self.frame)
     def state(self, statetomodify):
         for stateparam in self.stateparams:
             statetomodify = stateparam.function().state(statetomodify,self,stateparam)
         return statetomodify
     def composite(self, image,parentclass=None):
         for compositingparam in self.compositingparams:
-            compositingparam.function().composite(image,compositingparam,parentclass,self)
+            compositingparam.function().composite(image,compositingparam,parentclass,self,parentclass.playbackframe-self.frame)
 class Keyframelist():
     def __init__(self):
         self.keyframes = []

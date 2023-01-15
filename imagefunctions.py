@@ -17,7 +17,7 @@ class NormalImage():
             "imagepath":FileProperty("")
         }
     )
-    def image(param:Params,parentclass):
+    def image(param:Params,parentclass,frame):
         path = param.imagepath()
         if(path in loadedimages):
             img = loadedimages[path]
@@ -45,14 +45,12 @@ class FilledRectangle():
             "color":[192,255,192,255]
         }
     )
-    def image(param:Params,parentclass):
+    def image(param:Params,parentclass,frame):
         #return CreateFilledRectangle((param.width,param.height),tuple(param.color))
         made = np.full((param.width(),param.height(),4),np.array(param.color,dtype=np.uint8))
         return made,(param.width(),param.height())
     def __str__(self):
         return self.name
-    def gethashstring(self,param:Params,parentclass):
-        return self.name+str(param)
 class XPError():
     name = "Windows XP Error"
     params = Params(
@@ -69,14 +67,12 @@ class XPError():
                 ["None",""]])
         }
     )
-    def image(param:Params,parentclass):
+    def image(param:Params,parentclass,frame):
         #fillindefaults(param,{"text":"","title":"","buttons":[],"buttonstyles":emptylist(0),"erroricon":Selectable(1,[["Critical Error","xp/Critical Error.png"],["Exclamation","xp/Exclamation.png"],["Information","xp/Information.png"],["Question","xp/Question.png"],["None",""]])})
         generated = CreateXPWindow(param)
         return np.array(generated),generated.size
     def __str__(self):
         return self.name
-    def gethashstring(self,param:Params,parentclass):
-        return self.name+str(param)
 class SoundFile():
     name = "Sound"
     params = Params(
@@ -84,26 +80,22 @@ class SoundFile():
             "path":""
         }
     )
-    def image(param:Params,parentclass):
+    def image(param:Params,parentclass,frame):
         return np.array(emptyimage),(1,1)
     def __str__(self):
         return self.name
-    def gethashstring(self,param:Params,parentclass):
-        return self.name+str(param)
 class ImageSequence():
     name = "Image Sequence"
     params = Params({
         "imagespath":FileProperty("")
     })
-    def image(param:Params,parentclass):
+    def image(param:Params,parentclass,frame):
         #return Image.open(param.imagespath.replace("*",str(int(parentclass.playbackframe))))
-        with open(param.imagespath().replace("*",str(int(parentclass.playbackframe))),"rb") as file:
+        with open(param.imagespath().replace("*",str(int(frame))),"rb") as file:
             img = pyspng.load(file.read())
         return img,(img.shape[1],img.shape[0])
     def __str__(self):
         return self.name
-    def gethashstring(self,param:Params,parentclass):
-        return str(int(parentclass.playbackframe))+self.name+str(param)
 class Video():
     name = "Video"
     params = Params({
@@ -112,7 +104,7 @@ class Video():
             "pimsobject":None,
             "lastpath":""}))
     })
-    def image(param:Params,parentclass):
+    def image(param:Params,parentclass,frame):
         #return Image.open(param.imagespath.replace("*",str(int(parentclass.playbackframe))))
         secrets = param.secrets()
         if(not os.path.exists(param.videopath())):
@@ -120,13 +112,11 @@ class Video():
         if(param.videopath() != secrets.lastpath or secrets.pimsobject == None):
             secrets.pimsobject = pims.PyAVReaderIndexed(param.videopath())
             secrets.lastpath = param.videopath()
-        if(parentclass.playbackframe >= len(secrets.pimsobject) or parentclass.playbackframe < 0):
+        if(frame >= len(secrets.pimsobject) or frame < 0):
             return np.array(emptyimage),(1,1)
-        img = secrets.pimsobject[int(parentclass.playbackframe)]
+        img = secrets.pimsobject[int(frame)]
         img = np.pad(img,((0,0),(0,0),(0,1)),mode="constant",constant_values=255) # TODO : Maybe support alpha videos?
         return img,(img.shape[1],img.shape[0])
     def __str__(self):
         return self.name
-    def gethashstring(self,param:Params,parentclass):
-        return str(int(parentclass.playbackframe))+self.name+str(param)
 imagefunctionsdropdown = [["Image",NormalImage],["Windows XP Error",XPError],["Filled Rectangle",FilledRectangle],["Sound",SoundFile],["Image Sequence",ImageSequence],["Video",Video]]

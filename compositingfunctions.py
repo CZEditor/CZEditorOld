@@ -51,7 +51,7 @@ class SoundFile():
             "lastplaying":False
         }))
     })
-    def composite(canvas,imagefunction,params,parentclass,keyframe):
+    def composite(canvas,imagefunction,params,parentclass,keyframe,frame):
         if(not parentclass.isplaying):
             if(params.params.secrets().lastplaying):
                 parentclass.player.pause()
@@ -87,8 +87,8 @@ class Unholy():
         }))
     })
     
-    def composite(imageparam,params,parentclass,keyframe):
-        img,size = imageparam.function().image(imageparam.params,parentclass)
+    def composite(imageparam,params,parentclass,keyframe,frame):
+        img,size = imageparam.function().image(imageparam.params,parentclass,frame)
         imgdata = img.flatten()
         """vertexes = np.array([
              params.params.x-1280/2,  params.params.y-720/2, sin(parentclass.playbackframe/10)/20, 0.0, 0.0,
