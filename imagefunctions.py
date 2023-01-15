@@ -12,17 +12,18 @@ class NormalImage():
     name = "Image"
     params = Params(
         {
-            "imagepath":StringProperty("")
+            "imagepath":FileProperty("")
         }
     )
     def image(param:Params,parentclass):
-        if(param.imagepath in loadedimages):
-            img = loadedimages[param.imagepath()]
+        path = param.imagepath()
+        if(path in loadedimages):
+            img = loadedimages[path]
             return img,(img.shape[1],img.shape[0])
         try:
-            with open(param.imagepath(),"rb") as file:
+            with open(path,"rb") as file:
                 img = pyspng.load(file.read())
-            loadedimages[param.imagepath()] = img
+            loadedimages[path] = img
             if(len(loadedimages.keys()) > 300):
                 del loadedimages[loadedimages.keys()[0]]
 
@@ -90,7 +91,7 @@ class SoundFile():
 class ImageSequence():
     name = "Image Sequence"
     params = Params({
-        "imagespath":StringProperty("")
+        "imagespath":FileProperty("")
     })
     def image(param:Params,parentclass):
         #return Image.open(param.imagespath.replace("*",str(int(parentclass.playbackframe))))

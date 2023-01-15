@@ -290,6 +290,7 @@ class CzeKeyframeOptionCategory(QRedDropDownFrame):
         self.params = params
         
         self.whole.insertWidget(0,QRedSelectableProperty(None,params.function,self.parentclass,self.rebuild))
+        self.iterate(self.params.params)
     def rebuild(self,name,index):
         self.params.function.index = index
         for i in range(self.widgets.rowCount()):
@@ -301,7 +302,7 @@ class CzeKeyframeOptionCategory(QRedDropDownFrame):
     def updateParam(self):
         for i in range(self.widgets.rowCount()):
             self.widgets.itemAt(i,QFormLayout.FieldRole).widget().updateself()
-            
+        
             
             
     def regenerate(self,params):
@@ -313,7 +314,6 @@ class CzeKeyframeOptionCategory(QRedDropDownFrame):
         for i in range(self.widgets.rowCount()):
             self.widgets.removeRow(0)
         self.params = params
-        
         self.iterate(self.params.params)
         self.parentclass.updateviewport(self.parentclass.playbackframe)
     def iterate(self,params):
@@ -457,7 +457,8 @@ class CzeKeyframeOptionCategoryList(QRedFrame):
                 self.widgets()"""
 class CzeKeyframeOptions(QRedScrollArea):
     def __init__(self,parent,parentclass):
-        self.params = keyframes[0].params
+        #self.params = keyframes[0].params
+        self.params = Params({})
         super().__init__(parent)
         self.parentclass = parentclass
         self.viewframe = QRedFrame(None)
@@ -476,9 +477,13 @@ class CzeKeyframeOptions(QRedScrollArea):
         #self.alayout.addWidget(self.viewframe)
         self.setWidgetResizable(True)
     def changeEvent(self, arg__1) -> None:
-        if(hasattr(self,"widgets")):
-            self.setMaximumWidth(self.widgets.contentsRect().width()+self.verticalScrollBar().width())
+        if(hasattr(self,"viewframe")):
+            self.setMaximumWidth(self.viewframe.contentsRect().width()+self.verticalScrollBar().width())
         return super().changeEvent(arg__1)
+    def resizeEvent(self, arg__1) -> None:
+        if(hasattr(self,"viewframe")):
+            self.setMaximumWidth(self.viewframe.contentsRect().width()+self.verticalScrollBar().width())
+        return super().resizeEvent(arg__1)
     def iterate(self,params):
         for key in vars(params).keys():
             param = params[key]
@@ -500,6 +505,10 @@ class CzeKeyframeOptions(QRedScrollArea):
                 self.widgets.itemAt(i).widget().updateParam()
             i += 1
     def iterateRegenerate(self,params):
+        if(self.widgets.count() == 0):
+            self.params = params
+            self.rebuild()
+            return
         i = 0
         for key in vars(params).keys():
             param = params[key]
@@ -508,6 +517,7 @@ class CzeKeyframeOptions(QRedScrollArea):
             elif isinstance(param,list):
                 self.widgets.itemAt(i).widget().regenerate(param,baseparams[key])
             i += 1
+        self.setMaximumWidth(self.viewframe.contentsRect().width()+self.verticalScrollBar().width())
     def rebuild(self):
         if self.parentclass.selectedframe:
             self.params = self.parentclass.selectedframe.params
@@ -517,6 +527,7 @@ class CzeKeyframeOptions(QRedScrollArea):
         else:
             for i in range(self.widgets.count()):
                 self.widgets.itemAt(0).widget().setParent(None)
+        self.setMaximumWidth(self.viewframe.contentsRect().width()+self.verticalScrollBar().width())
     def update(self):
         if self.parentclass.selectedframe:
             self.params = self.parentclass.selectedframe.params
@@ -531,6 +542,7 @@ class CzeKeyframeOptions(QRedScrollArea):
         else:
             for i in range(self.widgets.count()):
                 self.widgets.itemAt(0).widget().setParent(None)
+        self.setMaximumWidth(self.viewframe.contentsRect().width()+self.verticalScrollBar().width())
 class CzeViewportDraggableBox(QGraphicsItem):
     def __init__(self,parent,parentclass,params,x,y):
         super().__init__(parent)
@@ -561,8 +573,8 @@ uniform highp mat4 matrix;
 out vec2 fragmentColor;
 void main()
 {
-    gl_Position = round(matrix*vec4(vertexPos, 1.0)*256)/256;
-    //gl_Position = matrix*vec4(vertexPos, 1.0);
+    //gl_Position = round(matrix*vec4(vertexPos, 1.0)*256)/256;
+    gl_Position = matrix*vec4(vertexPos, 1.0);
     fragmentColor = vertexColor;
 }""",GL_VERTEX_SHADER),
 compileShader("""#version 330 core

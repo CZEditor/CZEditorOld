@@ -20,7 +20,6 @@ class Keyframe():
     def composite(self, image,parentclass=None):
         for compositingparam in self.compositingparams:
             compositingparam.function().composite(image,compositingparam,parentclass,self)
-
 class Keyframelist():
     def __init__(self):
         self.keyframes = []
@@ -103,15 +102,29 @@ class Keyframelist():
             return None
     def isin(self,keyframe:Keyframe) -> bool:
         return keyframe in self.keyframes
-
+    def create(self,frame:int):
+        print(Selectable(0,imagefunctionsdropdown)().params)
+        addedkeyframe = Keyframe(frame,Params(
+            {
+                "image":
+                {
+                    "function":Selectable(0,imagefunctionsdropdown),
+                    "params":Selectable(0,imagefunctionsdropdown)().params.copy()
+                },
+                "states":[],
+                "compositing":[]
+            }
+        ))
+        self.append(addedkeyframe)
+        return addedkeyframe
 
 keyframes = Keyframelist()
-keyframes.append(Keyframe(20,Params(
+"""keyframes.append(Keyframe(20,Params(
     {
         "image":
         {
             "function":Selectable(0,imagefunctionsdropdown),
-            "params":{"imagepath":StringProperty("editor/icondark.png")}
+            "params":{"imagepath":FileProperty("editor/icondark.png")}
         },
         "states":
         [
@@ -145,7 +158,7 @@ keyframes.append(Keyframe(20,Params(
                 }
             }
         ]
-    })))
+    })))"""
 """keyframes.append(Keyframe(40,Params(
     {
         "image":

@@ -4,20 +4,16 @@ from util import dummyfunction
 
 class QRedButton(QToolButton):
 
-    def __init__(self,parent,text,x,y,onpress = dummyfunction,argself = False,*args,**kwargs):
+    def __init__(self,parent,text,onpress = dummyfunction,*args,**kwargs):
         super().__init__(parent)
-        self.state = 0
         self.setText(text)
         self.pressedfunction = onpress
         self.pressed.connect(self.pressedevent)
-        self.move(x,y)
         self.args = args
         self.kwargs = kwargs
         self.setFixedHeight(24)
         self.setBaseSize(24,24)
         self.setStyleSheet("QToolButton { border-image:url(editor/Button.png) 3; border-width: 3; color: rgb(255,192,192);} QToolButton:hover {border-image:url(editor/Button Highlighted.png) 3; border-width: 3; color: rgb(255,192,192);} QToolButton:pressed {border-image:url(editor/Button Pressed.png) 3; border-width: 3;}")
-        if argself:
-            self.kwargs["callerButton"] = self
     def pressedevent(self):
         self.pressedfunction(*self.args,**self.kwargs)
 class QRedExpandableButton(QPushButton):

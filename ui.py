@@ -3,7 +3,7 @@ from PIL import Image
 from functools import cache
 from util import *
 from PySide6.QtWidgets import QWidget,QGraphicsScene,QGraphicsView,QGraphicsItem,QGraphicsRectItem,QGraphicsLineItem,QToolButton,QPushButton,QComboBox,QFrame,QSizePolicy,QScrollArea,QPlainTextEdit,QSpinBox,QLineEdit
-from PySide6.QtGui import QPen,QColor,QRadialGradient,QResizeEvent,QMouseEvent,QWheelEvent,QDrag,QDragEnterEvent,QDragLeaveEvent,QDragMoveEvent,QDropEvent,QTextOption
+from PySide6.QtGui import QPen,QColor,QRadialGradient,QResizeEvent,QMouseEvent,QWheelEvent,QDrag,QDragEnterEvent,QDragLeaveEvent,QDragMoveEvent,QDropEvent,QTextOption,QKeyEvent
 from PySide6.QtCore import QSize,Qt,QRectF,QPoint,QLine,QMimeData,Qt
 from keyframes import *
 from copy import deepcopy
@@ -179,7 +179,6 @@ class CzeTimeline(QWidget):
                         self.keyframes[self.parentclass.selectedframe].setBrush(self.coolgradient)
                     founditem.setBrush(self.selectedcoolgradient)
                     self.parentclass.selectedframe = founditem.data(0)
-                    print(self.parentclass.selectedframe.params.compositing[0])
                     self.parentclass.regeneratekeyframeoptions()
                     self.parentclass.viewport.updatehandles()
                 
@@ -262,6 +261,10 @@ class CzeTimeline(QWidget):
         boundingrect = self.graphicsview.mapToScene(self.graphicsview.viewport().geometry()).boundingRect()
         self.playbackcursor.setLine(QLine(playbackframe,boundingrect.top(),playbackframe,boundingrect.bottom()))
 
+    def keyPressEvent(self, event: QKeyEvent) -> None:
+        if event.text() == "k":
+            self.addKeyframe(keyframes.create(self.parentclass.playbackframe))
+        return super().keyPressEvent(event)
 
 class CzePresets(QWidget):
     coolgradient = QRadialGradient(50,50,90)
