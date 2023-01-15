@@ -20,6 +20,7 @@ from keyframes import *
 from time import time,perf_counter
 from ctypes import c_void_p
 from base_ui import *
+import pyaudio
 UIDropdownLists = [
     [NormalImage,XPError],
     [NormalKeyframe],
@@ -69,12 +70,22 @@ def getframeimage(i):
     image:Image = composite(state)
     return np.asarray(image.convert("RGB"))
 
-def getviewportimage(i,parentclass):
+def getstate(i,parentclass):
     global keyframes
     processedkeyframes = frameprocessor(i, keyframes)
-    state = stateprocessor(processedkeyframes)
+    return stateprocessor(processedkeyframes)
+
+def getviewportimage(state,parentclass):
     composite(state,parentclass)
     #return image
+def getsound(state,parentclass):
+    first = True
+    for keyframe in state:
+        if first:
+            buffer = keyframe.sound(parentclass)[0]
+            continue
+        buffer += keyframe.sound(parentclass)[0]
+    return buffer
 mpyconfig.FFMPEG_BINARY = "ffmpeg"
 def render(filename, length, keyframes):
 
@@ -576,6 +587,7 @@ class CzeVideoView(QOpenGLWidget):
     def __init__(self,parentclass,parent=None):
         #print(parentclass,parent)
         super().__init__(parent)
+        self.state = []
         self.parentclass =parentclass
     def initializeGL(self):
         #super().initializeGL(self)
@@ -622,7 +634,7 @@ void main()
         projection.frustum(-1280/32,1280/32,720/32,-720/32,64,4096)
         projection.translate(0,0,-1024)
         glUniformMatrix4fv(glGetUniformLocation(self.shader,"matrix"),1,GL_FALSE,np.array(projection.data(),dtype=np.float32))
-        getviewportimage(self.parentclass.playbackframe,self.parentclass)
+        getviewportimage(self.state,self.parentclass)
 
         rendered = glReadPixels(0,0,1280,720,GL_RGBA,GL_UNSIGNED_BYTE,None)
 
@@ -645,7 +657,7 @@ class CzeViewport(QWidget):
         self.infolabel.setStyleSheet("background: transparent;")
         self.parentclass = parentclass
         
-        self.updateviewportimage(self.timestamp)
+        self.updateviewportimage(getstate(self.parentclass.playbackframe,self.parentclass))
         self.picture = QPixmap(1280,720)
         #self.viewportimage = self.scene.addPixmap(QPixmap.fromImage(ImageQt.ImageQt(getviewportimage(self.timestamp,self.parentclass))))
         self.viewportimage = self.scene.addPixmap(self.picture)
@@ -663,8 +675,9 @@ class CzeViewport(QWidget):
         self.graphicsview.onscroll = self.scrollEvent
     def sizeHint(self):
         return QSize(1280,720)
-    def updateviewportimage(self,i):
+    def updateviewportimage(self,state):
         global rendered
+        self.videorenderer.state = state
         self.videorenderer.update()
         if(rendered):
             img = QImage(rendered,1280,720,QImage.Format_RGBA8888)
@@ -672,7 +685,6 @@ class CzeViewport(QWidget):
             self.picture = QPixmap.fromImage(img)
             #self.picture = self.picture.scaled(QSize(min(self.size().width(),1280),min(self.size().height(),720)),Qt.AspectRatioMode.KeepAspectRatio)
             self.viewportimage.setPixmap(self.picture)
-        self.timestamp = i
     def createhandle(self,keyframe,function,param):  #self , keyframe of the handle , function of the param , param itself
         #print(vars(function))
         if hasattr(function,"handle"):
@@ -693,7 +705,7 @@ class CzeViewport(QWidget):
 
 
     def resizeEvent(self, event:QResizeEvent) -> None:
-        self.updateviewportimage(self.timestamp)
+        self.updateviewportimage(getstate(self.parentclass.playbackframe,self.parentclass))
         self.graphicsview.setFixedSize(event.size())
         self.scene.setSceneRect(0,0,self.picture.width()-2,self.picture.height()-2)
         r = self.graphicsview.sceneRect()
@@ -755,9 +767,6 @@ class Window(QMainWindow):
     def __init__(self):
         super().__init__()
         self.playbackframe = 100
-        self.player = QMediaPlayer()
-        self.audio_output = QAudioOutput()
-        self.player.setAudioOutput(self.audio_output)
         self.setWindowTitle("fgdf")
         self.setGeometry(100,100,1280,720)
         #button = QRedButton(self,"yeah",4,4,lambda: print("pressed"))
@@ -782,6 +791,8 @@ class Window(QMainWindow):
         self.starttime = perf_counter()
         self.startframe = self.playbackframe
         self.needtoupdate = True
+        self.pyaudio = pyaudio.PyAudio()
+        self.stream = self.pyaudio.open(format=self.pyaudio.get_format_from_width(1),channels=1,rate=48000,output=True)
     def updateviewport(self,theframe):
         self.needtoupdate = True
         #self.viewport.update()
@@ -800,11 +811,15 @@ class Window(QMainWindow):
         
         if self.isplaying:
             self.playbackframe = self.startframe+int((perf_counter()-self.starttime)*60)
-            self.viewport.updateviewportimage(self.playbackframe)
+            state = getstate(self.playbackframe,self)
+            self.viewport.updateviewportimage(state)
+            sound = ((getsound(state,self)+1)/2*255).astype(np.int8)
+            #print(sound)
+            self.stream.write(sound)
             self.timeline.updateplaybackcursor(self.playbackframe)
             self.needtoupdate = False
         if self.needtoupdate:
-            self.viewport.updateviewportimage(self.playbackframe)
+            self.viewport.updateviewportimage(getstate(self.playbackframe,self))
             self.needtoupdate = False
         return super().timerEvent(event)
     def showInfo(self, text):

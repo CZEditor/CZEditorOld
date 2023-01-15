@@ -20,7 +20,16 @@ class Keyframe():
         return statetomodify
     def composite(self, image,parentclass=None):
         for compositingparam in self.compositingparams:
-            compositingparam.function().composite(image,compositingparam,parentclass,self,parentclass.playbackframe-self.frame)
+            if hasattr(compositingparam.function(),"composite"):
+                compositingparam.function().composite(image,compositingparam,parentclass,self,parentclass.playbackframe-self.frame)
+    def sound(self,parentclass):
+        if hasattr(self.imageparams.function(),"sound"):
+            source = self.imageparams.function().sound(self.imageparams.params,parentclass.playbackframe-self.frame)
+            for soundeffectparam in self.compositingparams:
+                if hasattr(soundeffectparam.function(),"soundeffect"):
+                    source = soundeffectparam.function().soundeffect(source,soundeffectparam,parentclass.playbackframe-self.frame)
+            return source
+        return np.array((0)),48000
 class Keyframelist():
     def __init__(self):
         self.keyframes = []

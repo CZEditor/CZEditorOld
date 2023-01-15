@@ -51,18 +51,8 @@ class SoundFile():
             "lastplaying":False
         }))
     })
-    def composite(source,params,parentclass,keyframe,frame):
-        """if(not parentclass.isplaying):
-            if(params.params.secrets().lastplaying):
-                parentclass.player.pause()
-            parentclass.player.setPosition(int(parentclass.playbackframe/60*1000))
-            parentclass.player.setSource(QUrl.fromLocalFile(keyframe.imageparams.params.path))
-            parentclass.audio_output.setVolume(float(params.params.volume))
-            params.params.secrets().lastplaying = False
-        elif(not params.params.lastplaying):
-            parentclass.player.play()
-            params.params.secrets().lastplaying = True"""
-        source.function().sound(source.params,frame)
+    def soundeffect(source,params,frame):
+        return source
     def __str__(self):
         return self.name
 class Unholy():

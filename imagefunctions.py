@@ -137,9 +137,19 @@ class Video():
         #print(secrets.avobject.streams.audio[0].duration)
         #print(frame/60/secrets.avobject.streams.audio[0].time_base)
         #secrets.avobject.seek(int(frame/60/secrets.avobject.streams.audio[0].time_base),any_frame=True)
-        for frame in secrets.avobject.decode(secrets.avobject.streams.audio[0]):
+        buffer = np.array([])
+        first = True
+        for audioframe in secrets.avobject.decode(secrets.avobject.streams.audio[0]):
             #print(frame.to_ndarray())
-            return np.array(frame.to_ndarray()),secrets.avobject.streams.audio[0]
+            #print(float(audioframe.pts*secrets.avobject.streams.audio[0].time_base))
+            if first:
+                buffer = np.append(buffer,audioframe.to_ndarray()[0])
+                first = False
+            if(audioframe.pts*secrets.avobject.streams.audio[0].time_base < frame/60):
+                buffer = np.append(buffer,audioframe.to_ndarray()[0])
+            else:
+                return buffer,secrets.avobject.streams.audio[0]
+        
     def __str__(self):
         return self.name
 imagefunctionsdropdown = [["Image",NormalImage],["Windows XP Error",XPError],["Filled Rectangle",FilledRectangle],["Sound",SoundFile],["Image Sequence",ImageSequence],["Video",Video]]
