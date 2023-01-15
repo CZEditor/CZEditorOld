@@ -120,6 +120,8 @@ class Video():
         if(param.videopath() != secrets.lastpath or secrets.pimsobject == None):
             secrets.pimsobject = pims.PyAVReaderIndexed(param.videopath())
             secrets.lastpath = param.videopath()
+        if(parentclass.playbackframe >= len(secrets.pimsobject) or parentclass.playbackframe < 0):
+            return np.array(emptyimage),(1,1)
         img = secrets.pimsobject[int(parentclass.playbackframe)]
         img = np.pad(img,((0,0),(0,0),(0,1)),mode="constant",constant_values=255) # TODO : Maybe support alpha videos?
         return img,(img.shape[1],img.shape[0])
