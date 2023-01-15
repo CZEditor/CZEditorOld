@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QToolButton,QPushButton,QSpinBox,QSizePolicy,QFrame,QPlainTextEdit,QLineEdit,QScrollArea,QComboBox
+from PySide6.QtWidgets import QToolButton,QPushButton,QSpinBox,QSizePolicy,QFrame,QPlainTextEdit,QLineEdit,QScrollArea,QComboBox,QDoubleSpinBox
 from PySide6.QtGui import QTextOption
 from util import dummyfunction
 
@@ -71,6 +71,25 @@ class QRedSpinBox(QSpinBox):
         self.valueChanged.connect(self.change)
     def change(self) -> None:
         self.onchange(self.value()) 
+    def setValueBypass(self, value):
+        self.blockSignals(True)
+        self.setValue(value)
+        self.blockSignals(False)
+class QRedDecimalSpinBox(QDoubleSpinBox):
+    def __init__(self,parent,onchange=dummyfunction):
+        super().__init__(parent)
+        self.onchange = onchange
+        self.setStyleSheet("border-image:url(editor/Text Box.png) 2; border-width:2;")
+        self.setMaximum(50000)
+        self.setMinimum(-50000)
+        self.setDecimals(3)
+        self.valueChanged.connect(self.change)
+    def change(self) -> None:
+        self.onchange(self.value()) 
+    def setValueBypass(self, value):
+        self.blockSignals(True)
+        self.setValue(value)
+        self.blockSignals(False)
 class QRedComboBox(QComboBox):
     def __init__(self,parent,elements=[],onchange=dummyfunction):
         super().__init__(parent)

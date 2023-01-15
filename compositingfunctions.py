@@ -71,8 +71,7 @@ class Unholy():
         "x":IntProperty(0),
         "y":IntProperty(0),
         "z":IntProperty(0),
-        "width":IntProperty(1280),
-        "height":IntProperty(720),
+        "size":SizeProperty(1280,720,1280,720),
         "Xrotation":IntProperty(0),
         "Yrotation":IntProperty(0),
         "Zrotation":IntProperty(0),
@@ -88,16 +87,16 @@ class Unholy():
     })
     
     def composite(imageparam,params,parentclass,keyframe,frame):
-        img:np.ndarray
+        width,height = params.params.size()
         img,size = imageparam.function().image(imageparam.params,parentclass,frame)
         imgdata = img.flatten()
         
-        positions = np.array([[-params.params.width()/2,-params.params.height()/2,0.0],
-        [params.params.width()/2,  -params.params.height()/2, 0.0],
-        [params.params.width()/2,  params.params.height()/2, 0.0],
-        [-params.params.width()/2,  -params.params.height()/2, 0.0],
-        [-params.params.width()/2,  params.params.height()/2, 0.0],
-        [params.params.width()/2,  params.params.height()/2, 0.0]])
+        positions = np.array([[-width/2,-height/2,0.0],
+        [width/2,  -height/2, 0.0],
+        [width/2,  height/2, 0.0],
+        [-width/2,  -height/2, 0.0],
+        [-width/2,  height/2, 0.0],
+        [width/2,  height/2, 0.0]])
         positions = Rotation.from_euler("xyz",(params.params.Xrotation(),params.params.Yrotation(),params.params.Zrotation()),True).apply(positions)
         secrets = params.params.secrets()
         #print(positions)
@@ -110,8 +109,7 @@ class Unholy():
              positions[5][0]-1280/2+params.params.x(),  positions[5][1]-720/2+params.params.y(), positions[5][2]+params.params.z(), 1.0, 1.0],dtype=np.float32)
         if(not secrets.vao):
             #Create a pbo
-            params.params.width.set(size[0])
-            params.params.height.set(size[1])
+            params.params.size.setbase(size)
             secrets.pbo = glGenBuffers(1)
             glBindBuffer(GL_PIXEL_UNPACK_BUFFER, secrets.pbo)
             CopyToBuffer(imgdata.ctypes.data,size[0]*size[1]*4)
@@ -137,8 +135,7 @@ class Unholy():
             glBindVertexArray(0)
             secrets.lastsize = size
         elif secrets.lastsize[0] != size[0] or secrets.lastsize[1] != size[1]:
-            params.params.width.set(size[0])
-            params.params.height.set(size[1])
+            params.params.size.setbase(size)
             glBindTexture(GL_TEXTURE_2D,0)
             #Delete the buffer
             glDeleteBuffers(1,[secrets.pbo])

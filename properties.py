@@ -71,3 +71,38 @@ class SecretProperty:
         self._val = value
     def set(self,value):
         self._val = value
+
+class SizeProperty():
+    def __init__(self,basewidth,baseheight,width,height):
+        self._basewidth = basewidth
+        self._baseheight = baseheight
+        self._width = width
+        self._height = height
+        self._relativewidth = width/basewidth
+        self._relativeheight = height/baseheight
+        
+    def copy(self):
+        return SizeProperty(self._basewidth,self._baseheight,self._width,self._height)
+    def __call__(self):
+        return self._width,self._height
+    def set(self,size):
+        self._width = size[0]
+        self._height = size[1]
+        self._relativewidth = size[0]/self._basewidth
+        self._relativeheight = size[1]/self._baseheight
+    def setrelative(self,size):
+        self._relativewidth = size[0]
+        self._relativeheight = size[1]
+        self._width = self._basewidth*size[0]
+        self._height = self._baseheight*size[1]
+    def setbase(self,size):
+        self._basewidth = size[0]
+        self._baseheight = size[1]
+        self._width = self._basewidth*self._relativewidth
+        self._height = self._baseheight*self._relativeheight
+    def width(self):
+        return self._width
+    def height(self):
+        return self._height
+    def widget(self):
+        return SizePropertyWidget(self)

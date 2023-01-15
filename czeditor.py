@@ -377,9 +377,11 @@ class CzeKeyframeOptionCategoryList(QRedFrame):
             self.entries.append(CzeKeyframeOptionCategory(None,"expand/collapse",self.thelist[i],parentclass))
             arow = QHBoxLayout()
             arow.addWidget(self.entries[i])
-            arow.addWidget(QRedButton(None,"/\\",0,0,self.moveup,False,arow))
-            arow.addWidget(QRedButton(None,"\\/",0,0,self.movedown,False,arow))
-            arow.addWidget(QRedButton(None,"-",0,0,self.remove,False,arow))
+            buttons = QVBoxLayout()
+            buttons.addWidget(QRedButton(None,"/\\",0,0,self.moveup,False,arow))
+            buttons.addWidget(QRedButton(None,"\\/",0,0,self.movedown,False,arow))
+            buttons.addWidget(QRedButton(None,"-",0,0,self.remove,False,arow))
+            arow.addLayout(buttons)
             self.widgets.addRow("",arow)
         self.withbuttons.addLayout(self.widgets,0,0)
         self.withbuttons.addLayout(self.widgetbuttons,0,1)
@@ -445,9 +447,11 @@ class CzeKeyframeOptionCategoryList(QRedFrame):
         #print([self.thelist[i].params],[self.baseparam.params])
         arow = QHBoxLayout()
         arow.addWidget(self.entries[i])
-        arow.addWidget(QRedButton(None,"/\\",0,0,self.moveup,False,arow))
-        arow.addWidget(QRedButton(None,"\\/",0,0,self.movedown,False,arow))
-        arow.addWidget(QRedButton(None,"-",0,0,self.remove,False,arow))
+        buttons = QVBoxLayout()
+        buttons.addWidget(QRedButton(None,"/\\",0,0,self.moveup,False,arow))
+        buttons.addWidget(QRedButton(None,"\\/",0,0,self.movedown,False,arow))
+        buttons.addWidget(QRedButton(None,"-",0,0,self.remove,False,arow))
+        arow.addLayout(buttons)
         self.widgets.addRow("button",arow)
         window.updateviewport(window.playbackframe)
 """class CzeKeyframeOptionCategoryList(QRedDropDownFrame):
@@ -478,11 +482,13 @@ class CzeKeyframeOptions(QRedScrollArea):
         self.viewframe.setLayout(self.widgets)
         self.widgets.setAlignment(Qt.AlignmentFlag.AlignTop)
         self.setWidget(self.viewframe)
-        self.setSizePolicy(QSizePolicy.Policy.Maximum,QSizePolicy.Policy.Preferred)
+        self.setSizePolicy(QSizePolicy.Policy.Maximum,QSizePolicy.Policy.Expanding)
         
         #self.widgets.setAlignment(Qt.AlignmentFlag.AlignTop)
         #self.alayout.addWidget(self.viewframe)
         self.setWidgetResizable(True)
+    def sizeHint(self):
+        return QSize(1280,250)
     def changeEvent(self, arg__1) -> None:
         if(hasattr(self,"viewframe")):
             self.setMaximumWidth(self.viewframe.contentsRect().width()+self.verticalScrollBar().width())
@@ -634,7 +640,9 @@ class CzeViewport(QWidget):
         self.graphicsview.verticalScrollBar().setMaximum(200000000)
         self.graphicsview.horizontalScrollBar().setMaximum(200000000)
         self.graphicsview.setScene(self.scene)
-        
+        self.infolabel = QLabel(self)
+        self.infolabel.raise_()
+        self.infolabel.setStyleSheet("background: transparent;")
         self.parentclass = parentclass
         
         self.updateviewportimage(self.timestamp)
@@ -645,7 +653,7 @@ class CzeViewport(QWidget):
         #self.thelayout = QHBoxLayout()
        # self.setLayout(self.thelayout)
         #self.setMaximumSize(1280,720)
-        self.setSizePolicy(QSizePolicy.Policy.Expanding,QSizePolicy.Policy.Ignored)
+        self.setSizePolicy(QSizePolicy.Policy.Expanding,QSizePolicy.Policy.Expanding)
         self.handles = []
         #self.startTimer(0.01,Qt.TimerType.PreciseTimer)
        # self.isplaying = False
@@ -653,6 +661,8 @@ class CzeViewport(QWidget):
         #self.scene.addItem(self.somehandle)
         self.graphicsview.onmove = self.mmoveEvent
         self.graphicsview.onscroll = self.scrollEvent
+    def sizeHint(self):
+        return QSize(1280,720)
     def updateviewportimage(self,i):
         global rendered
         self.videorenderer.update()
@@ -713,7 +723,7 @@ class CzeViewport(QWidget):
         r.setSize(self.size()/self.graphicsview.transform().m11())
         self.graphicsview.setSceneRect(r)"""
         oldpos = self.graphicsview.mapToScene(event.position().toPoint())
-        factor = 1.25
+        factor = 1.125
         self.graphicsview.setTransformationAnchor(QGraphicsView.ViewportAnchor.AnchorUnderMouse)
         
         self.graphicsview.scale((factor if event.angleDelta().y() > 0 else 1/factor),(factor if event.angleDelta().y() > 0 else 1/factor))
@@ -725,13 +735,16 @@ class CzeViewport(QWidget):
         self.graphicsview.setTransformationAnchor(QGraphicsView.ViewportAnchor.AnchorViewCenter)
         
         self.graphicsview.translate(delta.x(),delta.y())
+        self.showInfo(f"Scale: {round(self.graphicsview.transform().m11(),3)}")
         #self.viewportimage.setScale(self.viewportimage.scale()*scale)
         #thepos = QPoint(self.viewportimage.pos().x()+(self.viewportimage.pos().x()-oldpos.x())*(scale-1),self.viewportimage.pos().y()+(self.viewportimage.pos().y()-oldpos.y())*(scale-1))
         #self.viewportimage.setPos(thepos)
         #self.viewportimage.setTransformOriginPoint(self.viewportimage.scenePos())
 
-
-
+    def showInfo(self,text):
+        self.infolabel.setText(text)
+        #self.infolabel.setSizePolicy(QSizePolicy.Policy.Expanding,QSizePolicy.Policy.Expanding)
+        self.infolabel.setFixedSize(self.infolabel.sizeHint())
     
     #def paintEvent(self, event) -> None:
     #    painter = QPainter(self)
@@ -757,6 +770,7 @@ class Window(QMainWindow):
         self.viewport = CzeViewport(topsplitter,self)
         self.presets = CzePresets(topsplitter,self)
         self.timeline = CzeTimeline(hozsplitter,self)
+    
         self.selectedframe = None
         self.setCentralWidget(hozsplitter)
         self.show()
@@ -793,6 +807,8 @@ class Window(QMainWindow):
             self.viewport.updateviewportimage(self.playbackframe)
             self.needtoupdate = False
         return super().timerEvent(event)
+    def showInfo(self, text):
+        self.viewport.showInfo(text)
 app = QApplication([])
 window = Window()
 sys.exit(app.exec())

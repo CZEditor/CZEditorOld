@@ -113,7 +113,8 @@ class CzeTimeline(QWidget):
         self.keyframes = {}
         super().__init__(parent)
         self.parentclass = parentclass
-        self.setFixedHeight(150)
+        
+        #self.setSizePolicy(QSizePolicy.Policy.Preferred,QSizePolicy.Policy.Ignored)
         self.scene = QGraphicsScene(self)
         self.graphicsview = QGraphicsViewEvent(self)
         #self.graphicsview.setSceneRect(QRectF(0,0,200,2000))
@@ -146,7 +147,8 @@ class CzeTimeline(QWidget):
         self.graphicsview.dragenter = self.dragEnterEvent
         self.graphicsview.dragdrop = self.dropEvent
         self.graphicsview.dragmove = self.dragMoveEvent
-
+    def sizeHint(self):
+        return QSize(self.size().width(),150)
     def updateplaybackcursor(self,frame):
         boundingrect = self.graphicsview.mapToScene(self.graphicsview.viewport().geometry()).boundingRect()
         self.playbackcursor.setLine(QLine(frame,boundingrect.top(),frame,boundingrect.bottom()))
@@ -230,7 +232,7 @@ class CzeTimeline(QWidget):
         r = self.graphicsview.sceneRect()
         r.setSize(event.size()/self.graphicsview.transform().m11()+QSize(1000,1000))  #hacky workaround, if this wasnt here it would snap to 0,0 every time you shrinked the view by more than 1 pixel per frame
         self.graphicsview.setSceneRect(r)
-        self.graphicsview.setFixedSize(event.size())
+        #self.graphicsview.setFixedSize(event.size())
         r = self.graphicsview.sceneRect()
         r.setSize(event.size()/self.graphicsview.transform().m11())
         self.graphicsview.setSceneRect(r)
