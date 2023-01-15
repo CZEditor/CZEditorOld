@@ -265,6 +265,13 @@ class CzeTimeline(QWidget):
     def keyPressEvent(self, event: QKeyEvent) -> None:
         if event.text() == "k":
             self.addKeyframe(keyframes.create(self.parentclass.playbackframe))
+        elif event.key() == Qt.Key.Key_Delete:
+            self.scene.removeItem(self.keyframes[self.parentclass.selectedframe])
+            keyframes.remove(self.parentclass.selectedframe)
+            self.parentclass.selectedframe = None
+            self.parentclass.regeneratekeyframeoptions()
+            self.parentclass.viewport.updatehandles()
+            self.parentclass.updateviewport(self.parentclass.playbackframe)
         return super().keyPressEvent(event)
 
 class CzePresets(QWidget):

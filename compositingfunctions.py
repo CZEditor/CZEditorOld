@@ -2,7 +2,6 @@ from PIL import Image
 from util import ParamLink,Params
 from handles import CzeViewportDraggableHandle
 from PySide6.QtCore import QUrl
-from PySide6.QtGui import QOpenGLContext
 from OpenGL.GL import *
 from time import time
 import numpy as np

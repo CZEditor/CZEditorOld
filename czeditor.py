@@ -666,11 +666,12 @@ class CzeViewport(QWidget):
         for handle in self.handles:
             self.scene.removeItem(handle)
         self.handles = []
-        self.createhandle(self.parentclass.selectedframe,self.parentclass.selectedframe.params.image.function(),self.parentclass.selectedframe.params)
-        for param in self.parentclass.selectedframe.params.compositing:
-            self.createhandle(self.parentclass.selectedframe,param.function(),param)
-        for param in self.parentclass.selectedframe.params.states:
-            self.createhandle(self.parentclass.selectedframe,param.function(),param)
+        if(self.parentclass.selectedframe):
+            self.createhandle(self.parentclass.selectedframe,self.parentclass.selectedframe.params.image.function(),self.parentclass.selectedframe.params)
+            for param in self.parentclass.selectedframe.params.compositing:
+                self.createhandle(self.parentclass.selectedframe,param.function(),param)
+            for param in self.parentclass.selectedframe.params.states:
+                self.createhandle(self.parentclass.selectedframe,param.function(),param)
 
 
     def resizeEvent(self, event:QResizeEvent) -> None:
