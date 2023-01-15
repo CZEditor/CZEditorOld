@@ -103,7 +103,6 @@ class Keyframelist():
     def isin(self,keyframe:Keyframe) -> bool:
         return keyframe in self.keyframes
     def create(self,frame:int):
-        print(Selectable(0,imagefunctionsdropdown)().params)
         addedkeyframe = Keyframe(frame,Params(
             {
                 "image":
