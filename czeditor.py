@@ -17,10 +17,9 @@ from ui import *
 from typing import *
 import sys
 from keyframes import *
-from time import time
+from time import time,perf_counter
 from ctypes import c_void_p
 from base_ui import *
-
 UIDropdownLists = [
     [NormalImage,XPError],
     [NormalKeyframe],
@@ -619,8 +618,13 @@ class CzeViewport(QWidget):
         self.videorenderer = CzeVideoView(parentclass,self)
         self.timestamp = 100
         self.scene = QGraphicsScene(self)
-        self.graphicsview = QGraphicsView(self)
-        
+        self.graphicsview = QGraphicsViewEvent(self)
+        self.graphicsview.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.graphicsview.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.graphicsview.horizontalScrollBar().disconnect(self.graphicsview)
+        self.graphicsview.verticalScrollBar().disconnect(self.graphicsview)
+        self.graphicsview.verticalScrollBar().setMaximum(200000000)
+        self.graphicsview.horizontalScrollBar().setMaximum(200000000)
         self.graphicsview.setScene(self.scene)
         
         self.parentclass = parentclass
@@ -629,6 +633,7 @@ class CzeViewport(QWidget):
         self.picture = QPixmap(1280,720)
         #self.viewportimage = self.scene.addPixmap(QPixmap.fromImage(ImageQt.ImageQt(getviewportimage(self.timestamp,self.parentclass))))
         self.viewportimage = self.scene.addPixmap(self.picture)
+        
         #self.thelayout = QHBoxLayout()
        # self.setLayout(self.thelayout)
         #self.setMaximumSize(1280,720)
@@ -638,18 +643,16 @@ class CzeViewport(QWidget):
        # self.isplaying = False
         #self.somehandle = CzeViewportDraggableHandle(None,self,ParamLink(keyframes[0].params.compositing[0].params,"x"),ParamLink(keyframes[0].params.compositing[0].params,"y"))
         #self.scene.addItem(self.somehandle)
-    
+        self.graphicsview.onmove = self.mmoveEvent
+        self.graphicsview.onscroll = self.scrollEvent
     def updateviewportimage(self,i):
         global rendered
         self.videorenderer.update()
-        #image:Image.Image = getviewportimage(i,self.parentclass)
-        #image = image.resize(self.size().toTuple(),Image.Resampling.NEAREST)
-        #self.picture = QPixmap.fromImage(ImageQt.ImageQt(image))
         if(rendered):
             img = QImage(rendered,1280,720,QImage.Format_RGBA8888)
             img.mirror(False,True)
             self.picture = QPixmap.fromImage(img)
-            self.picture = self.picture.scaled(QSize(min(self.size().width(),1280),min(self.size().height(),720)),Qt.AspectRatioMode.KeepAspectRatio)
+            #self.picture = self.picture.scaled(QSize(min(self.size().width(),1280),min(self.size().height(),720)),Qt.AspectRatioMode.KeepAspectRatio)
             self.viewportimage.setPixmap(self.picture)
         self.timestamp = i
     def createhandle(self,keyframe,function,param):  #self , keyframe of the handle , function of the param , param itself
@@ -674,12 +677,49 @@ class CzeViewport(QWidget):
         self.updateviewportimage(self.timestamp)
         self.graphicsview.setFixedSize(event.size())
         self.scene.setSceneRect(0,0,self.picture.width()-2,self.picture.height()-2)
+        r = self.graphicsview.sceneRect()
+        r.setSize(self.size()/self.graphicsview.transform().m11()*1.25)
+        self.graphicsview.setSceneRect(r)
         #size = event.size()
         #croppedevent = QResizeEvent(QSize(min(size.width(),size.height()/self.picture.size().width()*self.picture.size().height()),min(size.height(),size.width()/self.picture.size().height()*self.picture.size().width())),event.oldSize())
         return super().resizeEvent(event)
 
-
-
+    def mmoveEvent(self, event:QMouseEvent,prevpos:QPoint) -> None:
+        
+        if event.buttons() & Qt.MouseButton.MiddleButton:
+            self.graphicsview.setTransformationAnchor(QGraphicsView.ViewportAnchor.AnchorUnderMouse)
+            delta = (event.pos()-prevpos)*(self.graphicsview.sceneRect().width()/self.size().width())
+            self.graphicsview.translate(delta.x(),delta.y())
+            #self.graphicsview.setTransform(self.graphicsview.transform().translate(delta.x(),delta.y()))
+        return super().mouseMoveEvent(event)
+    def scrollEvent(self, event:QWheelEvent):
+        """self.graphicsview.setTransformationAnchor(QGraphicsView.ViewportAnchor.AnchorUnderMouse)
+        oldpos = self.graphicsview.mapToScene(event.position().toPoint())
+        
+        factor = 1.05
+        scale = (factor if event.angleDelta().y() > 0 else 1/factor)
+        self.graphicsview.scale(scale,scale)
+        #self.graphicsview.setTransform(self.graphicsview.transform().translate(int((self.viewportimage.pos().x()-oldpos.x())*(scale-1)),int((self.viewportimage.pos().y()-oldpos.y())*(scale-1))))
+        r = self.graphicsview.sceneRect()
+        r.setSize(self.size()/self.graphicsview.transform().m11())
+        self.graphicsview.setSceneRect(r)"""
+        oldpos = self.graphicsview.mapToScene(event.position().toPoint())
+        factor = 1.25
+        self.graphicsview.setTransformationAnchor(QGraphicsView.ViewportAnchor.AnchorUnderMouse)
+        
+        self.graphicsview.scale((factor if event.angleDelta().y() > 0 else 1/factor),(factor if event.angleDelta().y() > 0 else 1/factor))
+        r = self.graphicsview.sceneRect()
+        r.setSize(self.size()/self.graphicsview.transform().m11()*factor)
+        self.graphicsview.setSceneRect(r)
+        newpos = self.graphicsview.mapToScene(event.position().toPoint())
+        delta = newpos-oldpos
+        self.graphicsview.setTransformationAnchor(QGraphicsView.ViewportAnchor.AnchorViewCenter)
+        
+        self.graphicsview.translate(delta.x(),delta.y())
+        #self.viewportimage.setScale(self.viewportimage.scale()*scale)
+        #thepos = QPoint(self.viewportimage.pos().x()+(self.viewportimage.pos().x()-oldpos.x())*(scale-1),self.viewportimage.pos().y()+(self.viewportimage.pos().y()-oldpos.y())*(scale-1))
+        #self.viewportimage.setPos(thepos)
+        #self.viewportimage.setTransformOriginPoint(self.viewportimage.scenePos())
 
 
 
@@ -713,9 +753,10 @@ class Window(QMainWindow):
         self.show()
         
         self.draggedpreset = None
-        self.startTimer(0.01,Qt.TimerType.PreciseTimer)
+        self.startTimer(0.016,Qt.TimerType.PreciseTimer)
+        self.lastframetime = perf_counter()
         self.isplaying = False
-        self.starttime = time()
+        self.starttime = perf_counter()
         self.startframe = self.playbackframe
         self.needtoupdate = True
     def updateviewport(self,theframe):
@@ -729,16 +770,17 @@ class Window(QMainWindow):
         #print(event.text())
         if event.text() == " ":
             self.isplaying = not self.isplaying
-            self.starttime = time()
+            self.starttime = perf_counter()
             self.startframe = self.playbackframe
         return super().keyPressEvent(event)
     def timerEvent(self, event: QTimerEvent) -> None:
+        
         if self.isplaying:
-            self.playbackframe = self.startframe+int((time()-self.starttime)*60)
+            self.playbackframe = self.startframe+int((perf_counter()-self.starttime)*60)
             self.viewport.updateviewportimage(self.playbackframe)
             self.timeline.updateplaybackcursor(self.playbackframe)
             self.needtoupdate = False
-        if(self.needtoupdate):
+        if self.needtoupdate:
             self.viewport.updateviewportimage(self.playbackframe)
             self.needtoupdate = False
         return super().timerEvent(event)

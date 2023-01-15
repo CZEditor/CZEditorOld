@@ -80,6 +80,7 @@ class QGraphicsViewEvent(QGraphicsView):
         return super().mouseReleaseEvent(event)
 
     def mouseMoveEvent(self, event:QMouseEvent) -> None:
+        
         self.onmove(event,self.previousmouse)
         #print(event)
         self.previousmouse = event.pos()
@@ -151,7 +152,7 @@ class CzeTimeline(QWidget):
     
     def mmoveEvent(self, event:QMouseEvent,prevpos:QPoint) -> None:
         if event.buttons() & Qt.MouseButton.MiddleButton:
-            delta = event.pos()-prevpos
+            delta = (event.pos()-prevpos)*(self.graphicsview.sceneRect().width()/self.size().width())
             self.graphicsview.translate(delta.x(),delta.y())
             boundingrect = self.graphicsview.mapToScene(self.graphicsview.viewport().geometry()).boundingRect()
             self.playbackcursor.setLine(QLine(playbackframe,boundingrect.top(),playbackframe,boundingrect.bottom()))
