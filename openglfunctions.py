@@ -1,10 +1,10 @@
 from OpenGL.GL import *
 from ctypes import c_void_p
-def CopyToBuffer(pointer:int,size:int):
-    glBufferData(GL_PIXEL_UNPACK_BUFFER, size,None, GL_STREAM_DRAW)
+def CopyToBuffer(pointer:int,maxlen:int):
+    glBufferData(GL_PIXEL_UNPACK_BUFFER, maxlen,None, GL_STREAM_DRAW)
     data = glMapBuffer(GL_PIXEL_UNPACK_BUFFER,GL_WRITE_ONLY)
-    array = (GLubyte*size).from_address(data)
-    ctypes.memmove(array,pointer,size)
+    array = (GLubyte*maxlen).from_address(data)
+    ctypes.memmove(array,pointer,maxlen)
     glUnmapBuffer(GL_PIXEL_UNPACK_BUFFER)
 
 def CreateTexture(pointer:int,size:tuple):
@@ -18,10 +18,10 @@ def CreateTexture(pointer:int,size:tuple):
     
     glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,size[0],size[1],0,GL_RGBA,GL_UNSIGNED_BYTE,c_void_p(pointer))
 
-def UpdateTextureWithBuffer(pointer:int,size:int):
-    glBufferData(GL_PIXEL_UNPACK_BUFFER, size, GL_STREAM_DRAW)
+def UpdateTextureWithBuffer(pointer:int,maxlen:int,size:tuple):
+    glBufferData(GL_PIXEL_UNPACK_BUFFER, maxlen, None, GL_STREAM_DRAW)
     data = glMapBuffer(GL_PIXEL_UNPACK_BUFFER,GL_WRITE_ONLY)
-    array = (GLubyte*size).from_address(data)
-    ctypes.memmove(array,pointer,size[0]*size[1]*4)
+    array = (GLubyte*maxlen).from_address(data)
+    ctypes.memmove(array,pointer,maxlen)
     glUnmapBuffer(GL_PIXEL_UNPACK_BUFFER)
     glTexSubImage2D(GL_TEXTURE_2D,0,0,0,size[0],size[1],GL_RGBA,GL_UNSIGNED_BYTE,c_void_p(0))

@@ -91,28 +91,7 @@ class Unholy():
         img:np.ndarray
         img,size = imageparam.function().image(imageparam.params,parentclass,frame)
         imgdata = img.flatten()
-        """vertexes = np.array([
-             params.params.x-1280/2,  params.params.y-720/2, sin(parentclass.playbackframe/10)/20, 0.0, 0.0,
-             params.params.width+params.params.x-1280/2,  params.params.y-720/2, sin(parentclass.playbackframe/11.9)/20, 1.0, 0.0,
-             params.params.width+params.params.x-1280/2,  params.params.height+params.params.y-720/2, cos(parentclass.playbackframe/12.5)/20, 1.0, 1.0,
-             params.params.x-1280/2,  params.params.y-720/2, sin(parentclass.playbackframe/10)/20, 0.0, 0.0,
-             params.params.x-1280/2,  params.params.height+params.params.y-720/2, cos(parentclass.playbackframe/13.1)/20, 0.0, 1.0,
-             params.params.width+params.params.x-1280/2,  params.params.height+params.params.y-720/2, cos(parentclass.playbackframe/12.5)/20, 1.0, 1.0],dtype=np.float32)"""
-        """def r():
-            return (random()-0.5)/64
-        topleftx = r()
-        toplefty = r()
-        topleftz = r()
-        bottomrightx = r()
-        bottomrighty = r()
-        bottomrightz = r()
-        vertexes = np.array([
-             params.params.x-1280/2+topleftx,  params.params.y-720/2+toplefty, topleftz, 0.0, 0.0,
-             params.params.width+params.params.x-1280/2+r(),  params.params.y-720/2+r(), r(), 1.0, 0.0,
-             params.params.width+params.params.x-1280/2+bottomrightx,  params.params.height+params.params.y-720/2+bottomrighty, bottomrightz, 1.0, 1.0,
-             params.params.x-1280/2+topleftx,  params.params.y-720/2+toplefty, topleftz, 0.0, 0.0,
-             params.params.x-1280/2+r(),  params.params.height+params.params.y-720/2+r(), r(), 0.0, 1.0,
-             params.params.width+params.params.x-1280/2+bottomrightx,  params.params.height+params.params.y-720/2+bottomrighty, bottomrightz, 1.0, 1.0],dtype=np.float32)"""
+        
         positions = np.array([[-params.params.width()/2,-params.params.height()/2,0.0],
         [params.params.width()/2,  -params.params.height()/2, 0.0],
         [params.params.width()/2,  params.params.height()/2, 0.0],
@@ -181,7 +160,7 @@ class Unholy():
             glBindBuffer(GL_ARRAY_BUFFER,0)
             glBindBuffer(GL_PIXEL_UNPACK_BUFFER, secrets.pbo)
             glBindTexture(GL_TEXTURE_2D,secrets.textureid)
-            UpdateTextureWithBuffer(imgdata.ctypes.data,size[0]*size[1]*4)
+            UpdateTextureWithBuffer(imgdata.ctypes.data,size[0]*size[1]*4,size)
             #glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,size[0],size[1],0,GL_RGBA,GL_UNSIGNED_BYTE,c_void_p(0))
             
             glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0)
@@ -206,3 +185,26 @@ class Unholy():
 
 compositingfunctionsdropdown = [["Sound",SoundFile],["Unholy",Unholy]]
 #["Normal Media",ImageComposite],
+
+"""vertexes = np.array([
+        params.params.x-1280/2,  params.params.y-720/2, sin(parentclass.playbackframe/10)/20, 0.0, 0.0,
+        params.params.width+params.params.x-1280/2,  params.params.y-720/2, sin(parentclass.playbackframe/11.9)/20, 1.0, 0.0,
+        params.params.width+params.params.x-1280/2,  params.params.height+params.params.y-720/2, cos(parentclass.playbackframe/12.5)/20, 1.0, 1.0,
+        params.params.x-1280/2,  params.params.y-720/2, sin(parentclass.playbackframe/10)/20, 0.0, 0.0,
+        params.params.x-1280/2,  params.params.height+params.params.y-720/2, cos(parentclass.playbackframe/13.1)/20, 0.0, 1.0,
+        params.params.width+params.params.x-1280/2,  params.params.height+params.params.y-720/2, cos(parentclass.playbackframe/12.5)/20, 1.0, 1.0],dtype=np.float32)"""
+"""
+r = lambda: (random()-0.5)/64
+topleftx = r()
+toplefty = r()
+topleftz = r()
+bottomrightx = r()
+bottomrighty = r()
+bottomrightz = r()
+vertexes = np.array([
+        params.params.x-1280/2+topleftx,  params.params.y-720/2+toplefty, topleftz, 0.0, 0.0,
+        params.params.width+params.params.x-1280/2+r(),  params.params.y-720/2+r(), r(), 1.0, 0.0,
+        params.params.width+params.params.x-1280/2+bottomrightx,  params.params.height+params.params.y-720/2+bottomrighty, bottomrightz, 1.0, 1.0,
+        params.params.x-1280/2+topleftx,  params.params.y-720/2+toplefty, topleftz, 0.0, 0.0,
+        params.params.x-1280/2+r(),  params.params.height+params.params.y-720/2+r(), r(), 0.0, 1.0,
+        params.params.width+params.params.x-1280/2+bottomrightx,  params.params.height+params.params.y-720/2+bottomrighty, bottomrightz, 1.0, 1.0],dtype=np.float32)"""

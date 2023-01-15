@@ -113,6 +113,7 @@ class CzeTimeline(QWidget):
         self.keyframes = {}
         super().__init__(parent)
         self.parentclass = parentclass
+        self.setFixedHeight(150)
         self.scene = QGraphicsScene(self)
         self.graphicsview = QGraphicsViewEvent(self)
         #self.graphicsview.setSceneRect(QRectF(0,0,200,2000))

@@ -11,6 +11,7 @@ class Keyframe():
         self.imageparams = param.image
         self.stateparams = param.states
         self.compositingparams = param.compositing
+        self.shared = Params({})
     def image(self,parentclass):
         return self.imageparams.function().image(self.imageparams.params,parentclass,parentclass.playbackframe-self.frame)
     def state(self, statetomodify):

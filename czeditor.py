@@ -358,12 +358,18 @@ class CzeKeyframeOptionCategoryList(QRedFrame):
         self.parentclass = parentclass
         self.baseparam = baseparam
         self.whole = QVBoxLayout(self)
+        self.whole.setSpacing(2)
+        self.whole.setContentsMargins(2,2,2,2)
         self.collapseButton = QRedExpandableButton(None,"expand",self.collapse)
         self.collapseButton.sizePolicy().setHorizontalPolicy(QSizePolicy.Policy.MinimumExpanding)
         self.collapseButton.setMinimumWidth(60)
         self.mainView = QRedFrame(self)
         self.withbuttons = QGridLayout()
+        self.withbuttons.setSpacing(2)
+        self.withbuttons.setContentsMargins(2,2,2,2)
         self.widgets = QFormLayout()
+        self.widgets.setSpacing(2)
+        self.widgets.setContentsMargins(2,2,2,2)
         self.thelist = thelist
         self.entries = []
         self.widgetbuttons = QGridLayout()
@@ -463,6 +469,8 @@ class CzeKeyframeOptions(QRedScrollArea):
         self.viewframe = QRedFrame(None)
         #self.alayout = QVBoxLayout()
         self.widgets = QVBoxLayout()
+        self.widgets.setSpacing(2)
+        self.widgets.setContentsMargins(2,2,2,2)
         #dropdo = QRedDropDownFrame(None,"yo")
         self.iterate(self.params)
         #dropdo2 = QRedDropDownListFrame(None)
