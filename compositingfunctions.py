@@ -10,6 +10,7 @@ from ctypes import c_void_p
 from random import random
 from scipy.spatial.transform import Rotation
 from properties import *
+from openglfunctions import *
 imagecache = {}
 """def cachecomposite(func,parentclass,width,height):
     global imagecache
@@ -87,6 +88,7 @@ class Unholy():
     })
     
     def composite(imageparam,params,parentclass,keyframe,frame):
+        img:np.ndarray
         img,size = imageparam.function().image(imageparam.params,parentclass,frame)
         imgdata = img.flatten()
         """vertexes = np.array([
@@ -133,25 +135,11 @@ class Unholy():
             params.params.height.set(size[1])
             secrets.pbo = glGenBuffers(1)
             glBindBuffer(GL_PIXEL_UNPACK_BUFFER, secrets.pbo)
-            glBufferData(GL_PIXEL_UNPACK_BUFFER, size[0]*size[1]*4,None, GL_STREAM_DRAW)
-            data = glMapBuffer(GL_PIXEL_UNPACK_BUFFER,GL_WRITE_ONLY)
-            array = (GLubyte*size[0]*size[1]*4).from_address(data)
-            ctypes.memmove(array,imgdata.ctypes.data,size[0]*size[1]*4)
-            glUnmapBuffer(GL_PIXEL_UNPACK_BUFFER)
+            CopyToBuffer(imgdata.ctypes.data,size[0]*size[1]*4)
             #Generate a texture
             secrets.textureid = glGenTextures(1)
-            glPixelStorei(GL_UNPACK_ALIGNMENT,1)
-            
             glBindTexture(GL_TEXTURE_2D,secrets.textureid)
-
-            glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST)
-            glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST)
-            glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_BORDER)
-            glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_BORDER)
-            glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_BASE_LEVEL,0)
-            glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAX_LEVEL,0)
-            
-            glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,size[0],size[1],0,GL_RGBA,GL_UNSIGNED_BYTE,c_void_p(0))
+            CreateTexture(0,size)
             glBindTexture(GL_TEXTURE_2D,0)
             glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0)
             #Generate a vertex array
@@ -178,17 +166,9 @@ class Unholy():
 
             #Make a new buffer
             secrets.pbo = glGenBuffers(1)
-            glPixelStorei(GL_UNPACK_ALIGNMENT,1)
             
             glBindTexture(GL_TEXTURE_2D,secrets.textureid)
-            glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST)
-            glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST)
-            glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_BORDER)
-            glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_BORDER)
-            glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_BASE_LEVEL,0)
-            glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAX_LEVEL,0)
-            
-            glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,size[0],size[1],0,GL_RGBA,GL_UNSIGNED_BYTE,c_void_p(0))
+            CreateTexture(0,size)
             glBindTexture(GL_TEXTURE_2D,0)
 
             glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0)
@@ -200,13 +180,8 @@ class Unholy():
             glBufferData(GL_ARRAY_BUFFER,np.array(vertexes,dtype=np.float32),GL_DYNAMIC_DRAW)
             glBindBuffer(GL_ARRAY_BUFFER,0)
             glBindBuffer(GL_PIXEL_UNPACK_BUFFER, secrets.pbo)
-            glBufferData(GL_PIXEL_UNPACK_BUFFER, size[0]*size[1]*4,None, GL_STREAM_DRAW)
             glBindTexture(GL_TEXTURE_2D,secrets.textureid)
-            data = glMapBuffer(GL_PIXEL_UNPACK_BUFFER,GL_WRITE_ONLY)
-            array = (GLubyte*size[0]*size[1]*4).from_address(data)
-            ctypes.memmove(array,imgdata.ctypes.data,size[0]*size[1]*4)
-            glUnmapBuffer(GL_PIXEL_UNPACK_BUFFER)
-            glTexSubImage2D(GL_TEXTURE_2D,0,0,0,size[0],size[1],GL_RGBA,GL_UNSIGNED_BYTE,c_void_p(0))
+            UpdateTextureWithBuffer(imgdata.ctypes.data,size[0]*size[1]*4)
             #glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,size[0],size[1],0,GL_RGBA,GL_UNSIGNED_BYTE,c_void_p(0))
             
             glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0)
