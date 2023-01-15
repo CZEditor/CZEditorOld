@@ -9,6 +9,8 @@ import pims
 import numpy as np
 from properties import *
 import os
+import av
+
 loadedimages = {}
 class NormalImage():
     name = "Image"
@@ -100,8 +102,11 @@ class Video():
     name = "Video"
     params = Params({
         "videopath":FileProperty(""),
+        "startframe":IntProperty(0),
         "secrets":SecretProperty(Params({
             "pimsobject":None,
+            "avobject":None,
+            "decodedaudio":None,
             "lastpath":""}))
     })
     def image(param:Params,parentclass,frame):
@@ -110,13 +115,31 @@ class Video():
         if(not os.path.exists(param.videopath())):
             return np.array(emptyimage),(1,1)
         if(param.videopath() != secrets.lastpath or secrets.pimsobject == None):
-            secrets.pimsobject = pims.PyAVReaderIndexed(param.videopath())
+            secrets.pimsobject = pims.PyAVVideoReader(param.videopath())
+            secrets.avobject = av.open(param.videopath())
             secrets.lastpath = param.videopath()
+        frame += param.startframe()
+        frame = int(frame/60*secrets.pimsobject.frame_rate)
         if(frame >= len(secrets.pimsobject) or frame < 0):
             return np.array(emptyimage),(1,1)
         img = secrets.pimsobject[int(frame)]
         img = np.pad(img,((0,0),(0,0),(0,1)),mode="constant",constant_values=255) # TODO : Maybe support alpha videos?
         return img,(img.shape[1],img.shape[0])
+    def sound(param:Params,frame):
+        secrets = param.secrets()
+        if(not os.path.exists(param.videopath())):
+            return np.array((0)),1
+        if(param.videopath() != secrets.lastpath or secrets.avobject == None):
+            secrets.pimsobject = pims.PyAVVideoReader(param.videopath())
+            secrets.avobject = av.open(param.videopath())
+            secrets.lastpath = param.videopath()
+        frame += param.startframe()
+        #print(secrets.avobject.streams.audio[0].duration)
+        #print(frame/60/secrets.avobject.streams.audio[0].time_base)
+        #secrets.avobject.seek(int(frame/60/secrets.avobject.streams.audio[0].time_base),any_frame=True)
+        for frame in secrets.avobject.decode(secrets.avobject.streams.audio[0]):
+            #print(frame.to_ndarray())
+            return np.array(frame.to_ndarray()),secrets.avobject.streams.audio[0]
     def __str__(self):
         return self.name
 imagefunctionsdropdown = [["Image",NormalImage],["Windows XP Error",XPError],["Filled Rectangle",FilledRectangle],["Sound",SoundFile],["Image Sequence",ImageSequence],["Video",Video]]

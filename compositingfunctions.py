@@ -46,13 +46,13 @@ class ImageComposite():
 class SoundFile():
     name = "Sound"
     params = Params({
-        "volume":50,
+        "volume":IntProperty(50),
         "secrets":SecretProperty(Params({
             "lastplaying":False
         }))
     })
-    def composite(canvas,imagefunction,params,parentclass,keyframe,frame):
-        if(not parentclass.isplaying):
+    def composite(source,params,parentclass,keyframe,frame):
+        """if(not parentclass.isplaying):
             if(params.params.secrets().lastplaying):
                 parentclass.player.pause()
             parentclass.player.setPosition(int(parentclass.playbackframe/60*1000))
@@ -61,8 +61,8 @@ class SoundFile():
             params.params.secrets().lastplaying = False
         elif(not params.params.lastplaying):
             parentclass.player.play()
-            params.params.secrets().lastplaying = True
-        return canvas
+            params.params.secrets().lastplaying = True"""
+        source.function().sound(source.params,frame)
     def __str__(self):
         return self.name
 class Unholy():
