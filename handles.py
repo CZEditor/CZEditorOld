@@ -16,7 +16,7 @@ class CzeViewportDraggableHandle(QGraphicsItem):
         return QRectF(-4,-4,7,7)
     def paint(self, painter: QPainter, option, widget: Optional[QWidget] = ...) -> None:
         #print(self.params)
-        self.setPos(self.xproperty()/1280*self.parentclass.picture.width(),self.yproperty()/720*self.parentclass.picture.height())
+        self.setPos(self.xproperty(),self.yproperty())
         painter.setPen(QPen(QColor(255,255,255),1))
         painter.drawEllipse(QRectF(-4,-4,7,7))
         #return super().paint(painter, option, widget)
@@ -27,15 +27,16 @@ class CzeViewportDraggableHandle(QGraphicsItem):
     def mouseMoveEvent(self, event:QGraphicsSceneMouseEvent) -> None:
         #print(event.buttons())
         if event.buttons() & Qt.MouseButton.LeftButton:
-            self.xproperty.set(int(event.scenePos().x()/self.parentclass.picture.width()*1280))
-            self.yproperty.set(int(event.scenePos().y()/self.parentclass.picture.height()*720))
-            self.setPos(self.xproperty()/1280*self.parentclass.picture.width(),self.yproperty()/720*self.parentclass.picture.height())
+            self.xproperty.set(int(event.scenePos().x()))
+            self.yproperty.set(int(event.scenePos().y()))
+            self.setPos(self.xproperty(),self.yproperty())
         event.accept()
-        self.parentclass.updateviewportimage(self.parentclass.timestamp)
-        self.parentclass.parentclass.updatekeyframeoptions()
+        self.parentclass.updateviewport()
+        self.parentclass.updatekeyframeoptions()
         #return super().mouseMoveEvent(event)
     def mouseReleaseEvent(self, event: QGraphicsSceneMouseEvent) -> None:
-        self.parentclass.updateviewportimage(self.parentclass.timestamp)
+        self.parentclass.updateviewport()
+        self.parentclass.updatekeyframeoptions()
         return super().mouseReleaseEvent(event)
 
 
@@ -52,7 +53,7 @@ class CzeViewportDraggableOffset(QGraphicsItem):
     def boundingRect(self) -> QRectF:
         return QRectF(-5,-5,9,9)
     def paint(self, painter, option, widget):
-        self.setPos((self.xlink())/1280*self.parentclass.picture.width(),(self.ylink())/720*self.parentclass.picture.height())
+        self.setPos(self.xlink(),self.ylink())
         painter.setPen(QPen(QColor(255,255,255),1))
         #draw ellipse at the end
         painter.drawEllipse(QRectF(-5,-5,9,9))
@@ -62,16 +63,19 @@ class CzeViewportDraggableOffset(QGraphicsItem):
         #return super().mousePressEvent(event)
     def mouseMoveEvent(self, event:QGraphicsSceneMouseEvent) -> None:
         if event.buttons() & Qt.MouseButton.LeftButton:
-            self.lengthx.set(self.lengthx()+int((event.scenePos().x()-event.lastScenePos().x())/self.parentclass.picture.width()*1280))
-            self.lengthy.set(self.lengthy()+int((event.scenePos().y()-event.lastScenePos().y())/self.parentclass.picture.height()*720))
-            self.setPos((self.xlink())/1280*self.parentclass.picture.width(),(self.ylink())/720*self.parentclass.picture.height())
-        self.parentclass.scene.update()
+            self.lengthx.set(self.lengthx()+int((event.scenePos().x()-event.lastScenePos().x())))
+            self.lengthy.set(self.lengthy()+int((event.scenePos().y()-event.lastScenePos().y())))
+            self.setPos(self.xlink(),self.ylink())
+        #self.parentclass.scene.update()
+        self.parentclass.updateviewport()
+        self.parentclass.updatekeyframeoptions()
         event.accept()
         #return super().mouseMoveEvent(event)
     def mouseReleaseEvent(self, event: QGraphicsSceneMouseEvent) -> None:
-        self.parentclass.updateviewportimage(self.parentclass.timestamp)
-        self.parentclass.update()
-        self.parentclass.scene.update()
+        self.parentclass.updateviewport()
+        self.parentclass.updatekeyframeoptions()
+        #self.parentclass.update()
+        #self.parentclass.scene.update()
         return super().mouseReleaseEvent(event)
     
 class CzeViewportDraggableOffsetLine(QGraphicsItem):
@@ -85,7 +89,7 @@ class CzeViewportDraggableOffsetLine(QGraphicsItem):
     def boundingRect(self) -> QRectF:
         return QRectF(0,0,self.lengthx(),self.lengthy())
     def paint(self, painter, option, widget):
-        self.setPos((self.xlink()-self.lengthx())/1280*self.parentclass.picture.width(),(self.ylink()-self.lengthy())/720*self.parentclass.picture.height())
+        self.setPos(self.xlink()-self.lengthx(),self.ylink()-self.lengthy())
         painter.setPen(QPen(QColor(255,255,255),1))
         painter.drawLine(self.boundingRect().topLeft(),self.boundingRect().bottomRight())
         

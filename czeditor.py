@@ -42,6 +42,8 @@ baseparams = Params({
     }
 })
 
+# TODO : Move these into the Window class
+
 def stateprocessor(keyframes):
     state = []
     for keyframe in keyframes:
@@ -81,13 +83,15 @@ def getviewportimage(state,parentclass):
     #return image
 def getsound(state,sample):
     first = True
-    buffer = np.zeros((1024,1))
+    buffer = np.zeros((1024,2))
     for keyframe in state:
-        if first:
-            buffer = keyframe.sound(sample)[0]
-            first = False
-            continue
-        buffer += keyframe.sound(sample)[0]
+        #if first:
+        #    buffer = keyframe.sound(sample)[0]
+        #    first = False
+        #    continue
+        gotten = keyframe.sound(sample)[0]
+        gotten = np.pad(gotten,((0,1024-gotten.shape[0]),(0,0)),"constant",constant_values=(0,0))
+        buffer += gotten
     return buffer
     
 mpyconfig.FFMPEG_BINARY = "ffmpeg"
@@ -598,7 +602,7 @@ class CzeVideoView(QOpenGLWidget):
         self.parentclass =parentclass
     def initializeGL(self):
         #super().initializeGL(self)
-        self.shader = compileProgram(compileShader("""#version 330 core
+        self.shader = compileProgram(compileShader("""#version 450 core
 layout (location=0) in vec3 vertexPos;
 layout (location=1) in vec2 vertexColor;
 uniform highp mat4 matrix;
@@ -609,7 +613,7 @@ void main()
     gl_Position = matrix*vec4(vertexPos, 1.0);
     fragmentColor = vertexColor;
 }""",GL_VERTEX_SHADER),
-compileShader("""#version 330 core
+compileShader("""#version 450 core
 in vec2 fragmentColor;
 uniform sampler2D image;
 out vec4 color;
@@ -695,7 +699,7 @@ class CzeViewport(QWidget):
     def createhandle(self,keyframe,function,param):  #self , keyframe of the handle , function of the param , param itself
         #print(vars(function))
         if hasattr(function,"handle"):
-            handles = function.handle(keyframe,self,param)
+            handles = function.handle(keyframe,self.parentclass,param)
             for handle in handles:
                 self.handles.append(handle)
                 self.scene.addItem(handle)
@@ -823,11 +827,7 @@ class Window(QMainWindow):
     def getnextsoundchunk(self,outdata,frames,time,status):
         if self.isplaying:
             try:
-                sond = getsound(self.currentframestate,self.playbacksample)
-                #print(sond)
-                #outdata[:] = np.zeros((1024,1))
-                outdata[:] = sond
-                
+                outdata[:] = getsound(self.currentframestate,self.playbacksample)
             except Exception:
                 traceback.print_exc()
                 outdata[:] = np.zeros((1024,1))

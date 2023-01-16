@@ -187,7 +187,7 @@ class CzeTimeline(QWidget):
                     self.parentclass.viewport.updatehandles()
                 
             else:
-                self.parentclass.playbackframe = self.graphicsview.mapToScene(event.pos().x(),0).x()
+                self.parentclass.seek(self.graphicsview.mapToScene(event.pos().x(),0).x())
                 self.updateplaybackcursor(self.graphicsview.mapToScene(event.pos().x(),0).x())
                 self.parentclass.updateviewport(self.parentclass.playbackframe)
                 if event.pos() == self.lastm1pos:
