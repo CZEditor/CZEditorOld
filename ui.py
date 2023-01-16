@@ -726,7 +726,7 @@ class CzeTimeline(QWidget):
         if event.text() == "k":
             self.addKeyframe(keyframes.create(self.parentclass.playbackframe))
         elif event.key() == Qt.Key.Key_Delete:
-            self.deleteKeyframeItems(self.parentclass.playbackframe)
+            self.deleteKeyframeItems(self.parentclass.selectedframe)
             self.scene.removeItem(self.keyframes[self.parentclass.selectedframe])
             keyframes.remove(self.parentclass.selectedframe)
             self.parentclass.selectedframe = None
