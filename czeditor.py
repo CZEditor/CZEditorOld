@@ -78,8 +78,9 @@ def getsound(state,sample):
     buffer = np.zeros((1024,2))
     for keyframe in state:
         gotten = keyframe.sound(sample)[0]
-        gotten = np.pad(gotten,((0,1024-gotten.shape[0]),(0,0)),"constant",constant_values=(0,0))
-        buffer += gotten
+        if(len(gotten.shape) != 0):
+            gotten = np.pad(gotten,((0,1024-gotten.shape[0]),(0,0)),"constant",constant_values=(0,0))
+            buffer += gotten
     return buffer
     
 mpyconfig.FFMPEG_BINARY = "ffmpeg"
@@ -313,7 +314,7 @@ class Window(QMainWindow):
         self.stream = sounddevice.OutputStream(channels=2,samplerate=48000,blocksize=1024,callback=self.getnextsoundchunk)
         self.stream.start()
         self.playbacksample = int(self.playbackframe/60*48000)
-    def updateviewport(self,theframe):
+    def updateviewport(self):
         self.needtoupdate = True
         #self.viewport.update()
     def updatekeyframeoptions(self):

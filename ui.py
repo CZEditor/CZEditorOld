@@ -75,7 +75,7 @@ class QRedSelectableProperty(QRedFrame):
     def updateproperty(self,name,index):
         #print("setting:",value)
         self.param.index = index
-        self.parentclass.updateviewport(self.parentclass.playbackframe)
+        self.parentclass.updateviewport()
 
     def updateself(self):
         self.combobox.onchange = dummyfunction
@@ -98,13 +98,13 @@ class QRedTextEntryListProperty(QRedFrame):
     def updateproperty(self,value:str):
         #print("setting:",value)
         self.param[self.index] = value
-        self.parentclass.updateviewport(self.parentclass.playbackframe)
+        self.parentclass.updateviewport()
 
     def updateself(self):
         self.textbox.onchange = dummyfunction
         self.textbox.setText(self.param[self.index])
         self.textbox.onchange = self.updateproperty
-        self.parentclass.updateviewport(self.parentclass.playbackframe)
+        self.parentclass.updateviewport()
 
 class QRedTextListProperty(QRedFrame):
     def __init__(self,parent,thelist,parentclass):
@@ -235,7 +235,7 @@ class CzeKeyframeOptionCategory(QRedDropDownFrame):
         self.params.params = self.params.function().params.copy()
         self.iterate(self.params.params)
         
-        self.parentclass.updateviewport(self.parentclass.playbackframe)
+        self.parentclass.updateviewport()
 
     def updateParam(self):
         for i in range(self.widgets.rowCount()):
@@ -251,7 +251,7 @@ class CzeKeyframeOptionCategory(QRedDropDownFrame):
             self.widgets.removeRow(0)
         self.params = params
         self.iterate(self.params.params)
-        self.parentclass.updateviewport(self.parentclass.playbackframe)
+        self.parentclass.updateviewport()
 
     def iterate(self,params):
         for key in vars(params).keys():     
@@ -587,7 +587,7 @@ class CzeTimeline(QWidget):
         if self.draggedframe and self.graphicsview.geometry().contains(event.pos()):
             keyframes.setframe(self.draggedframe,int(self.graphicsview.mapToScene(event.pos().x(),0).x()))
             self.keyframes[self.draggedframe].setPos(self.draggedframe.frame,0)
-            self.parentclass.updateviewport(self.parentclass.playbackframe)
+            self.parentclass.updateviewport()
         return super().mouseMoveEvent(event)
     
     def pressEvent(self, event:QMouseEvent) -> None:
@@ -614,7 +614,7 @@ class CzeTimeline(QWidget):
             else:
                 self.parentclass.seek(self.graphicsview.mapToScene(event.pos().x(),0).x())
                 self.updateplaybackcursor(self.graphicsview.mapToScene(event.pos().x(),0).x())
-                self.parentclass.updateviewport(self.parentclass.playbackframe)
+                self.parentclass.updateviewport()
                 if event.pos() == self.lastm1pos:
                     
                     if self.parentclass.selectedframe:
@@ -647,7 +647,7 @@ class CzeTimeline(QWidget):
                 keyframes.setframe(self.draggedframe,int(self.graphicsview.mapToScene(event.pos().x(),0).x()))
                 self.keyframes[self.draggedframe].setPos(self.draggedframe.frame,0)
                 self.draggedframe = None
-                self.parentclass.updateviewport(self.parentclass.playbackframe)
+                self.parentclass.updateviewport()
         return super().mouseReleaseEvent(event)
     
         #return super().mouseReleaseEvent(event)
@@ -699,7 +699,7 @@ class CzeTimeline(QWidget):
             self.parentclass.selectedframe = None
             self.parentclass.regeneratekeyframeoptions()
             self.parentclass.viewport.updatehandles()
-            self.parentclass.updateviewport(self.parentclass.playbackframe)
+            self.parentclass.updateviewport()
         return super().keyPressEvent(event)
 
 class CzePresets(QWidget):
