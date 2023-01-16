@@ -22,12 +22,12 @@ class Keyframe():
         for compositingparam in self.compositingparams:
             if hasattr(compositingparam.function(),"composite"):
                 compositingparam.function().composite(image,compositingparam,parentclass,self,parentclass.playbackframe-self.frame)
-    def sound(self,parentclass):
+    def sound(self,sample):
         if hasattr(self.imageparams.function(),"sound"):
-            source = self.imageparams.function().sound(self.imageparams.params,parentclass.playbackframe-self.frame)
+            source = self.imageparams.function().sound(self.imageparams.params,sample-int(self.frame/60*48000))
             for soundeffectparam in self.compositingparams:
                 if hasattr(soundeffectparam.function(),"soundeffect"):
-                    source = soundeffectparam.function().soundeffect(source,soundeffectparam,parentclass.playbackframe-self.frame)
+                    source = soundeffectparam.function().soundeffect(source,soundeffectparam,sample-int(self.frame/60*48000))
             return source
         return np.array((0)),48000
 class Keyframelist():

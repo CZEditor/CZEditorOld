@@ -9,7 +9,7 @@ import pims
 import numpy as np
 from properties import *
 import os
-import av
+from moviepy.editor import AudioFileClip
 
 loadedimages = {}
 class NormalImage():
@@ -105,7 +105,7 @@ class Video():
         "startframe":IntProperty(0),
         "secrets":SecretProperty(Params({
             "pimsobject":None,
-            "avobject":None,
+            "moviepyobject":None,
             "decodedaudio":None,
             "lastpath":""}))
     })
@@ -116,7 +116,7 @@ class Video():
             return np.array(emptyimage),(1,1)
         if(param.videopath() != secrets.lastpath or secrets.pimsobject == None):
             secrets.pimsobject = pims.PyAVVideoReader(param.videopath())
-            secrets.avobject = av.open(param.videopath())
+            secrets.moviepyobject = AudioFileClip(param.videopath(),nbytes=2,fps=48000)
             secrets.lastpath = param.videopath()
         frame += param.startframe()
         frame = int(frame/60*secrets.pimsobject.frame_rate)
@@ -125,30 +125,38 @@ class Video():
         img = secrets.pimsobject[int(frame)]
         img = np.pad(img,((0,0),(0,0),(0,1)),mode="constant",constant_values=255) # TODO : Maybe support alpha videos?
         return img,(img.shape[1],img.shape[0])
-    def sound(param:Params,frame):
+    def sound(param:Params,sample):
         secrets = param.secrets()
         if(not os.path.exists(param.videopath())):
             return np.array((0)),1
-        if(param.videopath() != secrets.lastpath or secrets.avobject == None):
+        if(param.videopath() != secrets.lastpath or secrets.moviepyobject == None):
             secrets.pimsobject = pims.PyAVVideoReader(param.videopath())
-            secrets.avobject = av.open(param.videopath())
+            secrets.moviepyobject = AudioFileClip(param.videopath(),nbytes=2,fps=48000)
             secrets.lastpath = param.videopath()
-        frame += param.startframe()
+        sample += int(param.startframe()/60*secrets.moviepyobject.fps)
+        if secrets.moviepyobject.reader.pos != sample:
+            secrets.moviepyobject.reader.seek(sample)
+            secrets.moviepyobject.reader.pos = sample
+        chunk = secrets.moviepyobject.reader.read_chunk(1024)
+        return chunk,secrets.moviepyobject.fps
+        #print(chunk)
+        #print(sample,secrets.moviepyobject.reader.pos,secrets.moviepyobject.reader.nframes)
+        
         #print(secrets.avobject.streams.audio[0].duration)
         #print(frame/60/secrets.avobject.streams.audio[0].time_base)
         #secrets.avobject.seek(int(frame/60/secrets.avobject.streams.audio[0].time_base),any_frame=True)
-        buffer = np.array([])
-        first = True
-        for audioframe in secrets.avobject.decode(secrets.avobject.streams.audio[0]):
+        #buffer = np.array([])
+        #first = True
+        #for audioframe in secrets.avobject.decode(secrets.avobject.streams.audio[0]):
             #print(frame.to_ndarray())
             #print(float(audioframe.pts*secrets.avobject.streams.audio[0].time_base))
-            if first:
-                buffer = np.append(buffer,audioframe.to_ndarray()[0])
-                first = False
-            if(audioframe.pts*secrets.avobject.streams.audio[0].time_base < frame/60):
-                buffer = np.append(buffer,audioframe.to_ndarray()[0])
-            else:
-                return buffer,secrets.avobject.streams.audio[0]
+            #if first:
+            #    buffer = np.append(buffer,audioframe.to_ndarray()[0])
+            #    first = False
+            #if(audioframe.pts*secrets.avobject.streams.audio[0].time_base < (frame+1)/60):
+            #    buffer = np.append(buffer,audioframe.to_ndarray()[0])
+            #else:
+            #return audioframe.to_ndarray()[0],secrets.avobject.streams.audio[0]
         
     def __str__(self):
         return self.name

@@ -20,7 +20,8 @@ from keyframes import *
 from time import time,perf_counter
 from ctypes import c_void_p
 from base_ui import *
-import pyaudio
+import sounddevice
+import traceback
 UIDropdownLists = [
     [NormalImage,XPError],
     [NormalKeyframe],
@@ -78,14 +79,17 @@ def getstate(i,parentclass):
 def getviewportimage(state,parentclass):
     composite(state,parentclass)
     #return image
-def getsound(state,parentclass):
+def getsound(state,sample):
     first = True
+    buffer = np.zeros((1024,1))
     for keyframe in state:
         if first:
-            buffer = keyframe.sound(parentclass)[0]
+            buffer = keyframe.sound(sample)[0]
+            first = False
             continue
-        buffer += keyframe.sound(parentclass)[0]
+        buffer += keyframe.sound(sample)[0]
     return buffer
+    
 mpyconfig.FFMPEG_BINARY = "ffmpeg"
 def render(filename, length, keyframes):
 
@@ -96,6 +100,9 @@ def render(filename, length, keyframes):
 #render("video.mp4", 150, keyframes)
 def dummyfunction(*args,**kwargs):
     pass
+
+
+
 
 class QRedTextProperty(QRedFrame):
     def __init__(self,parent,param:Params,index,parentclass):
@@ -791,8 +798,14 @@ class Window(QMainWindow):
         self.starttime = perf_counter()
         self.startframe = self.playbackframe
         self.needtoupdate = True
-        self.pyaudio = pyaudio.PyAudio()
-        self.stream = self.pyaudio.open(format=self.pyaudio.get_format_from_width(1),channels=1,rate=48000,output=True)
+        self.currentframestate = []
+        #self.stream = self.pyaudio.open(format=self.pyaudio.get_format_from_width(1),channels=1,rate=48000,output=True)
+        sounddevice.default.samplerate = 48000
+        sounddevice.default.channels = 1
+        sounddevice.play(np.zeros(1024))
+        self.stream = sounddevice.OutputStream(channels=2,samplerate=48000,blocksize=1024,callback=self.getnextsoundchunk)
+        self.stream.start()
+        self.playbacksample = int(self.playbackframe/60*48000)
     def updateviewport(self,theframe):
         self.needtoupdate = True
         #self.viewport.update()
@@ -807,15 +820,30 @@ class Window(QMainWindow):
             self.starttime = perf_counter()
             self.startframe = self.playbackframe
         return super().keyPressEvent(event)
+    def getnextsoundchunk(self,outdata,frames,time,status):
+        if self.isplaying:
+            try:
+                sond = getsound(self.currentframestate,self.playbacksample)
+                #print(sond)
+                #outdata[:] = np.zeros((1024,1))
+                outdata[:] = sond
+                
+            except Exception:
+                traceback.print_exc()
+                outdata[:] = np.zeros((1024,1))
+            self.playbacksample += 1024
+        else:
+            outdata[:] = np.zeros((1024,1))
+            self.playbacksample = int(self.playbackframe/60*48000)
+    def seek(self,frame):
+        self.playbackframe = frame
+        self.playbacksample = int(frame/60*48000)
     def timerEvent(self, event: QTimerEvent) -> None:
         
         if self.isplaying:
             self.playbackframe = self.startframe+int((perf_counter()-self.starttime)*60)
-            state = getstate(self.playbackframe,self)
-            self.viewport.updateviewportimage(state)
-            sound = ((getsound(state,self)+1)/2*255).astype(np.int8)
-            #print(sound)
-            self.stream.write(sound)
+            self.currentframestate = getstate(self.playbackframe,self)
+            self.viewport.updateviewportimage(self.currentframestate)
             self.timeline.updateplaybackcursor(self.playbackframe)
             self.needtoupdate = False
         if self.needtoupdate:

@@ -51,7 +51,7 @@ class SoundFile():
             "lastplaying":False
         }))
     })
-    def soundeffect(source,params,frame):
+    def soundeffect(source,params,sample):
         return source
     def __str__(self):
         return self.name
