@@ -2,11 +2,12 @@ from generate import *
 from PIL import Image
 from functools import cache
 from util import *
-from PySide6.QtWidgets import QWidget,QGraphicsScene,QGraphicsView,QGraphicsItem,QGraphicsRectItem,QGraphicsLineItem,QToolButton,QPushButton,QComboBox,QFrame,QSizePolicy,QScrollArea,QPlainTextEdit,QSpinBox,QLineEdit
+from PySide6.QtWidgets import QWidget,QGraphicsScene,QGraphicsView,QGraphicsItem,QGraphicsRectItem,QGraphicsLineItem,QToolButton,QPushButton,QComboBox,QFrame,QSizePolicy,QScrollArea,QPlainTextEdit,QSpinBox,QLineEdit,QFormLayout
 from PySide6.QtGui import QPen,QColor,QRadialGradient,QResizeEvent,QMouseEvent,QWheelEvent,QDrag,QDragEnterEvent,QDragLeaveEvent,QDragMoveEvent,QDropEvent,QTextOption,QKeyEvent
 from PySide6.QtCore import QSize,Qt,QRectF,QPoint,QLine,QMimeData,Qt
 from keyframes import *
 from copy import deepcopy
+from base_ui import *
 playbackframe = 100
 
 def updateplaybackframe(frame):
@@ -55,6 +56,430 @@ def CreateRedTab(text,active=True):
 
 
 
+class QRedSelectableProperty(QRedFrame):
+    def __init__(self,parent,param:Selectable,parentclass,override=None):
+        super().__init__(parent)
+        self.parentclass = parentclass
+        if override==None:
+            override = self.updateproperty
+        self.param = param
+        self.widgets = QHBoxLayout()
+        self.combobox = QRedComboBox(self,self.param.names)
+        self.combobox.setCurrentIndex(self.param.index)
+        self.combobox.onchange = override
+        self.widgets.addWidget(self.combobox)
+        
+        self.setLayout(self.widgets)
+        self.setStyleSheet("border-width:0px;")
+
+    def updateproperty(self,name,index):
+        #print("setting:",value)
+        self.param.index = index
+        self.parentclass.updateviewport(self.parentclass.playbackframe)
+
+    def updateself(self):
+        self.combobox.onchange = dummyfunction
+        self.combobox.setCurrentIndex(self.param.index)
+        self.combobox.onchange = self.updateproperty
+
+class QRedTextEntryListProperty(QRedFrame):
+    def __init__(self,parent,param:Params,index,parentclass):
+        super().__init__(parent)
+        self.param = param
+        self.widgets = QHBoxLayout()
+        self.index = index
+        self.textbox = QRedTextEntry(self,self.updateproperty)
+        self.textbox.setText(param[index])
+        self.widgets.addWidget(self.textbox)
+        self.setLayout(self.widgets)
+        self.setStyleSheet("border-width:0px;")
+        self.parentclass = self.parentclass
+
+    def updateproperty(self,value:str):
+        #print("setting:",value)
+        self.param[self.index] = value
+        self.parentclass.updateviewport(self.parentclass.playbackframe)
+
+    def updateself(self):
+        self.textbox.onchange = dummyfunction
+        self.textbox.setText(self.param[self.index])
+        self.textbox.onchange = self.updateproperty
+        self.parentclass.updateviewport(self.parentclass.playbackframe)
+
+class QRedTextListProperty(QRedFrame):
+    def __init__(self,parent,thelist,parentclass):
+        super().__init__(parent)
+        self.parentclass = parentclass
+        self.whole = QVBoxLayout(self)
+        self.collapseButton = QRedExpandableButton(None,"expand",self.collapse)
+        self.collapseButton.sizePolicy().setHorizontalPolicy(QSizePolicy.Policy.MinimumExpanding)
+        self.collapseButton.setMinimumWidth(60)
+        self.mainView = QRedFrame(self)
+        self.withbuttons = QGridLayout()
+        self.widgets = QFormLayout()
+        self.thelist = thelist
+        self.entries = []
+        self.widgetbuttons = QGridLayout()
+        for i in range(len(self.thelist)):
+            self.entries.append(QRedTextEntryListProperty(None,self.thelist,i))
+            arow = QHBoxLayout()
+            arow.addWidget(self.entries[i])
+            arow.addWidget(QRedButton(None,"/\\",0,0,self.moveup,False,arow))
+            arow.addWidget(QRedButton(None,"\\/",0,0,self.movedown,False,arow))
+            arow.addWidget(QRedButton(None,"-",0,0,self.remove,False,arow))
+            self.widgets.addRow("",arow)
+        self.withbuttons.addLayout(self.widgets,0,0)
+        self.withbuttons.addLayout(self.widgetbuttons,0,1)
+        self.withbuttons.addWidget(QRedExpandableButton(None,"+",self.add),1,0)
+        self.mainView.setLayout(self.withbuttons)
+        self.mainView.sizePolicy().setVerticalPolicy(QSizePolicy.Policy.Minimum)
+        self.mainView.sizePolicy().setHorizontalPolicy(QSizePolicy.Policy.MinimumExpanding)
+        self.whole.addWidget(self.collapseButton)
+        self.whole.addWidget(self.mainView)
+        #self.whole.addWidget(QRedExpandableButton(None,"+",self.add))
+        self.setLayout(self.whole)
+        self.collapsed = False
+        self.whole.setAlignment(Qt.AlignmentFlag.AlignTop)
+        self.whole.setSizeConstraint(QVBoxLayout.SizeConstraint.SetFixedSize)
+        #print(self.mainView.maximumHeight())
+        #self.setMaximumHeight(200)
+        self.mainView.setStyleSheet("border-width:0px; background:none;")
+
+    def collapse(self):
+        if self.collapsed:
+            self.mainView.setMaximumHeight(9999)
+            self.collapsed = False
+        else:
+            self.mainView.setMaximumHeight(0)
+            self.collapsed = True
+
+    def moveup(self,arow):
+        index = self.widgets.getLayoutPosition(arow)[0]
+        if index == 0:
+            return
+        self.thelist[index],self.thelist[index-1] = self.thelist[index-1],self.thelist[index]
+        self.entries[index].updatetextbox()
+        self.entries[index-1].updatetextbox()
+        self.parentclass.updateviewport()
+
+    def movedown(self,arow):
+        index = self.widgets.getLayoutPosition(arow)[0]
+        if index == len(self.thelist)-1:
+            return
+        self.thelist[index],self.thelist[index+1] = self.thelist[index+1],self.thelist[index]
+        self.entries[index].updatetextbox()
+        self.entries[index+1].updatetextbox()
+        self.parentclass.updateviewport()
+
+    def remove(self,arow):
+        index = self.widgets.getLayoutPosition(arow)[0] #no idea why it has to be [0]. it returns a tuple that looks like this (4, <ItemRole.FieldRole: 1>)
+        self.thelist.pop(index)
+        self.widgets.removeRow(index)
+        self.entries.pop(index)
+        self.parentclass.updateviewport()
+
+    def add(self):
+        self.thelist.append("")
+        i = len(self.thelist)-1
+        self.entries.append(QRedTextEntryListProperty(None,self.thelist,i))
+        arow = QHBoxLayout()
+        arow.addWidget(self.entries[i])
+        arow.addWidget(QRedButton(None,"/\\",0,0,self.moveup,False,arow))
+        arow.addWidget(QRedButton(None,"\\/",0,0,self.movedown,False,arow))
+        arow.addWidget(QRedButton(None,"-",0,0,self.remove,False,arow))
+        self.widgets.addRow("button",arow)
+        self.parentclass.updateviewport()
+
+class QRedDropDownFrame(QRedFrame):
+    def __init__(self,parent,name):
+        super().__init__(parent)
+        
+        self.whole = QVBoxLayout(self)
+        self.collapseButton = QRedExpandableButton(None,name,self.collapse)
+        self.mainView = QRedFrame(self)
+        self.widgets = QFormLayout(self.mainView)
+        
+        self.mainView.setLayout(self.widgets)
+        self.mainView.sizePolicy().setVerticalPolicy(QSizePolicy.Policy.Minimum)
+        self.mainView.sizePolicy().setHorizontalPolicy(QSizePolicy.Policy.Preferred)
+        self.whole.addWidget(self.collapseButton)
+        self.whole.addWidget(self.mainView)
+        self.setLayout(self.whole)
+        self.collapsed = False
+        self.whole.setAlignment(Qt.AlignmentFlag.AlignTop)
+        self.whole.setSizeConstraint(QVBoxLayout.SizeConstraint.SetNoConstraint)
+        #print(self.mainView.maximumHeight())
+        #self.setMaximumHeight(200)
+        self.mainView.setStyleSheet("border-width:0px; background:none;")
+    def collapse(self):
+        if self.collapsed:
+            self.mainView.setMaximumHeight(9999)
+            self.collapsed = False
+        else:
+            self.mainView.setMaximumHeight(0)
+            self.collapsed = True
+
+class CzeKeyframeOptionCategory(QRedDropDownFrame):
+    def __init__(self,parent,name:str,params:Params,parentclass):
+        super().__init__(parent,name)
+        self.parentclass = parentclass
+        self.params = params
+        
+        self.whole.insertWidget(0,QRedSelectableProperty(None,params.function,self.parentclass,self.rebuild))
+        self.iterate(self.params.params)
+
+    def rebuild(self,name,index):
+        self.params.function.index = index
+        for i in range(self.widgets.rowCount()):
+            self.widgets.removeRow(0)
+        self.params.params = self.params.function().params.copy()
+        self.iterate(self.params.params)
+        
+        self.parentclass.updateviewport(self.parentclass.playbackframe)
+
+    def updateParam(self):
+        for i in range(self.widgets.rowCount()):
+            self.widgets.itemAt(i,QFormLayout.FieldRole).widget().updateself()
+        
+    def regenerate(self,params):
+        toremove = self.whole.itemAt(0).widget()
+        self.whole.removeItem(self.whole.itemAt(0))
+        toremove.setParent(None)
+        toremove.destroy()
+        self.whole.insertWidget(0,QRedSelectableProperty(None,params.function,self.parentclass,self.rebuild))
+        for i in range(self.widgets.rowCount()):
+            self.widgets.removeRow(0)
+        self.params = params
+        self.iterate(self.params.params)
+        self.parentclass.updateviewport(self.parentclass.playbackframe)
+
+    def iterate(self,params):
+        for key in vars(params).keys():     
+            param = params[key]
+            if(hasattr(param,"widget")):
+                self.widgets.addRow(key,param.widget())
+        
+class CzeKeyframeOptionCategoryList(QRedFrame):
+    def __init__(self,parent,thelist,baseparam,parentclass):
+        super().__init__(parent)
+        self.parentclass = parentclass
+        self.baseparam = baseparam
+        self.whole = QVBoxLayout(self)
+        self.whole.setSpacing(2)
+        self.whole.setContentsMargins(2,2,2,2)
+        self.collapseButton = QRedExpandableButton(None,"expand",self.collapse)
+        self.collapseButton.sizePolicy().setHorizontalPolicy(QSizePolicy.Policy.MinimumExpanding)
+        self.collapseButton.setMinimumWidth(60)
+        self.mainView = QRedFrame(self)
+        self.withbuttons = QGridLayout()
+        self.withbuttons.setSpacing(2)
+        self.withbuttons.setContentsMargins(2,2,2,2)
+        self.widgets = QFormLayout()
+        self.widgets.setSpacing(2)
+        self.widgets.setContentsMargins(2,2,2,2)
+        self.thelist = thelist
+        self.entries = []
+        self.widgetbuttons = QGridLayout()
+        for i in range(len(self.thelist)):
+            self.entries.append(CzeKeyframeOptionCategory(None,"expand/collapse",self.thelist[i],parentclass))
+            arow = QHBoxLayout()
+            arow.addWidget(self.entries[i])
+            buttons = QVBoxLayout()
+            buttons.addWidget(QRedButton(None,"/\\",0,0,self.moveup,False,arow))
+            buttons.addWidget(QRedButton(None,"\\/",0,0,self.movedown,False,arow))
+            buttons.addWidget(QRedButton(None,"-",0,0,self.remove,False,arow))
+            arow.addLayout(buttons)
+            self.widgets.addRow("",arow)
+        self.withbuttons.addLayout(self.widgets,0,0)
+        self.withbuttons.addLayout(self.widgetbuttons,0,1)
+        self.withbuttons.addWidget(QRedExpandableButton(None,"+",self.add),1,0)
+        self.mainView.setLayout(self.withbuttons)
+        self.mainView.sizePolicy().setVerticalPolicy(QSizePolicy.Policy.Minimum)
+        self.mainView.sizePolicy().setHorizontalPolicy(QSizePolicy.Policy.Preferred)
+        self.whole.addWidget(self.collapseButton)
+        self.whole.addWidget(self.mainView)
+        #self.whole.addWidget(QRedExpandableButton(None,"+",self.add))
+        self.setLayout(self.whole)
+        self.collapsed = False
+        self.whole.setAlignment(Qt.AlignmentFlag.AlignTop)
+        self.whole.setSizeConstraint(QVBoxLayout.SizeConstraint.SetNoConstraint)
+        #print(self.mainView.maximumHeight())
+        #self.setMaximumHeight(200)
+        self.mainView.setStyleSheet("border-width:0px; background:none;")
+
+    def updateParam(self):
+        for widget in self.entries:
+            widget.updateParam()
+
+    def regenerate(self,thelist,baseparam):
+        self.baseparam = baseparam
+        self.thelist = thelist
+        i = 0
+        
+        for element in thelist:
+            self.entries[i].regenerate(element)
+            i+=1
+
+    def collapse(self):
+        if self.collapsed:
+            self.mainView.setMaximumHeight(9999)
+            self.collapsed = False
+        else:
+            self.mainView.setMaximumHeight(0)
+            self.collapsed = True
+
+    def moveup(self,arow):
+        index = self.widgets.getLayoutPosition(arow)[0]
+        if index == 0:
+            return
+        self.thelist[index],self.thelist[index-1] = self.thelist[index-1],self.thelist[index]
+        #self.entries[index].updatetextbox()
+        #self.entries[index-1].updatetextbox()
+        self.parentclass.updateviewport()
+
+    def movedown(self,arow):
+        index = self.widgets.getLayoutPosition(arow)[0]
+        if index == len(self.thelist)-1:
+            return
+        self.thelist[index],self.thelist[index+1] = self.thelist[index+1],self.thelist[index]
+        #self.entries[index].updatetextbox()
+        #self.entries[index+1].updatetextbox()
+        self.parentclass.updateviewport()
+
+    def remove(self,arow):
+        index = self.widgets.getLayoutPosition(arow)[0] #no idea why it has to be [0]. it returns a tuple that looks like this (4, <ItemRole.FieldRole: 1>)
+        self.thelist.pop(index)
+        self.widgets.removeRow(index)
+        self.entries.pop(index)
+        self.parentclass.updateviewport()
+
+    def add(self):
+        
+        self.thelist.append(self.baseparam.copy())
+        i = len(self.thelist)-1
+        self.entries.append(CzeKeyframeOptionCategory(None,"expand/collapse",self.thelist[i],self.parentclass))
+        #print([self.thelist[i].params],[self.baseparam.params])
+        arow = QHBoxLayout()
+        arow.addWidget(self.entries[i])
+        buttons = QVBoxLayout()
+        buttons.addWidget(QRedButton(None,"/\\",0,0,self.moveup,False,arow))
+        buttons.addWidget(QRedButton(None,"\\/",0,0,self.movedown,False,arow))
+        buttons.addWidget(QRedButton(None,"-",0,0,self.remove,False,arow))
+        arow.addLayout(buttons)
+        self.widgets.addRow("button",arow)
+        self.parentclass.updateviewport()
+
+class CzeKeyframeOptions(QRedScrollArea):
+    baseparams = Params({  #BAD!!! TODO : While we wont support anything else than sources, effects and actions, but we can still generalize this.
+        "image":{
+            "function":Selectable(0,imagefunctionsdropdown),
+            "params":Selectable(0,imagefunctionsdropdown)().params.copy()
+        },
+        "states":{
+            "function":Selectable(0,statefunctionsdropdown),
+            "params":Selectable(0,statefunctionsdropdown)().params.copy()
+        },
+        "compositing":{
+            "function":Selectable(0,compositingfunctionsdropdown),
+            "params":Selectable(0,compositingfunctionsdropdown)().params.copy()
+        }
+    }) 
+    def __init__(self,parent,parentclass):
+        self.params = Params({})
+
+        super().__init__(parent)
+
+        self.parentclass = parentclass
+        self.viewframe = QRedFrame(None)
+
+        self.widgets = QVBoxLayout()
+        self.widgets.setSpacing(2)
+        self.widgets.setContentsMargins(2,2,2,2)
+
+        self.iterate(self.params)
+
+        self.viewframe.setLayout(self.widgets)
+
+        self.widgets.setAlignment(Qt.AlignmentFlag.AlignTop)
+        self.setWidget(self.viewframe)
+
+        self.setSizePolicy(QSizePolicy.Policy.Maximum,QSizePolicy.Policy.Expanding)
+        
+        self.setWidgetResizable(True)
+
+    def sizeHint(self):
+        return QSize(1280,250)
+
+    def changeEvent(self, arg__1) -> None:
+        if(hasattr(self,"viewframe")):
+            self.setMaximumWidth(self.viewframe.contentsRect().width()+self.verticalScrollBar().width())
+        return super().changeEvent(arg__1)
+
+    def resizeEvent(self, arg__1) -> None:
+        if(hasattr(self,"viewframe")):
+            self.setMaximumWidth(self.viewframe.contentsRect().width()+self.verticalScrollBar().width())
+        return super().resizeEvent(arg__1)
+
+    def iterate(self,params):
+        for key in vars(params).keys():
+            param = params[key]
+            if isinstance(param,Params):
+                self.widgets.addWidget(CzeKeyframeOptionCategory(None,"Expand/Collapse",param,self.parentclass)) #Make it display the actual name!
+            elif isinstance(param,list):
+                self.widgets.addWidget(CzeKeyframeOptionCategoryList(None,param,self.baseparams[key],self.parentclass))
+
+    def iterateUpdate(self,params):
+        i = 0
+        for key in vars(params).keys():
+            param = params[key]
+            if isinstance(param,Params):
+                self.widgets.itemAt(i).widget().updateParam()
+            elif isinstance(param,list):
+                self.widgets.itemAt(i).widget().updateParam()
+            i += 1
+
+    def iterateRegenerate(self,params):
+        if(self.widgets.count() == 0):
+            self.params = params
+            self.rebuild()
+            return
+        i = 0
+        for key in vars(params).keys():
+            param = params[key]
+            if isinstance(param,Params):
+                self.widgets.itemAt(i).widget().regenerate(param)
+            elif isinstance(param,list):
+                self.widgets.itemAt(i).widget().regenerate(param,self.baseparams[key])
+            i += 1
+        self.setMaximumWidth(self.viewframe.contentsRect().width()+self.verticalScrollBar().width())
+
+    def rebuild(self):
+        if self.parentclass.selectedframe:
+            self.params = self.parentclass.selectedframe.params
+            for i in range(self.widgets.count()):
+                self.widgets.itemAt(0).widget().setParent(None)
+            self.iterate(self.params)
+        else:
+            for i in range(self.widgets.count()):
+                self.widgets.itemAt(0).widget().setParent(None)
+        self.setMaximumWidth(self.viewframe.contentsRect().width()+self.verticalScrollBar().width())
+
+    def update(self):
+        if self.parentclass.selectedframe:
+            self.params = self.parentclass.selectedframe.params
+            self.iterateUpdate(self.params)
+        else:
+            for i in range(self.widgets.count()):
+                self.widgets.itemAt(0).widget().setParent(None)
+
+    def regenerate(self):
+        if self.parentclass.selectedframe:
+            self.params = self.parentclass.selectedframe.params
+            self.iterateRegenerate(self.params)
+        else:
+            for i in range(self.widgets.count()):
+                self.widgets.itemAt(0).widget().setParent(None)
+        self.setMaximumWidth(self.viewframe.contentsRect().width()+self.verticalScrollBar().width())
 
 class QGraphicsViewEvent(QGraphicsView):
     def __init__(self,*args,**kwargs):
