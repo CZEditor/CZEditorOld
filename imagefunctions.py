@@ -10,7 +10,7 @@ import numpy as np
 from properties import *
 import os
 from moviepy.editor import AudioFileClip
-
+from timelineitems import *
 loadedimages = {}
 class NormalImage():
     name = "Image"
@@ -139,6 +139,8 @@ class Video():
             secrets.moviepyobject.reader.pos = sample
         chunk = secrets.moviepyobject.reader.read_chunk(1024)
         return chunk,secrets.moviepyobject.fps
+    def timelineitem(param:Params,keyframe,windowClass):
+        return [TimelineDurationLineItem(param,windowClass,keyframe)]
         #print(chunk)
         #print(sample,secrets.moviepyobject.reader.pos,secrets.moviepyobject.reader.nframes)
         

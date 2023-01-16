@@ -33,8 +33,17 @@ class Keyframe():
                 if hasattr(soundeffectparam.function(),"soundeffect"):
                     source = soundeffectparam.function().soundeffect(source,soundeffectparam,sample-int(self.frame/60*48000))
             return source
-        return np.array((0)),48000
+        return np.array((0),(0)),48000
 
+    def timelineitems(self):
+        items = []
+        for action in self.params.states:
+            if hasattr(action.function(),"timelineitem"):
+                items.append(action.function().timelineitem(action.params,self))
+        for effect in self.params.compositing:
+            if hasattr(effect.function(),"timelineitem"):
+                items.append(effect.function().timelineitem(effect.params,self))
+        return items
         
 class Keyframelist():
     def __init__(self):

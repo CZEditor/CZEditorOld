@@ -56,6 +56,7 @@ class Params(object):
             else:
                 out[k] = v
         return out
+
     def iteratelist(self,toiterate:list):
         out = []
         for v in toiterate:
@@ -66,16 +67,20 @@ class Params(object):
             else:
                 out.append(v)
         return out
+
     def copy(self):
         var = self.iterate(vars(self))
         return Params(var)
+
     def __str__(self):
         returnal = {}
         for k,v in vars(self).items():
             returnal[k] = str(v)
         return str(returnal)
+
     def __getitem__(self,param):
         return self.__getattribute__(param)
+        
     def __setitem__(self,index,param):
         return self.__setattr__(index,param)
 

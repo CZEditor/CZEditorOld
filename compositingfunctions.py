@@ -74,6 +74,7 @@ class Unholy():
             "pbo":0,
             "lastsize":(32,32)
         }))
+        
     })
     
     def composite(imageparam,params,parentclass,keyframe,frame):

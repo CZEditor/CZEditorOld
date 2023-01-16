@@ -227,14 +227,16 @@ class CzeKeyframeOptionCategory(QRedDropDownFrame):
         
         self.whole.insertWidget(0,QRedSelectableProperty(None,params.function,self.parentclass,self.rebuild))
         self.iterate(self.params.params)
+        self.parentclass.timeline.createKeyframeItem(self.parentclass.selectedframe,params)
 
     def rebuild(self,name,index):
+        self.parentclass.timeline.deleteKeyframeItem(self.parentclass.selectedframe,self.params)
         self.params.function.index = index
         for i in range(self.widgets.rowCount()):
             self.widgets.removeRow(0)
         self.params.params = self.params.function().params.copy()
         self.iterate(self.params.params)
-        
+        self.parentclass.timeline.createKeyframeItem(self.parentclass.selectedframe,self.params)
         self.parentclass.updateviewport()
 
     def updateParam(self):
@@ -368,6 +370,7 @@ class CzeKeyframeOptionCategoryList(QRedFrame):
         arow.addLayout(buttons)
         self.widgets.addRow("button",arow)
         self.parentclass.updateviewport()
+        
 
 class CzeKeyframeOptions(QRedScrollArea):
     baseparams = Params({  #BAD!!! TODO : While we wont support anything else than sources, effects and actions, but we can still generalize this.
@@ -534,8 +537,9 @@ class CzeTimeline(QWidget):
     selectedcoolgradient.setColorAt(0,QColor(255,0,0))
 
     def __init__(self,parent,parentclass):
-        global keyframes
+        global keyframes # TODO : Make keyframes be stored inside the parentclass
         self.keyframes = {}
+        self.keyframeitems = {}
         super().__init__(parent)
         self.parentclass = parentclass
         
@@ -572,8 +576,10 @@ class CzeTimeline(QWidget):
         self.graphicsview.dragenter = self.dragEnterEvent
         self.graphicsview.dragdrop = self.dropEvent
         self.graphicsview.dragmove = self.dragMoveEvent
+
     def sizeHint(self):
         return QSize(self.size().width(),150)
+
     def updateplaybackcursor(self,frame):
         boundingrect = self.graphicsview.mapToScene(self.graphicsview.viewport().geometry()).boundingRect()
         self.playbackcursor.setLine(QLine(frame,boundingrect.top(),frame,boundingrect.bottom()))
@@ -672,7 +678,33 @@ class CzeTimeline(QWidget):
         self.keyframes[keyframe].setRotation(45)
         self.keyframes[keyframe].setPos(keyframe.frame,0)
         self.keyframes[keyframe].setData(0,keyframe)
+        self.createKeyframeItem(keyframe,keyframe.params.image)
+        for action in keyframe.params.states:
+            self.createKeyframeItem(keyframe,action)
+        for effect in keyframe.params.compositing:
+            self.createKeyframeItem(keyframe,effect)
     
+    def createKeyframeItem(self,keyframe:Keyframe,param:Params):
+        if hasattr(param.function(),"timelineitem"):
+            items = param.function().timelineitem(param,keyframe,self.parentclass)
+            for item in items:
+                self.keyframeitems[keyframe] = {}
+                self.keyframeitems[keyframe][param] = []
+                self.keyframeitems[keyframe][param].append(self.scene.addItem(item))
+    
+    def deleteKeyframeItem(self,keyframe,param):
+        if(keyframe in self.keyframeitems and param in self.keyframeitems[keyframe]):
+            for item in self.keyframeitems[keyframe][param]:
+                self.scene.removeItem(item)
+            del self.keyframeitems[keyframe][param]
+
+    def deleteKeyframeItems(self,keyframe):
+        if(keyframe in self.keyframeitems):
+            for param in self.keyframeitems[keyframe].keys():
+                for item in self.keyframeitems[keyframe][param]:
+                    self.scene.removeItem(item)
+            del self.keyframeitems[keyframe]
+
     def zoom(self,event:QWheelEvent):
         oldpos = self.graphicsview.mapToScene(event.position().toPoint())
         factor = 1.05
@@ -694,6 +726,7 @@ class CzeTimeline(QWidget):
         if event.text() == "k":
             self.addKeyframe(keyframes.create(self.parentclass.playbackframe))
         elif event.key() == Qt.Key.Key_Delete:
+            self.deleteKeyframeItems(self.parentclass.playbackframe)
             self.scene.removeItem(self.keyframes[self.parentclass.selectedframe])
             keyframes.remove(self.parentclass.selectedframe)
             self.parentclass.selectedframe = None
