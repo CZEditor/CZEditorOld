@@ -106,7 +106,7 @@ class TimelineStartFrameHandleItem(QGraphicsItem):
         self.params.params.startframe.set(min(self.params.params.secrets().maxduration,self.params.params.duration()+self.keyframe.frame,self.params.params.startframe()+scenepos.x()-self.keyframe.frame))
         self.params.params.duration.set(max(0,self.params.params.duration()))
         self.params.params.startframe.set(max(0,self.params.params.startframe()))
-        clampedpos = max(self.keyframe.frame-self.params.params.startframe(),scenepos.x())
+        clampedpos = min(self.keyframe.frame+self.params.params.duration(),max(self.keyframe.frame-self.params.params.startframe(),scenepos.x()))
         #print(self.keyframe.frame,self.params.params.startframe(),scenepos.x(),clampedpos)
         self.keyframe.frame = clampedpos
         self.windowClass.timeline.keyframes[self.keyframe].setPos(clampedpos,0)
