@@ -131,6 +131,11 @@ void main()
         #glRenderbufferStorage(GL_RENDERBUFFER, GL_RGBA8, 1280,720)
         #glBindFramebuffer(GL_DRAW_FRAMEBUFFER,self.fbo)
         #glFramebufferRenderbuffer(GL_DRAW_FRAMEBUFFER,GL_COLOR_ATTACHMENT0,GL_RENDERBUFFER,self.renderbuffer)
+        projection = QMatrix4x4()
+        projection.frustum(-1280/32,1280/32,720/32,-720/32,64,4096)
+        projection.translate(0,0,-1024)
+        glUseProgram(self.shader)
+        glUniformMatrix4fv(glGetUniformLocation(self.shader,"matrix"),1,GL_FALSE,np.array(projection.data(),dtype=np.float32))
     def sizeHint(self):
         return QSize(1280,720)
     #def resizeGL(self, w: int, h: int) -> None:
@@ -144,10 +149,8 @@ void main()
         glClearColor(0.1,0.2,0.2,1.0)
         glLoadIdentity()
         glUseProgram(self.shader)
-        projection = QMatrix4x4()
-        projection.frustum(-1280/32,1280/32,720/32,-720/32,64,4096)
-        projection.translate(0,0,-1024)
-        glUniformMatrix4fv(glGetUniformLocation(self.shader,"matrix"),1,GL_FALSE,np.array(projection.data(),dtype=np.float32))
+        
+        
         getviewportimage(self.state,self.parentclass)
 
         rendered = glReadPixels(0,0,1280,720,GL_RGBA,GL_UNSIGNED_BYTE,None)
@@ -249,7 +252,7 @@ class CzeViewport(QWidget):
         r.setSize(self.size()/self.graphicsview.transform().m11())
         self.graphicsview.setSceneRect(r)"""
         oldpos = self.graphicsview.mapToScene(event.position().toPoint())
-        factor = 1.125
+        factor = 17/16
         self.graphicsview.setTransformationAnchor(QGraphicsView.ViewportAnchor.AnchorUnderMouse)
         
         self.graphicsview.scale((factor if event.angleDelta().y() > 0 else 1/factor),(factor if event.angleDelta().y() > 0 else 1/factor))
@@ -342,6 +345,8 @@ class Window(QMainWindow):
             outdata[:] = np.zeros((1024,1))
             self.playbacksample = int(self.playbackframe/60*48000)
     def seek(self,frame):
+        self.startframe = frame
+        self.starttime = perf_counter()
         self.playbackframe = frame
         self.playbacksample = int(frame/60*48000)
     def timerEvent(self, event: QTimerEvent) -> None:

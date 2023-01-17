@@ -628,8 +628,8 @@ class CzeTimeline(QWidget):
                             self.keyframes[self.parentclass.selectedframe].setBrush(self.coolgradient)
                             self.parentclass.selectedframe = None
                             self.parentclass.updatekeyframeoptions()
-            elif hasattr(founditem,"pressEvent"):
-                founditem.pressEvent(self.graphicsview.mapToScene(event.pos().x(),0).toPoint()) # TODO : Give more parameters to the function
+            #elif hasattr(founditem,"pressEvent"):
+            #    founditem.pressEvent(event,self.graphicsview.mapToScene(event.pos().x(),0).toPoint()) # TODO : Give more parameters to the function
 
             self.lastm1pos = event.pos()
        
@@ -653,11 +653,14 @@ class CzeTimeline(QWidget):
     
     def releaseEvent(self, event:QMouseEvent) -> None:
         if event.button() == Qt.MouseButton.LeftButton:
+            founditem:QGraphicsItem = self.graphicsview.itemAt(event.pos().x(),event.pos().y())
             if self.draggedframe:
                 self.parentclass.keyframes.setframe(self.draggedframe,int(self.graphicsview.mapToScene(event.pos().x(),0).x()))
                 self.keyframes[self.draggedframe].setPos(self.draggedframe.frame,0)
                 self.draggedframe = None
                 self.parentclass.updateviewport()
+            #elif hasattr(founditem,"pressEvent"):
+            #    founditem.pressEvent(event,self.graphicsview.mapToScene(event.pos().x(),0).toPoint())
         return super().mouseReleaseEvent(event)
     
         #return super().mouseReleaseEvent(event)
@@ -699,6 +702,7 @@ class CzeTimeline(QWidget):
             for item in items:
                 self.keyframeitems[keyframe][param].append(item)
                 self.scene.addItem(item)
+
     def deleteKeyframeItem(self,keyframe,param):
         if(keyframe in self.keyframeitems and param in self.keyframeitems[keyframe]):
             for item in self.keyframeitems[keyframe][param]:

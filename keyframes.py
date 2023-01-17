@@ -31,7 +31,7 @@ class Keyframe():
                 if hasattr(soundeffectparam.function(),"soundeffect"):
                     source = soundeffectparam.function().soundeffect(source,soundeffectparam,sample-int(self.frame/60*48000))
             return source
-        return np.array((0),(0)),48000
+        return np.array(((0),(0))),48000
 
     def timelineitems(self):
         items = []
