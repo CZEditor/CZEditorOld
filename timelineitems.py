@@ -14,7 +14,7 @@ class TimelineDurationLineItem(QGraphicsItem):
         return QRectF(0,-1,self.params.params.duration(),1)
     def paint(self, painter, option, widget):
         self.setPos(self.keyframe.frame,0)
-        painter.setPen(QPen(QColor(255,255,255),1))
+        painter.setPen(QPen(QColor(255,255,255),0))
         painter.drawLine(QPointF(0,0),QPointF(self.params.params.duration(),0))
         #print(self.params.params.duration())
     def pressEvent(self, scenepos) -> None:

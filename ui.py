@@ -691,11 +691,14 @@ class CzeTimeline(QWidget):
     def createKeyframeItem(self,keyframe:Keyframe,param:Params):
         if hasattr(param.function(),"timelineitem"):
             items = param.function().timelineitem(param,keyframe,self.parentclass)
-            for item in items:
+            if(keyframe not in self.keyframeitems):
                 self.keyframeitems[keyframe] = {}
                 self.keyframeitems[keyframe][param] = []
-                self.keyframeitems[keyframe][param].append(self.scene.addItem(item))
-    
+            elif param not in self.keyframeitems[keyframe]:
+                self.keyframeitems[keyframe][param] = []
+            for item in items:
+                self.keyframeitems[keyframe][param].append(item)
+                self.scene.addItem(item)
     def deleteKeyframeItem(self,keyframe,param):
         if(keyframe in self.keyframeitems and param in self.keyframeitems[keyframe]):
             for item in self.keyframeitems[keyframe][param]:
