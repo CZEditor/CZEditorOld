@@ -3,7 +3,10 @@ from handles import CzeViewportDraggableOffsetLine,CzeViewportDraggableOffset
 class NormalKeyframe():
     name = "Media"
     params = Params({})
-    def state(statetomodify,keyframe,stateparam):
+    def state(statetomodify,keyframe,stateparam,frame):
+        if(keyframe.params.image.params.duration and keyframe.params.image.params.duration() != 0):
+            if(keyframe.params.image.params.duration() < frame):
+                return statetomodify
         statetomodify.append(keyframe)
         return statetomodify
     def __str__(self):
@@ -11,7 +14,7 @@ class NormalKeyframe():
 class ErrorKeyframe():
     name = "Windows Error"
     params = Params({})
-    def state(statetomodify,keyframe,stateparam):
+    def state(statetomodify,keyframe,stateparam,frame):
         if statetomodify:
             statetomodify[-1].imageparams.params.active = False
         keyframe.imageparams.params.active = True
@@ -26,7 +29,7 @@ class CascadeKeyframe():
             "x":16,
             "y":16
         })
-    def state(statetomodify,keyframe,stateparam):
+    def state(statetomodify,keyframe,stateparam,frame):
         if statetomodify:
             #get previous keyframe normal media params
             for lastkeyframe in statetomodify[-1].compositingparams:

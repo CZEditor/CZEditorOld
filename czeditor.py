@@ -2,9 +2,9 @@ from multiprocessing import dummy
 import numpy as np
 import moviepy.editor as mpy
 import moviepy.config as mpyconfig
-from imagefunctions import NormalImage,XPError
-from statefunctions import NormalKeyframe
-from compositingfunctions import ImageComposite
+from imagefunctions import *
+from statefunctions import *
+from compositingfunctions import *
 from util import *
 from PySide6.QtWidgets import QAbstractButton,QMainWindow,QApplication,QFrame,QScrollArea,QSplitter,QWidget,QGraphicsScene,QGraphicsView,QGraphicsItem,QGraphicsSceneMouseEvent,QComboBox,QPlainTextEdit,QLabel,QVBoxLayout,QHBoxLayout,QSizePolicy,QFormLayout,QLineEdit,QGridLayout,QSpinBox,QGraphicsPixmapItem,QStyle,QPushButton,QToolButton
 from PySide6.QtGui import QPixmap,QPainter,QPen,QBrush,QColor,QRadialGradient,QResizeEvent,QMouseEvent,QWheelEvent,QTextOption,QKeyEvent,QImage,QMatrix4x4
@@ -32,12 +32,12 @@ UIDropdownLists = [
 
 # TODO : Move these into the Window class
 
-def stateprocessor(frame,keyframes):
+def stateprocessor(frame,keyframes,windowClass):
     state = []
     for keyframe in keyframes:
         if keyframe.frame > frame:
             return state
-        state = keyframe.state(state)
+        state = keyframe.state(state,windowClass)
     return state
     
 
@@ -66,9 +66,8 @@ def getframeimage(i):
     image:Image = composite(state)
     return np.asarray(image.convert("RGB"))
 
-def getstate(i,parentclass):
-    global keyframes
-    return stateprocessor(i,keyframes)
+def getstate(i,windowClass):
+    return stateprocessor(i,windowClass.keyframes,windowClass)
 
 def getviewportimage(state,parentclass):
     composite(state,parentclass)
@@ -282,6 +281,8 @@ class Window(QMainWindow):
     def __init__(self):
         super().__init__()
         self.playbackframe = 100
+        self.imagefunctionsdropdown = imagefunctionsdropdown
+        self.keyframes = Keyframelist(self)
         self.setWindowTitle("fgdf")
         self.setGeometry(100,100,1280,720)
         #button = QRedButton(self,"yeah",4,4,lambda: print("pressed"))
@@ -314,6 +315,7 @@ class Window(QMainWindow):
         self.stream = sounddevice.OutputStream(channels=2,samplerate=48000,blocksize=1024,callback=self.getnextsoundchunk)
         self.stream.start()
         self.playbacksample = int(self.playbackframe/60*48000)
+       
     def updateviewport(self):
         self.needtoupdate = True
         #self.viewport.update()
@@ -356,6 +358,10 @@ class Window(QMainWindow):
         return super().timerEvent(event)
     def showInfo(self, text):
         self.viewport.showInfo(text)
+    
+    def createKeyframe(self,keyframe:Keyframe):
+        self.keyframes.add(keyframe)
+        self.timeline.addKeyframe(keyframe)
 app = QApplication([])
 window = Window()
 sys.exit(app.exec())

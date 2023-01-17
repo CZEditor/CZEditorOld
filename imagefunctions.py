@@ -103,6 +103,7 @@ class Video():
     params = Params({
         "videopath":FileProperty(""),
         "startframe":IntProperty(0),
+        "duration":IntProperty(0),
         "secrets":SecretProperty(Params({
             "pimsobject":None,
             "moviepyobject":None,
@@ -113,11 +114,14 @@ class Video():
         #return Image.open(param.imagespath.replace("*",str(int(parentclass.playbackframe))))
         secrets = param.secrets()
         if(not os.path.exists(param.videopath())):
+            param.duration.set(0)
             return np.array(emptyimage),(1,1)
         if(param.videopath() != secrets.lastpath or secrets.pimsobject == None):
             secrets.pimsobject = pims.PyAVVideoReader(param.videopath())
             secrets.moviepyobject = AudioFileClip(param.videopath(),nbytes=2,fps=48000)
             secrets.lastpath = param.videopath()
+            param.duration.set(int(len(secrets.pimsobject)/secrets.pimsobject.frame_rate*60)-param.startframe())
+            #print(len(secrets.pimsobject)/secrets.pimsobject.frame_rate*60)
         frame += param.startframe()
         frame = int(frame/60*secrets.pimsobject.frame_rate)
         if(frame >= len(secrets.pimsobject) or frame < 0):
@@ -133,6 +137,8 @@ class Video():
             secrets.pimsobject = pims.PyAVVideoReader(param.videopath())
             secrets.moviepyobject = AudioFileClip(param.videopath(),nbytes=2,fps=48000)
             secrets.lastpath = param.videopath()
+            param.duration.set(int(len(secrets.pimsobject)/secrets.pimsobject.frame_rate*60)-param.startframe())
+            #print(len(secrets.pimsobject)/secrets.pimsobject.frame_rate*60)
         sample += int(param.startframe()/60*secrets.moviepyobject.fps)
         if secrets.moviepyobject.reader.pos != sample:
             secrets.moviepyobject.reader.seek(sample)

@@ -1,8 +1,6 @@
 from typing import overload
 from util import *
-from imagefunctions import *
-from statefunctions import *
-from compositingfunctions import *
+import numpy as np
 
 class Keyframe():
     def __init__(self, frame, param:Params):
@@ -16,9 +14,9 @@ class Keyframe():
     def image(self,parentclass):
         return self.imageparams.function().image(self.imageparams.params,parentclass,parentclass.playbackframe-self.frame)
     
-    def state(self, statetomodify): #action
+    def state(self, statetomodify,windowClass): #action
         for stateparam in self.stateparams:
-            statetomodify = stateparam.function().state(statetomodify,self,stateparam)
+            statetomodify = stateparam.function().state(statetomodify,self,stateparam,windowClass.playbackframe-self.frame)
         return statetomodify
     
     def composite(self, image,parentclass=None):
@@ -46,7 +44,8 @@ class Keyframe():
         return items
         
 class Keyframelist():
-    def __init__(self):
+    def __init__(self,windowClass):
+        self.windowClass = windowClass
         self.keyframes = []
         self.needssorting = False
     def add(self,keyframe:Keyframe) -> None:
@@ -132,8 +131,8 @@ class Keyframelist():
             {
                 "image":
                 {
-                    "function":Selectable(0,imagefunctionsdropdown),
-                    "params":Selectable(0,imagefunctionsdropdown)().params.copy()
+                    "function":Selectable(0,self.windowClass.imagefunctionsdropdown),
+                    "params":Selectable(0,self.windowClass.imagefunctionsdropdown)().params.copy()
                 },
                 "states":[],
                 "compositing":[]
@@ -142,7 +141,6 @@ class Keyframelist():
         self.append(addedkeyframe)
         return addedkeyframe
 
-keyframes = Keyframelist()
 """keyframes.append(Keyframe(20,Params(
     {
         "image":
