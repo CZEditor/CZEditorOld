@@ -22,6 +22,7 @@ from ctypes import c_void_p
 from base_ui import *
 import sounddevice
 import traceback
+import concurrent.futures
 
 UIDropdownLists = [
     [NormalImage,XPError],
@@ -286,7 +287,7 @@ class Window(QMainWindow):
         self.playbackframe = 100
         self.imagefunctionsdropdown = imagefunctionsdropdown
         self.keyframes = Keyframelist(self)
-        self.setWindowTitle("fgdf")
+        self.setWindowTitle("CZEditor")
         self.setGeometry(100,100,1280,720)
         #button = QRedButton(self,"yeah",4,4,lambda: print("pressed"))
         self.setStyleSheet("background-color: qradialgradient(spread:pad, cx:4.5, cy:4.5, radius:7, fx:4.5, fy:4.5, stop:0 rgba(255, 0, 0, 255), stop:1 rgba(0, 0, 0, 255));  color: rgb(255,192,192);")
@@ -318,7 +319,8 @@ class Window(QMainWindow):
         self.stream = sounddevice.OutputStream(channels=2,samplerate=48000,blocksize=1024,callback=self.getnextsoundchunk)
         self.stream.start()
         self.playbacksample = int(self.playbackframe/60*48000)
-       
+        self.executor = concurrent.futures.ThreadPoolExecutor(max_workers=4)
+
     def updateviewport(self):
         self.needtoupdate = True
         #self.viewport.update()
@@ -349,10 +351,22 @@ class Window(QMainWindow):
         self.starttime = perf_counter()
         self.playbackframe = frame
         self.playbacksample = int(frame/60*48000)
+        self.executor.submit(self.threadseek)
+    def threadseek(self):
+        for keyframe in self.currentframestate:
+            if hasattr(keyframe.params.image.function(),"seek"):
+                keyframe.params.image.function().seek(keyframe.params.image.params,self.playbackframe)
+            for action in keyframe.params.states:
+                if hasattr(action.function(),"seek"):
+                    action.function().seek(action.params,self.playbackframe)
+            for effect in keyframe.params.compositing:
+                if hasattr(effect.function(),"seek"):
+                    effect.function().seek(effect.params,self.playbackframe)
     def timerEvent(self, event: QTimerEvent) -> None:
         
         if self.isplaying:
-            self.playbackframe = self.startframe+int((perf_counter()-self.starttime)*60)
+            #self.playbackframe = self.startframe+int((perf_counter()-self.starttime)*60)
+            self.playbackframe += 1
             self.currentframestate = getstate(self.playbackframe,self)
             self.viewport.updateviewportimage(self.currentframestate)
             self.timeline.updateplaybackcursor(self.playbackframe)

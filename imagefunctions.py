@@ -109,8 +109,12 @@ class Video():
             "moviepyobject":None,
             "decodedaudio":None,
             "maxduration":0,
+            "entirevideo":None,
             "lastpath":""}))
     })
+    """
+    Return the current frame the cursor is on in a video file
+    """
     def image(param:Params,parentclass,frame):
         #return Image.open(param.imagespath.replace("*",str(int(parentclass.playbackframe))))
         secrets = param.secrets()
@@ -122,18 +126,24 @@ class Video():
                 secrets.pimsobject.close()
                 secrets.moviepyobject.close()
             secrets.pimsobject = pims.PyAVVideoReader(param.videopath())
+            #secrets.entirevideo = np.copy(secrets.pimsobject)
             secrets.moviepyobject = AudioFileClip(param.videopath(),nbytes=2,fps=48000)
             secrets.lastpath = param.videopath()
             param.duration.set(int(len(secrets.pimsobject)/secrets.pimsobject.frame_rate*60)-param.startframe())
             secrets.maxduration = int(len(secrets.pimsobject)/secrets.pimsobject.frame_rate*60)
             #print(len(secrets.pimsobject)/secrets.pimsobject.frame_rate*60)
+
+        # Add the beginning frame offset
         frame += param.startframe()
+
+        # Correct the framerate from 60 fps to video fps
         frame = int(frame/60*secrets.pimsobject.frame_rate)
-        if(frame >= len(secrets.pimsobject) or frame < 0):
+        if(frame >= len(secrets.pimsobject) or frame < 0): #Check if its after or before
             return np.array(emptyimage),(1,1)
         img = secrets.pimsobject[int(frame)]
-        img = np.pad(img,((0,0),(0,0),(0,1)),mode="constant",constant_values=255) # TODO : Maybe support alpha videos?
+        img = np.pad(img,((0,0),(0,0),(0,1)),mode="constant",constant_values=255) # Add alpha 255, TODO : Maybe support alpha videos?
         return img,(img.shape[1],img.shape[0])
+
     def sound(param:Params,sample):
         secrets = param.secrets()
         if(not os.path.exists(param.videopath())):
@@ -154,8 +164,15 @@ class Video():
             secrets.moviepyobject.reader.pos = sample
         chunk = secrets.moviepyobject.reader.read_chunk(1024)
         return chunk,secrets.moviepyobject.fps
+
     def timelineitem(param:Params,keyframe,windowClass):
         return [TimelineDurationLineItem(param,windowClass,keyframe),TimelineDurationHandleItem(param,windowClass,keyframe),TimelineStartFrameHandleItem(param,windowClass,keyframe)]
+
+    def seek(params:Params,frame):
+        if frame < 1:
+            params.secrets().pimsobject[0]
+            params.secrets().moviepyobject.reader.seek(0)
+        
         #print(chunk)
         #print(sample,secrets.moviepyobject.reader.pos,secrets.moviepyobject.reader.nframes)
         

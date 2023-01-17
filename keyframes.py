@@ -88,7 +88,7 @@ class Keyframelist():
         if self.needssorting:
             self.keyframes = sorted(self.keyframes,key=lambda k: k.frame)
             self.needssorting = False
-        return keyframes[i]
+        return self.keyframes[i]
     def __str__(self) -> str:
         if self.needssorting:
             self.keyframes = sorted(self.keyframes,key=lambda k: k.frame)
