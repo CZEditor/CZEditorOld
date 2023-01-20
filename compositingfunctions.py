@@ -104,7 +104,6 @@ class Unholy():
              positions[4][0]-1280/2+params.params.x(),  positions[4][1]-720/2+params.params.y(), positions[4][2]+params.params.z(), 0.0, 1.0,
              positions[5][0]-1280/2+params.params.x(),  positions[5][1]-720/2+params.params.y(), positions[5][2]+params.params.z(), 1.0, 1.0],dtype=np.float32)
         if(secrets.lastshader != params.params.shader()):
-            print("compiling")
             secrets.shader = compileProgram(compileShader("""#version 450 core
 layout (location=0) in vec3 vertexPos;
 layout (location=1) in vec2 vertexColor;
