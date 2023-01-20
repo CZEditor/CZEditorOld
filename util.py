@@ -16,6 +16,8 @@ def newimage(w,h,r=0,g=0,b=0,a=255):
     return newimages[cachestr].copy()
 
 
+
+
 class Params(object):
     def __init__(self,params:dict,**kwargs):
         for k in params.keys():
@@ -42,7 +44,7 @@ class Params(object):
             else:
                 returnal.append(i)
         return returnal
-
+    
     def __getattr__(self,param:str): #This is a failsafe
         return None
         
@@ -103,6 +105,8 @@ def fillindefaults(param,defaults):
         if getattr(param,key) == None:
             setattr(param,key,defaults[key])
     return param
+
+
 class emptylist():
     def __init__(self,default):
         self.default = default
