@@ -25,6 +25,7 @@ class IntProperty:
     def set(self,value):
         self._val = value
 
+
 class StringProperty:
     def __init__(self,value):
         self._val = value
@@ -48,6 +49,7 @@ class StringProperty:
 
     def set(self,value):
         self._val = value
+
 
 class FileProperty:
     def __init__(self,value):
@@ -73,10 +75,11 @@ class FileProperty:
     def set(self,value):
         self._val = value
 
+
 class SecretProperty:
     def __init__(self,param):
         self._val = param.copy()
-        self._originalparam = param.copy()
+        self._originalparam = param
 
     def copy(self):
         return SecretProperty(self._originalparam.copy())
@@ -94,6 +97,7 @@ class SecretProperty:
 
     def set(self,value):
         self._val = value
+
 
 class SizeProperty():
     def __init__(self,basewidth,baseheight,width,height):

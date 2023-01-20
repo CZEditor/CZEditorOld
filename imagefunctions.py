@@ -170,8 +170,8 @@ class Video():
 
     def seek(params:Params,frame):
         if frame < 1:
-            params.secrets().pimsobject[0]
-            params.secrets().moviepyobject.reader.seek(0)
+            params.secrets().pimsobject[int(params.startframe()/60*params.secrets().pimsobject.frame_rate)]
+            params.secrets().moviepyobject.reader.seek(int(params.startframe()/60*params.secrets().moviepyobject.fps))
         
         #print(chunk)
         #print(sample,secrets.moviepyobject.reader.pos,secrets.moviepyobject.reader.nframes)

@@ -1,6 +1,7 @@
 from PIL import Image
 from util import ParamLink,Params
 from handles import CzeViewportDraggableHandle
+from PySide6.QtGui import QMatrix4x4
 from PySide6.QtCore import QUrl
 from OpenGL.GL import *
 from time import time
@@ -11,6 +12,7 @@ from random import random
 from scipy.spatial.transform import Rotation
 from properties import *
 from openglfunctions import *
+from OpenGL.GL.shaders import compileProgram,compileShader
 imagecache = {}
 """def cachecomposite(func,parentclass,width,height):
     global imagecache
@@ -67,12 +69,15 @@ class Unholy():
         "Zrotation":IntProperty(0),
         "relativewidth":IntProperty(100),
         "relativeheight":IntProperty(100),
+        "shader":StringProperty("color = texture(image,pos);"),
         "secrets":SecretProperty(Params({
             "textureid":0,
             "vbo":0,
             "vao":0,
             "pbo":0,
-            "lastsize":(32,32)
+            "lastsize":(32,32),
+            "lastshader":"",
+            "shader":None
         }))
         
     })
@@ -98,6 +103,29 @@ class Unholy():
              positions[3][0]-1280/2+params.params.x(),  positions[3][1]-720/2+params.params.y(), positions[3][2]+params.params.z(), 0.0, 0.0,
              positions[4][0]-1280/2+params.params.x(),  positions[4][1]-720/2+params.params.y(), positions[4][2]+params.params.z(), 0.0, 1.0,
              positions[5][0]-1280/2+params.params.x(),  positions[5][1]-720/2+params.params.y(), positions[5][2]+params.params.z(), 1.0, 1.0],dtype=np.float32)
+        if(secrets.lastshader != params.params.shader()):
+            print("compiling")
+            secrets.shader = compileProgram(compileShader("""#version 450 core
+layout (location=0) in vec3 vertexPos;
+layout (location=1) in vec2 vertexColor;
+uniform highp mat4 matrix;
+out vec2 pos;
+void main()
+{
+    //gl_Position = round(matrix*vec4(vertexPos, 1.0)*256)/256;
+    gl_Position = matrix*vec4(vertexPos, 1.0);
+    pos = vertexColor;
+}""",GL_VERTEX_SHADER),
+compileShader("""#version 450 core
+in vec2 pos;
+uniform sampler2D image;
+uniform float t;
+out vec4 color;
+void main()
+{
+    """+params.params.shader()+"""
+}""",GL_FRAGMENT_SHADER))
+            secrets.lastshader = params.params.shader()
         if(not secrets.vao):
             #Create a pbo
             params.params.size.setbase(size)
@@ -153,10 +181,16 @@ class Unholy():
             
             glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0)
             #Draw the quad
+            glUseProgram(secrets.shader)
             glEnable(GL_DEPTH_TEST)
             glEnable(GL_BLEND)
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-            glUniform1i(glGetUniformLocation(parentclass.viewport.videorenderer.shader,"image"),0)
+            projection = QMatrix4x4()
+            projection.frustum(-1280/32,1280/32,720/32,-720/32,64,4096)
+            projection.translate(0,0,-1024)
+            glUniformMatrix4fv(glGetUniformLocation(secrets.shader,"matrix"),1,GL_FALSE,np.array(projection.data(),dtype=np.float32))
+            glUniform1i(glGetUniformLocation(secrets.shader,"image"),0)
+            glUniform1f(glGetUniformLocation(secrets.shader,"t"),frame)
             glActiveTexture(GL_TEXTURE0)
             glBindVertexArray(secrets.vao)
             glDrawArrays(GL_TRIANGLES,0,6)
@@ -170,7 +204,16 @@ class Unholy():
         return [CzeViewportDraggableHandle(None,parentclass,params.params.x,params.params.y)]
     def __str__(self):
         return self.name
-
+"""
+class Shader():
+    name = "Shader"
+    params = Params({
+        "shader":StringProperty(""),
+        "secrets":SecretProperty(Params({
+            "lastshader":""
+        }))
+    })
+    def composite(imageparam,params)"""
 compositingfunctionsdropdown = [["Sound",SoundFile],["Unholy",Unholy]]
 #["Normal Media",ImageComposite],
 

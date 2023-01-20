@@ -124,7 +124,6 @@ out vec4 color;
 void main()
 {
     color = texture(image,fragmentColor);
-    //color = vec4(fragmentColor,0.0,1.0);
 }""",GL_FRAGMENT_SHADER))
         #self.fbo = glGenFramebuffers(1)
         #self.renderbuffer = glGenRenderbuffers(1)
@@ -319,8 +318,9 @@ class Window(QMainWindow):
         self.stream = sounddevice.OutputStream(channels=2,samplerate=48000,blocksize=1024,callback=self.getnextsoundchunk)
         self.stream.start()
         self.playbacksample = int(self.playbackframe/60*48000)
-        self.executor = concurrent.futures.ThreadPoolExecutor(max_workers=4)
-
+        self.executor = concurrent.futures.ThreadPoolExecutor()
+        self.seeking = False
+        self.skipfuturesobject = None
     def updateviewport(self):
         self.needtoupdate = True
         #self.viewport.update()
@@ -347,31 +347,38 @@ class Window(QMainWindow):
             outdata[:] = np.zeros((1024,1))
             self.playbacksample = int(self.playbackframe/60*48000)
     def seek(self,frame):
+        if self.skipfuturesobject is not None:
+            self.skipfuturesobject.cancel()
+        
+        self.skipfuturesobject = self.executor.submit(self.threadseek,frame)
+        
+        
+    def threadseek(self,frame):
+        self.seeking = True
+        for keyframe in getstate(self.playbackframe,self):
+            if hasattr(keyframe.params.image.function(),"seek"):
+                keyframe.params.image.function().seek(keyframe.params.image.params,frame-keyframe.frame)
+            for action in keyframe.params.states:
+                if hasattr(action.function(),"seek"):
+                    action.function().seek(action.params,frame-keyframe.frame)
+            for effect in keyframe.params.compositing:
+                if hasattr(effect.function(),"seek"):
+                    effect.function().seek(effect.params,frame-keyframe.frame)
         self.startframe = frame
         self.starttime = perf_counter()
         self.playbackframe = frame
         self.playbacksample = int(frame/60*48000)
-        self.executor.submit(self.threadseek)
-    def threadseek(self):
-        for keyframe in self.currentframestate:
-            if hasattr(keyframe.params.image.function(),"seek"):
-                keyframe.params.image.function().seek(keyframe.params.image.params,self.playbackframe)
-            for action in keyframe.params.states:
-                if hasattr(action.function(),"seek"):
-                    action.function().seek(action.params,self.playbackframe)
-            for effect in keyframe.params.compositing:
-                if hasattr(effect.function(),"seek"):
-                    effect.function().seek(effect.params,self.playbackframe)
+        self.seeking = False
     def timerEvent(self, event: QTimerEvent) -> None:
         
-        if self.isplaying:
-            #self.playbackframe = self.startframe+int((perf_counter()-self.starttime)*60)
-            self.playbackframe += 1
+        if self.isplaying and not self.seeking:
+            self.playbackframe = self.startframe+int((perf_counter()-self.starttime)*60)
+            #self.playbackframe += 1
             self.currentframestate = getstate(self.playbackframe,self)
             self.viewport.updateviewportimage(self.currentframestate)
             self.timeline.updateplaybackcursor(self.playbackframe)
             self.needtoupdate = False
-        if self.needtoupdate:
+        if self.needtoupdate and not self.seeking:
             self.viewport.updateviewportimage(getstate(self.playbackframe,self))
             self.needtoupdate = False
         return super().timerEvent(event)
