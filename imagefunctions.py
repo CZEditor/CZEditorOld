@@ -11,7 +11,9 @@ from properties import *
 import os
 from moviepy.editor import AudioFileClip
 from timelineitems import *
+
 loadedimages = {}
+
 class NormalImage():
     name = "Image"
     params = Params(
@@ -19,6 +21,7 @@ class NormalImage():
             "imagepath":FileProperty("")
         }
     )
+    
     def image(param:Params,parentclass,frame):
         path = param.imagepath()
         if(path in loadedimages):
@@ -34,10 +37,14 @@ class NormalImage():
             return img,(img.shape[1],img.shape[0])
         except:
             return np.array([[[0,0,0,0]]]),(1,1)
+
     def __str__(self):
         return self.name
+
     def gethashstring(self,param:Params,parentclass):
         return self.name+str(param)
+
+
 class FilledRectangle():
     name = "Filled Rectangle"
     params = Params(
@@ -47,12 +54,16 @@ class FilledRectangle():
             "color":[192,255,192,255]
         }
     )
+
     def image(param:Params,parentclass,frame):
         #return CreateFilledRectangle((param.width,param.height),tuple(param.color))
         made = np.full((param.width(),param.height(),4),np.array(param.color,dtype=np.uint8))
         return made,(param.width(),param.height())
+
     def __str__(self):
         return self.name
+
+
 class XPError():
     name = "Windows XP Error"
     params = Params(
@@ -69,12 +80,16 @@ class XPError():
                 ["None",""]])
         }
     )
+
     def image(param:Params,parentclass,frame):
         #fillindefaults(param,{"text":"","title":"","buttons":[],"buttonstyles":emptylist(0),"erroricon":Selectable(1,[["Critical Error","xp/Critical Error.png"],["Exclamation","xp/Exclamation.png"],["Information","xp/Information.png"],["Question","xp/Question.png"],["None",""]])})
         generated = CreateXPWindow(param)
         return np.array(generated),generated.size
+
     def __str__(self):
         return self.name
+
+
 class SoundFile():
     name = "Sound"
     params = Params(
@@ -82,29 +97,37 @@ class SoundFile():
             "path":""
         }
     )
+
     def image(param:Params,parentclass,frame):
         return np.array(emptyimage),(1,1)
+
     def __str__(self):
         return self.name
+
+
 class ImageSequence():
     name = "Image Sequence"
     params = Params({
         "imagespath":FileProperty("")
     })
+
     def image(param:Params,parentclass,frame):
         #return Image.open(param.imagespath.replace("*",str(int(parentclass.playbackframe))))
         with open(param.imagespath().replace("*",str(int(frame))),"rb") as file:
             img = pyspng.load(file.read())
         return img,(img.shape[1],img.shape[0])
+
     def __str__(self):
         return self.name
+
+
 class Video():
     name = "Video"
     params = Params({
         "videopath":FileProperty(""),
         "startframe":IntProperty(0),
         "duration":IntProperty(0),
-        "secrets":SecretProperty(Params({
+        "secrets":TransientProperty(Params({
             "pimsobject":None,
             "moviepyobject":None,
             "decodedaudio":None,
@@ -115,6 +138,7 @@ class Video():
     """
     Return the current frame the cursor is on in a video file
     """
+    
     def image(param:Params,parentclass,frame):
         #return Image.open(param.imagespath.replace("*",str(int(parentclass.playbackframe))))
         secrets = param.secrets()
@@ -194,4 +218,6 @@ class Video():
         
     def __str__(self):
         return self.name
+
+
 imagefunctionsdropdown = [["Image",NormalImage],["Windows XP Error",XPError],["Filled Rectangle",FilledRectangle],["Sound",SoundFile],["Image Sequence",ImageSequence],["Video",Video]]

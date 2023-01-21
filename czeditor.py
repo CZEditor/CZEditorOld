@@ -44,7 +44,7 @@ def stateprocessor(frame,keyframes,windowClass):
 
 def composite(state,parentclass):
     for keyframe in state:
-        keyframe.composite(keyframe.imageparams,parentclass)
+        keyframe.composite(parentclass)
 
 def frameprocessor(frame, keyframes):
     returnkeyframes = []
@@ -321,13 +321,17 @@ class Window(QMainWindow):
         self.executor = concurrent.futures.ThreadPoolExecutor()
         self.seeking = False
         self.skipfuturesobject = None
+
     def updateviewport(self):
         self.needtoupdate = True
         #self.viewport.update()
+
     def updatekeyframeoptions(self):
         self.keyframeoptions.update()
+
     def regeneratekeyframeoptions(self):
         self.keyframeoptions.regenerate()
+
     def keyPressEvent(self, event: QKeyEvent) -> None:
         #print(event.text())
         if event.text() == " ":
@@ -335,6 +339,7 @@ class Window(QMainWindow):
             self.starttime = perf_counter()
             self.startframe = self.playbackframe
         return super().keyPressEvent(event)
+
     def getnextsoundchunk(self,outdata,frames,time,status):
         if self.isplaying:
             try:
@@ -346,6 +351,7 @@ class Window(QMainWindow):
         else:
             outdata[:] = np.zeros((1024,1))
             self.playbacksample = int(self.playbackframe/60*48000)
+
     def seek(self,frame):
         if self.skipfuturesobject is not None:
             self.skipfuturesobject.cancel()
@@ -369,6 +375,7 @@ class Window(QMainWindow):
         self.playbackframe = frame
         self.playbacksample = int(frame/60*48000)
         self.seeking = False
+
     def timerEvent(self, event: QTimerEvent) -> None:
         
         if self.isplaying and not self.seeking:
@@ -382,12 +389,14 @@ class Window(QMainWindow):
             self.viewport.updateviewportimage(getstate(self.playbackframe,self))
             self.needtoupdate = False
         return super().timerEvent(event)
+
     def showInfo(self, text):
         self.viewport.showInfo(text)
     
     def createKeyframe(self,keyframe:Keyframe):
         self.keyframes.add(keyframe)
         self.timeline.addKeyframe(keyframe)
+
 app = QApplication([])
 window = Window()
 sys.exit(app.exec())

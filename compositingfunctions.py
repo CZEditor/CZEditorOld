@@ -49,7 +49,7 @@ class SoundFile():
     name = "Sound"
     params = Params({
         "volume":IntProperty(50),
-        "secrets":SecretProperty(Params({
+        "secrets":TransientProperty(Params({
             "lastplaying":False
         }))
     })
@@ -57,6 +57,9 @@ class SoundFile():
         return source
     def __str__(self):
         return self.name
+
+
+
 class Unholy():
     name = "Unholy"
     params = Params({
@@ -70,7 +73,7 @@ class Unholy():
         "relativewidth":IntProperty(100),
         "relativeheight":IntProperty(100),
         "shader":StringProperty("color = texture(image,pos);"),
-        "secrets":SecretProperty(Params({
+        "secrets":TransientProperty(Params({
             "textureid":0,
             "vbo":0,
             "vao":0,
@@ -83,6 +86,7 @@ class Unholy():
     })
     
     def composite(imageparam,params,parentclass,keyframe,frame):
+       #composite(image,vertices,shader,windowObject,keyframe,frame) - > (image,vertices,shader)
         width,height = params.params.size()
         img,size = imageparam.function().image(imageparam.params,parentclass,frame)
         imgdata = img.flatten()
@@ -203,6 +207,33 @@ void main()
         return [CzeViewportDraggableHandle(None,parentclass,params.params.x,params.params.y)]
     def __str__(self):
         return self.name
+
+class Media2D:
+    name = "2D Media",
+    params = Params({
+        "x":IntProperty(0),
+        "y":IntProperty(0),
+        "rotation":IntProperty(0),
+        "size":SizeProperty(1280,720,1280,720),
+        "transient":TransientProperty(Params({
+            "lastsize":(32,32),
+        }))
+    })
+    def composite(image,vertices,params,windowObject,keyframe,frame):
+        transient = params.secrets()
+        width,height = params.size()
+        size = (image.shape[0],image.shape[1])
+        x,y = params.x, params.y
+        if transient.lastsize[0] != size[0] or transient.lastsize[1] != size[1]:
+            params.params.size.setbase(size)
+        return image,np.append(vertices,np.array([[-width/2+x,-height/2+y,0.0, 0.0, 0.0],
+        [width/2+x,  -height/2+y, 0.0, 1.0, 0.0],
+        [width/2+x,  height/2+y, 0.0, 1.0, 1.0],
+        [-width/2+x,  -height/2+y, 0.0, 0.0, 0.0],
+        [-width/2+x,  height/2+y, 0.0, 0.0, 1.0],
+        [width/2+x,  height/2+y, 0.0, 1.0, 1.0]]))
+        
+
 """
 class Shader():
     name = "Shader"

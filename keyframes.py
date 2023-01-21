@@ -2,6 +2,30 @@ from typing import overload
 from util import *
 import numpy as np
 
+#
+# Image, Vertices, Fragment Shader, Vertex Shader
+#
+# [["uniform float time"],["""pos = pos+sin(pos*9+time/70);""","""pos = pos+time/90;\npos = mod(pos,1);"""],["""color=color*2;"""]]
+#
+##version 450 core
+#in vec2 vertexColor;
+#...
+#out vec4 color;
+#void main()
+#{
+#    vec2 pos = vertexColor;
+#    //
+#    pos = pos+sin(pos*9);
+#    pos = pos+time/90;
+#    float beat = sin(time/);
+#    pos = mod(pos,1);
+#    //
+#    color = texture(image,pos);
+#    //
+#    color = color*2;
+#    //
+#}
+#
 class Keyframe():
     def __init__(self, frame, param:Params):
         self.frame = frame
@@ -19,10 +43,13 @@ class Keyframe():
             statetomodify = stateparam.function().state(statetomodify,self,stateparam,windowClass.playbackframe-self.frame)
         return statetomodify
     
-    def composite(self, image,parentclass=None):
+    def composite(self,windowObject=None):
+        image = self.image(windowObject)
+        vertices = np.array((),dtype=np.float)
         for compositingparam in self.compositingparams:
             if hasattr(compositingparam.function(),"composite"):
-                compositingparam.function().composite(image,compositingparam,parentclass,self,parentclass.playbackframe-self.frame)
+                image,vertices = compositingparam.function().composite(image,vertices,compositingparam,windowObject,self,windowObject.playbackframe-self.frame)
+        
     
     def sound(self,sample):
         if hasattr(self.imageparams.function(),"sound"):

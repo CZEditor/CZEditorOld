@@ -76,13 +76,13 @@ class FileProperty:
         self._val = value
 
 
-class SecretProperty:
+class TransientProperty:
     def __init__(self,param):
         self._val = param.copy()
         self._originalparam = param
 
     def copy(self):
-        return SecretProperty(self._originalparam.copy())
+        return TransientProperty(self._originalparam.copy())
 
     def __call__(self):
         return self._val
