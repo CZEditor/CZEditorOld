@@ -535,10 +535,10 @@ def CreateXPWindow(param):
         
     textposx = 15+3
     textposy = 11+h(TopFrame)
-    captiontextimg = createtext(param.title,"./xp/fonts/caption/")
+    captiontextimg = createtext(param.title(),"./xp/fonts/caption/")
     captiontextwidth = w(captiontextimg)
     width = max(width,captiontextwidth+43)
-    createdtext = createtext(param.text,"./xp/fonts/text/",(0,0,0,255))
+    createdtext = createtext(param.text(),"./xp/fonts/text/",(0,0,0,255))
     #textposy -= min(15,h(createdtext)//2)
     width = max(width,w(createdtext)+textposx+8+3)
     height = max(height,h(createdtext)+h(TopFrame)+3+25)
@@ -595,10 +595,10 @@ def CreateXPWindow(param):
     IMAGE = put(IMAGE,Image.new("RGBA", (width-6,height-3-h(TopFrame)), (236,233,216,255)),3,h(TopFrame),"00")
     IMAGE = put(IMAGE,CloseButton,width-5,5,"20")
     if param.active:
-        IMAGE = put(IMAGE,createtext(param.title,"./xp/fonts/captionshadow/",(10,24,131,255)),8,8,"00")
+        IMAGE = put(IMAGE,createtext(param.title(),"./xp/fonts/captionshadow/",(10,24,131,255)),8,8,"00")
         IMAGE = put(IMAGE,captiontextimg,7,7,"00")
     else:
-        IMAGE = put(IMAGE,createtext(param.title,"./xp/fonts/caption/",(216,228,248,255)),7,7,"00")
+        IMAGE = put(IMAGE,createtext(param.title(),"./xp/fonts/caption/",(216,228,248,255)),7,7,"00")
     #if(insideimagepath != ""):
     #    IMAGE = put(IMAGE,insideimage,3,h(TopFrame))
     if(param.erroricon() != ""):

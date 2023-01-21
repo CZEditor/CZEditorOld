@@ -113,3 +113,22 @@ class SizePropertyWidget(QRedFrame):
         self.heightSpinBox.setValue(self.theproperty._height)
         self.relativeWidthSpinBox.setValue(self.theproperty._relativewidth*100)
         self.relativeHeightSpinBox.setValue(self.theproperty._relativeheight*100)
+
+
+class FloatPropertyWidget(QRedFrame):
+    
+    def __init__(self,property):
+        super().__init__(None)
+        self.theproperty = property
+        self.widgets = QHBoxLayout()
+        self.spinbox = QRedDecimalSpinBox(self,self.updateproperty)
+        self.spinbox.setValue(self.theproperty._val)
+        self.widgets.addWidget(self.spinbox)
+        self.setLayout(self.widgets)
+        self.setStyleSheet("border-width:0px;")
+
+    def updateproperty(self, value):
+        self.theproperty._val = value
+
+    def updateself(self):
+        self.spinbox.setValue(self.theproperty._val)

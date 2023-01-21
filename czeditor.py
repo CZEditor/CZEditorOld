@@ -117,7 +117,10 @@ class CzeVideoView(QOpenGLWidget):
         glVertexAttribPointer(0,3,GL_FLOAT,GL_FALSE,20,c_void_p(0))
         glEnableVertexAttribArray(1)
         glVertexAttribPointer(1,2,GL_FLOAT,GL_FALSE,20,c_void_p(12))
-
+        glEnable(GL_DEPTH_TEST)
+        glEnable(GL_BLEND)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+        glDepthFunc(GL_LEQUAL)
     def sizeHint(self):
         return QSize(1280,720)
     #def resizeGL(self, w: int, h: int) -> None:
@@ -132,6 +135,8 @@ class CzeVideoView(QOpenGLWidget):
         
         glBindBuffer(GL_ARRAY_BUFFER,self.vbo)
         glBindVertexArray(self.vao)
+        #for keyframeId in range(len(self.state)):
+        #    self.state[-keyframeId-1].composite(self.parentclass) # It is required to composite from end to beginning because OpenGL renders front-to-back rather than back-to-front
         for keyframe in self.state:
             keyframe.composite(self.parentclass)
         glBindBuffer(GL_ARRAY_BUFFER,0)

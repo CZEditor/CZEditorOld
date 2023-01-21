@@ -54,16 +54,18 @@ class Keyframe():
             return
         image = self.image(windowObject)
         imageDataPointer = image.ctypes.data
-        vertices = np.array((),dtype=np.float32)
+        vertices = np.array(((0,0,0,0,0),(0,0,0,0,0)),dtype=np.float32)
         shader = [[],[],[],[]]
         for compositingparam in self.compositingparams:
             if hasattr(compositingparam.function(),"composite"):
                 image,vertices,shader = compositingparam.function().composite(image,vertices,shader,compositingparam.params,windowObject,self,windowObject.playbackframe-self.frame)
-
+        vertices = vertices[2:]
+        vertices = vertices.flatten()
         if(str(shader) != str(self.lastShaderList)):
             main = """#version 450 core
 in vec2 fragmentColor;
 uniform sampler2D image;
+uniform float frame;
 out vec4 color;
 """
             for declareString in shader[3]:
@@ -83,7 +85,7 @@ out vec4 color;
                 main += functionString.replace("$inpos",curInPosName).replace("$outpos",curOutPosName)+"\n   "
                 curInPosName,curOutPosName = curOutPosName,curInPosName #Swap them
 
-            main += """color = texture(image,"""+curOutPosName+""");
+            main += """color = texture(image,"""+curInPosName+""");
 }"""
             
             shaders=[
@@ -126,9 +128,7 @@ void main()
         glTexSubImage2D(GL_TEXTURE_2D,0,0,0,image.shape[1],image.shape[0],GL_RGBA,GL_UNSIGNED_BYTE,c_void_p(imageDataPointer))
 
         glBufferData(GL_ARRAY_BUFFER,np.array(vertices,dtype=np.float32),GL_DYNAMIC_DRAW)
-        glEnable(GL_DEPTH_TEST)
-        glEnable(GL_BLEND)
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+        
 
         glUseProgram(self.compiledProgram)
 
@@ -136,10 +136,13 @@ void main()
         projection.frustum(-1280/32,1280/32,720/32,-720/32,64,4096)
         projection.translate(-1280/2,-720/2,-1024)
         glUniformMatrix4fv(glGetUniformLocation(self.compiledProgram,"matrix"),1,GL_FALSE,np.array(projection.data(),dtype=np.float32))
+
         glUniform1i(glGetUniformLocation(self.compiledProgram,"image"),0)
 
+        glUniform1f(glGetUniformLocation(self.compiledProgram,"frame"),windowObject.playbackframe-self.frame)
+
         glActiveTexture(GL_TEXTURE0)
-        glDrawArrays(GL_TRIANGLES,0,6)
+        glDrawArrays(GL_TRIANGLES,0,int(vertices.shape[0]/5))
 
         glBindTexture(GL_TEXTURE_2D,0)
 
@@ -150,7 +153,7 @@ void main()
                 if hasattr(soundeffectparam.function(),"soundeffect"):
                     source = soundeffectparam.function().soundeffect(source,soundeffectparam,sample-int(self.frame/60*48000))
             return source
-        return np.array(((0),(0))),48000
+        return np.zeros((1024,2)),48000
 
     def timelineitems(self):
         items = []
@@ -258,6 +261,7 @@ class Keyframelist():
             }
         ))
         self.append(addedkeyframe)
+        
         return addedkeyframe
 
 """keyframes.append(Keyframe(20,Params(

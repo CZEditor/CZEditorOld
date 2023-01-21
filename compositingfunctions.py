@@ -13,6 +13,7 @@ from scipy.spatial.transform import Rotation
 from properties import *
 from openglfunctions import *
 from OpenGL.GL.shaders import compileProgram,compileShader
+from traceback import print_exc
 imagecache = {}
 """def cachecomposite(func,parentclass,width,height):
     global imagecache
@@ -242,7 +243,7 @@ class Media2D:
         [width/2,  height/2, 0.0, 1.0, 1.0],
         [-width/2,  -height/2, 0.0, 0.0, 0.0],
         [-width/2,  height/2, 0.0, 0.0, 1.0],
-        [width/2,  height/2, 0.0, 1.0, 1.0]])
+        [width/2,  height/2, 0.0, 1.0, 1.0]],dtype=np.float32)
 
         angle = np.deg2rad(params.rotation())
 
@@ -252,8 +253,8 @@ class Media2D:
         rotatedVertices = np.hstack(((rotationMatrix @ (unrotatedVertices[:,:2].T)).T,unrotatedVertices[:,2:]))
 
         rotatedVertices[:,:2] += (x,y)
-
-        return image,np.append(vertices,rotatedVertices),shader
+        
+        return image,np.concatenate([vertices,rotatedVertices]),shader
 
     def handle(keyframe,parentclass,params):
         return [CzeViewportDraggableHandle(None,parentclass,params.params.x,params.params.y)]
@@ -290,12 +291,12 @@ class Media3D:
 
             width,height = params.size()
         
-        newvertices = np.array([[-width/2,-height/2,0.0, 0.0, 0.0],
+        newvertices = np.array([[-width/2,-height/2, 0.0, 0.0, 0.0],
         [width/2,  -height/2, 0.0, 1.0, 0.0],
         [width/2,  height/2, 0.0, 1.0, 1.0],
         [-width/2,  -height/2, 0.0, 0.0, 0.0],
         [-width/2,  height/2, 0.0, 0.0, 1.0],
-        [width/2,  height/2, 0.0, 1.0, 1.0]])
+        [width/2,  height/2, 0.0, 1.0, 1.0]],dtype=np.float32)
 
         newvertices = np.hstack(
                 (
@@ -310,10 +311,8 @@ class Media3D:
             )
 
         newvertices[:,:3] += (x,y,z)
-
         
-
-        return image,np.append(vertices,newvertices),shader
+        return image,np.concatenate([vertices,newvertices]),shader
 
     def handle(keyframe,parentclass,params):
         return [CzeViewportDraggableHandle(None,parentclass,params.params.x,params.params.y)]
@@ -322,8 +321,7 @@ class BasicShader:
     name = "Basic Shader"
     params = Params({
         "transient":TransientProperty(Params({
-            "shader":None,
-            "lastlength":0
+            "shader":None
         }))
     })
     def composite(image,vertices,shader,params,windowObject,keyframe,frame):
@@ -341,6 +339,96 @@ class BasicShader:
         shader[3].append("void shaderbasic(in vec2 inpos, out vec2 outpos);")
         return image,vertices,shader
 
+class ScrollingShader:
+    name = "Scrolling Shader"
+    params = Params({
+        "speedX":FloatProperty(1.0),
+        "speedY":FloatProperty(1.0),
+        "transient":TransientProperty(Params({
+            "shader":None
+        }))
+    })
+    def composite(image,vertices,shader,params,windowObject,keyframe,frame):
+        transient = params.transient()
+        if(transient.shader is None):
+
+            transient.shader = compileShader("""#version 450 core
+                void shaderscrolling(in vec2 inpos, float frame,float speedx, float speedy, out vec2 outpos){
+                    outpos = mod(inpos+vec2(frame*speedx/60,frame*speedy/60),1);
+                }
+            """,GL_FRAGMENT_SHADER)
+        # TODO : Add more complex stuff, like custom equations or scaling the tile effect
+        shader[1].append(transient.shader)
+        shader[2].append("shaderscrolling($inpos,frame,"+str(params.speedX())+","+str(params.speedY())+",$outpos);")  # TODO : Do not pass in parameters like this (You would have to recompile every time if the properties were animated). Use a uniform.
+        shader[3].append("void shaderscrolling(in vec2 inpos, float frame, float speedx, float speedy, out vec2 outpos);")
+        return image,vertices,shader
+
+class TilingShader:
+    name = "Tiling Shader"
+    params = Params({
+        "amountX":FloatProperty(1.0),
+        "amountY":FloatProperty(1.0),
+        "transient":TransientProperty(Params({
+            "shader":None
+        }))
+    })
+    def composite(image,vertices,shader,params,windowObject,keyframe,frame):
+        transient = params.transient()
+        if(transient.shader is None):
+
+            transient.shader = compileShader("""#version 450 core
+                void shadertiling(in vec2 inpos, float amountx, float amounty, out vec2 outpos){
+                    outpos = mod(inpos*vec2(amountx,amounty),1);
+                }
+            """,GL_FRAGMENT_SHADER)
+        shader[1].append(transient.shader)
+        shader[2].append("shadertiling($inpos,"+str(params.amountX())+","+str(params.amountY())+",$outpos);")
+        shader[3].append("void shadertiling(in vec2 inpos, float amountx, float amounty, out vec2 outpos);")
+        return image,vertices,shader
+
+class CustomShader:
+    name = "Custom Shader"
+    params = Params({
+        "variableA":FloatProperty(0.0),
+        "variableB":FloatProperty(0.0),
+        "custom":StringProperty("outpos = inpos;"),
+        "transient":TransientProperty(Params({
+            "shader":None,
+            "previousCustom":"",
+            "previousIndex":None
+        }))
+    })
+    def composite(image,vertices,shader,params,windowObject,keyframe,frame):
+        transient = params.transient()
+        index = len(shader[1]) #There may be a better way to avoid function name collisions, but this works, it's just not really efficient.
+        if(transient.shader is None or params.custom() != transient.previousCustom or transient.previousIndex != index):
+
+            transient.shader = compileShader("""#version 450 core
+                void shadercustom"""+str(index)+"""(in vec2 inpos, float variableA, float variableB, out vec2 outpos){
+                    """+params.custom()+"""
+                }
+            """,GL_FRAGMENT_SHADER)
+
+            transient.previousCustom = params.custom()
+            transient.previousIndex = index
+
+        shader[1].append(transient.shader)
+        shader[2].append("shadercustom"+str(index)+"($inpos,"+str(params.variableA())+","+str(params.variableB())+",$outpos);")
+        shader[3].append("void shadercustom"+str(index)+"(in vec2 inpos, float variableA, float variableB, out vec2 outpos);")
+        return image,vertices,shader
+
+class CustomVertexModifier:
+    name = "Custom Vertex Modifier"
+    params = Params({
+        "code":StringProperty("")
+    })
+    def composite(image,vertices,shader,params,windowObject,keyframe,frame):
+        try:
+            exec(params.code())
+            return image,vertices,shader
+        except Exception:
+            print_exc()
+            return image,vertices,shader
 """
 class Shader():
     name = "Shader"
@@ -351,7 +439,7 @@ class Shader():
         }))
     })
     def composite(imageparam,params)"""
-compositingfunctionsdropdown = [["Media 2D",Media2D],["Media 3D",Media3D],["Basic Shader",BasicShader]]
+compositingfunctionsdropdown = [["Media 2D",Media2D],["Media 3D",Media3D],["Basic Shader",BasicShader],["Scrolling Shader",ScrollingShader],["Tiling Shader",TilingShader],["Custom Shader",CustomShader],["Custom Vertex Modifier",CustomVertexModifier]]
 #["Normal Media",ImageComposite],
 
 """vertexes = np.array([

@@ -9,7 +9,7 @@ class CzeViewportDraggableHandle(QGraphicsItem):
         self.xproperty = x
         self.yproperty = y
         self.parentclass = parentclass
-        #self.setPos(self.x,self.y)
+        self.setPos(self.xproperty(),self.yproperty())
         
         self.setCursor(Qt.CursorShape.OpenHandCursor)
     def boundingRect(self) -> QRectF:

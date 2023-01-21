@@ -28,8 +28,11 @@ class NormalImage():
             img = loadedimages[path]
             return img
         try:
-            with open(path,"rb") as file:
-                img = pyspng.load(file.read())
+            if(os.path.splitext(path)[1] == ".png"):
+                with open(path,"rb") as file:
+                    img = pyspng.load(file.read())
+            else:
+                img = np.array(Image.open(path).convert("RGBA"))
             loadedimages[path] = img
             if(len(loadedimages.keys()) > 300):
                 del loadedimages[loadedimages.keys()[0]]
@@ -68,23 +71,30 @@ class XPError():
     name = "Windows XP Error"
     params = Params(
         {
-            "text":"",
-            "title":"",
-            "buttons":StringList([]),
+            "text":StringProperty(""),
+            "title":StringProperty(""),
+            "buttons":StringList(["OK"]),
             "buttonstyles":emptylist(0),
-            "erroricon":Selectable(1,[
+            "erroricon":Selectable(0,[
                 ["Critical Error","xp/Critical Error.png"],
                 ["Exclamation","xp/Exclamation.png"],
                 ["Information","xp/Information.png"],
                 ["Question","xp/Question.png"],
-                ["None",""]])
+                ["None",""]]),
+            "transient":TransientProperty(Params({
+                "cached":None,
+                "lastParams":None
+            }))
         }
     )
 
     def image(param:Params,parentclass,frame):
         #fillindefaults(param,{"text":"","title":"","buttons":[],"buttonstyles":emptylist(0),"erroricon":Selectable(1,[["Critical Error","xp/Critical Error.png"],["Exclamation","xp/Exclamation.png"],["Information","xp/Information.png"],["Question","xp/Question.png"],["None",""]])})
-        generated = CreateXPWindow(param)
-        return np.array(generated)
+        transient = param.transient()
+        if(transient.lastParams != str(param)):
+            transient.cached = np.array(CreateXPWindow(param))
+            transient.lastParams = str(param)
+        return transient.cached
 
     def __str__(self):
         return self.name

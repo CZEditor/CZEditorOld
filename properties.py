@@ -50,6 +50,9 @@ class StringProperty:
     def set(self,value):
         self._val = value
 
+    def __str__(self):
+        return self._val
+
 
 class FileProperty:
     def __init__(self,value):
@@ -140,3 +143,28 @@ class SizeProperty():
 
     def widget(self):
         return SizePropertyWidget(self)
+
+
+class FloatProperty:
+    def __init__(self,value):
+        self._val = value
+        
+    def copy(self):
+        return FloatProperty(self._val)
+
+    def __call__(self):
+        return self._val
+
+    def widget(self):
+        return FloatPropertyWidget(self)
+
+    @property
+    def val(self):
+        return self._val
+
+    @val.setter
+    def val(self, value):
+        self._val = value
+
+    def set(self,value):
+        self._val = value

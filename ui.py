@@ -290,9 +290,9 @@ class CzeKeyframeOptionCategoryList(QRedFrame):
             arow = QHBoxLayout()
             arow.addWidget(self.entries[i])
             buttons = QVBoxLayout()
-            buttons.addWidget(QRedButton(None,"/\\",0,0,self.moveup,False,arow))
-            buttons.addWidget(QRedButton(None,"\\/",0,0,self.movedown,False,arow))
-            buttons.addWidget(QRedButton(None,"-",0,0,self.remove,False,arow))
+            buttons.addWidget(QRedButton(None,"/\\",self.moveup,arow))
+            buttons.addWidget(QRedButton(None,"\\/",self.movedown,arow))
+            buttons.addWidget(QRedButton(None,"-",self.remove,arow))
             arow.addLayout(buttons)
             self.widgets.addRow("",arow)
         self.withbuttons.addLayout(self.widgets,0,0)
@@ -322,8 +322,28 @@ class CzeKeyframeOptionCategoryList(QRedFrame):
         i = 0
         
         for element in thelist:
-            self.entries[i].regenerate(element)
+            if(i>=len(self.entries)):
+                self.entries.append(CzeKeyframeOptionCategory(None,"expand/collapse",element,self.parentclass))
+                arow = QHBoxLayout()
+                arow.addWidget(self.entries[i])
+                buttons = QVBoxLayout()
+                buttons.addWidget(QRedButton(None,"/\\",self.moveup,arow))
+                buttons.addWidget(QRedButton(None,"\\/",self.movedown,arow))
+                buttons.addWidget(QRedButton(None,"-",self.remove,arow))
+                arow.addLayout(buttons)
+                self.widgets.addRow("",arow)
+            else:
+                self.entries[i].regenerate(element)
             i+=1
+        
+        initialLength = len(self.entries)
+
+        if(len(thelist)<initialLength):
+            while i < initialLength:
+                self.widgets.removeRow(len(thelist))
+                self.entries.pop(len(thelist))
+                i+=1
+        
 
     def collapse(self):
         if self.collapsed:
@@ -338,8 +358,8 @@ class CzeKeyframeOptionCategoryList(QRedFrame):
         if index == 0:
             return
         self.thelist[index],self.thelist[index-1] = self.thelist[index-1],self.thelist[index]
-        #self.entries[index].updatetextbox()
-        #self.entries[index-1].updatetextbox()
+        self.entries[index].regenerate(self.thelist[index])
+        self.entries[index-1].regenerate(self.thelist[index-1])
         self.parentclass.updateviewport()
 
     def movedown(self,arow):
@@ -347,6 +367,8 @@ class CzeKeyframeOptionCategoryList(QRedFrame):
         if index == len(self.thelist)-1:
             return
         self.thelist[index],self.thelist[index+1] = self.thelist[index+1],self.thelist[index]
+        self.entries[index].regenerate(self.thelist[index])
+        self.entries[index+1].regenerate(self.thelist[index+1])
         #self.entries[index].updatetextbox()
         #self.entries[index+1].updatetextbox()
         self.parentclass.updateviewport()
@@ -367,9 +389,9 @@ class CzeKeyframeOptionCategoryList(QRedFrame):
         arow = QHBoxLayout()
         arow.addWidget(self.entries[i])
         buttons = QVBoxLayout()
-        buttons.addWidget(QRedButton(None,"/\\",0,0,self.moveup,False,arow))
-        buttons.addWidget(QRedButton(None,"\\/",0,0,self.movedown,False,arow))
-        buttons.addWidget(QRedButton(None,"-",0,0,self.remove,False,arow))
+        buttons.addWidget(QRedButton(None,"/\\",self.moveup,arow))
+        buttons.addWidget(QRedButton(None,"\\/",self.movedown,arow))
+        buttons.addWidget(QRedButton(None,"-",self.remove,arow))
         arow.addLayout(buttons)
         self.widgets.addRow("button",arow)
         self.parentclass.updateviewport()

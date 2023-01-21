@@ -1,5 +1,6 @@
 from util import Params,ParamLink
 from handles import CzeViewportDraggableOffsetLine,CzeViewportDraggableOffset
+from properties import *
 class NormalKeyframe():
     name = "Media"
     params = Params({})
@@ -26,28 +27,28 @@ class CascadeKeyframe():
     name = "Cascade"
     params = Params(
         {
-            "x":16,
-            "y":16
+            "x":IntProperty(16),
+            "y":IntProperty(16)
         })
     def state(statetomodify,keyframe,stateparam,frame):
         if statetomodify:
             #get previous keyframe normal media params
             for lastkeyframe in statetomodify[-1].compositingparams:
-                if lastkeyframe.function().name == "Normal Media":
+                if lastkeyframe.function().params.x != None:
                     #get current keyframe normal media params
                     for currentkeyframe in keyframe.compositingparams:
-                        if currentkeyframe.function().name == "Normal Media":
+                        if currentkeyframe.function().params.x != None:
                             #set current keyframe normal media params to previous keyframe normal media params and add x and y 
-                            currentkeyframe.params.x = lastkeyframe.params.x+stateparam.params.x
-                            currentkeyframe.params.y = lastkeyframe.params.y+stateparam.params.y
+                            currentkeyframe.params.x.set(lastkeyframe.params.x()+stateparam.params.x())
+                            currentkeyframe.params.y.set(lastkeyframe.params.y()+stateparam.params.y())
                             break
                     break
         return statetomodify
     def handle(keyframe,parentclass,params):
         for currentkeyframe in keyframe.compositingparams:
-            if currentkeyframe.function().name == "Normal Media":
-                return [CzeViewportDraggableOffset(None,parentclass,ParamLink(currentkeyframe.params,"x"),ParamLink(currentkeyframe.params,"y"),ParamLink(params.params,"x"),ParamLink(params.params,"y")),CzeViewportDraggableOffsetLine(None,parentclass,ParamLink(currentkeyframe.params,"x"),ParamLink(currentkeyframe.params,"y"),ParamLink(params.params,"x"),ParamLink(params.params,"y"))]
-        
+            if currentkeyframe.function().params.x != None:
+                return [CzeViewportDraggableOffset(None,parentclass,currentkeyframe.params.x,currentkeyframe.params.y,params.params.x,params.params.y),CzeViewportDraggableOffsetLine(None,parentclass,currentkeyframe.params.x,currentkeyframe.params.y,params.params.x,params.params.y)]
+        return []
     def __str__(self):
         return self.name
 
