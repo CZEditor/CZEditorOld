@@ -1,6 +1,7 @@
 from OpenGL.GL import *
 from ctypes import c_void_p
-
+import numpy as np
+from scipy.spatial.transform import Rotation
 # Copy a pointer to a bound opengl GL_PIXEL_UNPACK_BUFFER
 def CopyToBuffer(pointer:int,maxlen:int):
     glBufferData(GL_PIXEL_UNPACK_BUFFER, maxlen,None, GL_STREAM_DRAW)
@@ -30,3 +31,16 @@ def UpdateTextureWithBuffer(pointer:int,maxlen:int,size:tuple):
     ctypes.memmove(array,pointer,maxlen)
     glUnmapBuffer(GL_PIXEL_UNPACK_BUFFER)
     glTexSubImage2D(GL_TEXTURE_2D,0,0,0,size[0],size[1],GL_RGBA,GL_UNSIGNED_BYTE,c_void_p(0))
+
+def RotatePoints(points, X, Y, Z):
+    return np.hstack(
+                (
+                    Rotation.from_euler("xyz",(
+                            X,
+                            Y,
+                            Z),True).apply(
+                        points[:,:3]
+                    ),
+                    points[:,3:]
+                )
+            )

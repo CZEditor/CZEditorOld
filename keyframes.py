@@ -54,12 +54,11 @@ class Keyframe():
             return
         image = self.image(windowObject)
         imageDataPointer = image.ctypes.data
-        vertices = np.array(((0,0,0,0,0),(0,0,0,0,0)),dtype=np.float32)
+        vertices = np.empty((0,5),dtype=np.float32)
         shader = [[],[],[],[]]
         for compositingparam in self.compositingparams:
             if hasattr(compositingparam.function(),"composite"):
                 image,vertices,shader = compositingparam.function().composite(image,vertices,shader,compositingparam.params,windowObject,self,windowObject.playbackframe-self.frame)
-        vertices = vertices[2:]
         vertices = vertices.flatten()
         if(str(shader) != str(self.lastShaderList)):
             main = """#version 450 core
