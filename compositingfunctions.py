@@ -216,23 +216,130 @@ class Media2D:
         "rotation":IntProperty(0),
         "size":SizeProperty(1280,720,1280,720),
         "transient":TransientProperty(Params({
-            "lastsize":(32,32),
+            "lastsize":(32,32)
         }))
     })
-    def composite(image,vertices,params,windowObject,keyframe,frame):
-        transient = params.secrets()
+    def composite(image,vertices,shader,params,windowObject,keyframe,frame):
+
+        transient = params.transient()
+
         width,height = params.size()
-        size = (image.shape[0],image.shape[1])
-        x,y = params.x, params.y
-        if transient.lastsize[0] != size[0] or transient.lastsize[1] != size[1]:
-            params.params.size.setbase(size)
-        return image,np.append(vertices,np.array([[-width/2+x,-height/2+y,0.0, 0.0, 0.0],
-        [width/2+x,  -height/2+y, 0.0, 1.0, 0.0],
-        [width/2+x,  height/2+y, 0.0, 1.0, 1.0],
-        [-width/2+x,  -height/2+y, 0.0, 0.0, 0.0],
-        [-width/2+x,  height/2+y, 0.0, 0.0, 1.0],
-        [width/2+x,  height/2+y, 0.0, 1.0, 1.0]]))
+
+        imageResolution = (image.shape[1],image.shape[0])
+
+        x,y = params.x(), params.y()
+
+        if transient.lastsize[0] != imageResolution[0] or transient.lastsize[1] != imageResolution[1]: #Detect change in image resolution
+
+            params.size.setbase(imageResolution)
+
+            transient.lastsize = imageResolution
+
+            width,height = params.size()
         
+        unrotatedVertices = np.array([[-width/2,-height/2,0.0, 0.0, 0.0],
+        [width/2,  -height/2, 0.0, 1.0, 0.0],
+        [width/2,  height/2, 0.0, 1.0, 1.0],
+        [-width/2,  -height/2, 0.0, 0.0, 0.0],
+        [-width/2,  height/2, 0.0, 0.0, 1.0],
+        [width/2,  height/2, 0.0, 1.0, 1.0]])
+
+        angle = np.deg2rad(params.rotation())
+
+        rotationMatrix = np.array([[np.cos(angle),-np.sin(angle)],
+                                   [np.sin(angle),np.cos(angle)]])
+
+        rotatedVertices = np.hstack(((rotationMatrix @ (unrotatedVertices[:,:2].T)).T,unrotatedVertices[:,2:]))
+
+        rotatedVertices[:,:2] += (x,y)
+
+        return image,np.append(vertices,rotatedVertices),shader
+
+    def handle(keyframe,parentclass,params):
+        return [CzeViewportDraggableHandle(None,parentclass,params.params.x,params.params.y)]
+
+class Media3D:
+    name = "3D Media",
+    params = Params({
+        "x":IntProperty(0),
+        "y":IntProperty(0),
+        "z":IntProperty(0),
+        "rotationX":IntProperty(0),
+        "rotationY":IntProperty(0),
+        "rotationZ":IntProperty(0),
+        "size":SizeProperty(1280,720,1280,720),
+        "transient":TransientProperty(Params({
+            "lastsize":(32,32)
+        }))
+    })
+    def composite(image,vertices,shader,params,windowObject,keyframe,frame):
+
+        transient = params.transient()
+
+        width,height = params.size()
+
+        imageResolution = (image.shape[1],image.shape[0])
+
+        x,y,z = params.x(), params.y(), params.z()
+
+        if transient.lastsize[0] != imageResolution[0] or transient.lastsize[1] != imageResolution[1]: #Detect change in image resolution
+
+            params.size.setbase(imageResolution)
+
+            transient.lastsize = imageResolution
+
+            width,height = params.size()
+        
+        newvertices = np.array([[-width/2,-height/2,0.0, 0.0, 0.0],
+        [width/2,  -height/2, 0.0, 1.0, 0.0],
+        [width/2,  height/2, 0.0, 1.0, 1.0],
+        [-width/2,  -height/2, 0.0, 0.0, 0.0],
+        [-width/2,  height/2, 0.0, 0.0, 1.0],
+        [width/2,  height/2, 0.0, 1.0, 1.0]])
+
+        newvertices = np.hstack(
+                (
+                    Rotation.from_euler("xyz",(
+                            params.rotationX(),
+                            params.rotationY(),
+                            params.rotationZ()),True).apply(
+                        newvertices[:,:3]
+                    ),
+                    newvertices[:,3:]
+                )
+            )
+
+        newvertices[:,:3] += (x,y,z)
+
+        
+
+        return image,np.append(vertices,newvertices),shader
+
+    def handle(keyframe,parentclass,params):
+        return [CzeViewportDraggableHandle(None,parentclass,params.params.x,params.params.y)]
+
+class BasicShader:
+    name = "Basic Shader"
+    params = Params({
+        "transient":TransientProperty(Params({
+            "shader":None,
+            "lastlength":0
+        }))
+    })
+    def composite(image,vertices,shader,params,windowObject,keyframe,frame):
+        transient = params.transient()
+        if(transient.shader is None):
+
+            transient.shader = compileShader("""#version 450 core
+                void shaderbasic(in vec2 inpos, out vec2 outpos){
+                    outpos = inpos;
+                }
+            """,GL_FRAGMENT_SHADER)
+        
+        shader[1].append(transient.shader)
+        shader[2].append("shaderbasic($inpos,$outpos);")
+        shader[3].append("void shaderbasic(in vec2 inpos, out vec2 outpos);")
+        return image,vertices,shader
 
 """
 class Shader():
@@ -244,7 +351,7 @@ class Shader():
         }))
     })
     def composite(imageparam,params)"""
-compositingfunctionsdropdown = [["Sound",SoundFile],["Unholy",Unholy]]
+compositingfunctionsdropdown = [["Media 2D",Media2D],["Media 3D",Media3D],["Basic Shader",BasicShader]]
 #["Normal Media",ImageComposite],
 
 """vertexes = np.array([

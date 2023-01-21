@@ -19,6 +19,9 @@ class CzeViewportDraggableHandle(QGraphicsItem):
         self.setPos(self.xproperty(),self.yproperty())
         painter.setPen(QPen(QColor(255,255,255),1))
         painter.drawEllipse(QRectF(-4,-4,7,7))
+        #draw black border
+        painter.setPen(QPen(QColor(0,0,0),1))
+        painter.drawEllipse(QRectF(-5,-5,9,9))
         #return super().paint(painter, option, widget)
     def mousePressEvent(self, event: QGraphicsSceneMouseEvent) -> None:
         #print(event.buttons())
@@ -57,6 +60,9 @@ class CzeViewportDraggableOffset(QGraphicsItem):
         painter.setPen(QPen(QColor(255,255,255),1))
         #draw ellipse at the end
         painter.drawEllipse(QRectF(-5,-5,9,9))
+        #draw black border
+        painter.setPen(QPen(QColor(0,0,0),1))
+        painter.drawEllipse(QRectF(-6,-6,10,10))
     def mousePressEvent(self, event: QGraphicsSceneMouseEvent) -> None:
         #print(event.buttons())
         event.accept()

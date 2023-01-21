@@ -1,7 +1,10 @@
 from typing import overload
 from util import *
 import numpy as np
-
+from OpenGL.GL import *
+from OpenGL.GL.shaders import compileProgram,compileShader
+from PySide6.QtGui import QMatrix4x4
+from ctypes import c_void_p
 #
 # Image, Vertices, Fragment Shader, Vertex Shader
 #
@@ -34,23 +37,112 @@ class Keyframe():
         self.stateparams = param.states
         self.compositingparams = param.compositing
         self.shared = Params({})
-
+        self.lastShaderList = None
+        self.compiledProgram = None
+        self.currentTextureSize = None
+        self.currentTexture = None
     def image(self,parentclass): # TODO : Rename this to source
-        return self.imageparams.function().image(self.imageparams.params,parentclass,parentclass.playbackframe-self.frame)
+        return self.params.image.function().image(self.imageparams.params,parentclass,parentclass.playbackframe-self.frame)
     
     def state(self, statetomodify,windowClass): #action
         for stateparam in self.stateparams:
             statetomodify = stateparam.function().state(statetomodify,self,stateparam,windowClass.playbackframe-self.frame)
         return statetomodify
     
-    def composite(self,windowObject=None):
+    def composite(self,windowObject):
+        if(not hasattr(self.params.image.function(),"image")):
+            return
         image = self.image(windowObject)
-        vertices = np.array((),dtype=np.float)
+        imageDataPointer = image.ctypes.data
+        vertices = np.array((),dtype=np.float32)
+        shader = [[],[],[],[]]
         for compositingparam in self.compositingparams:
             if hasattr(compositingparam.function(),"composite"):
-                image,vertices = compositingparam.function().composite(image,vertices,compositingparam,windowObject,self,windowObject.playbackframe-self.frame)
+                image,vertices,shader = compositingparam.function().composite(image,vertices,shader,compositingparam.params,windowObject,self,windowObject.playbackframe-self.frame)
+
+        if(str(shader) != str(self.lastShaderList)):
+            main = """#version 450 core
+in vec2 fragmentColor;
+uniform sampler2D image;
+out vec4 color;
+"""
+            for declareString in shader[3]:
+                main += declareString+"\n"
+
+            main+= """void main()
+{
+    vec2 pos1,pos2;
+    pos1 = fragmentColor;
+    pos2 = vec2(0,0);
+    """
+
+            curInPosName = "pos1"
+            curOutPosName = "pos2"
+
+            for functionString in shader[2]:
+                main += functionString.replace("$inpos",curInPosName).replace("$outpos",curOutPosName)+"\n   "
+                curInPosName,curOutPosName = curOutPosName,curInPosName #Swap them
+
+            main += """color = texture(image,"""+curOutPosName+""");
+}"""
+            
+            shaders=[
+                compileShader("""#version 450 core
+layout (location=0) in vec3 vertexPos;
+layout (location=1) in vec2 vertexColor;
+uniform highp mat4 matrix;
+out vec2 fragmentColor;
+void main()
+{
+    gl_Position = matrix*vec4(vertexPos, 1.0);
+    fragmentColor = vertexColor;
+}""",GL_VERTEX_SHADER)
+            ]+\
+            shader[1]+\
+            [compileShader(main,GL_FRAGMENT_SHADER)]
+            
+            self.compiledProgram = compileProgram(*shaders)
+            self.lastShaderList = shader
+        if(self.currentTexture == None):
+            self.currentTexture = glGenTextures(1)
+            self.currentTextureSize = (0,0)
         
-    
+        glBindTexture(GL_TEXTURE_2D,self.currentTexture)
+
+        if(self.currentTextureSize[0] != image.shape[1] or self.currentTextureSize[1] != image.shape[0]):
+
+            glPixelStorei(GL_UNPACK_ALIGNMENT,1)
+
+            glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST)
+            glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST)
+            glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_BORDER)
+            glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_BORDER)
+            glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_BASE_LEVEL,0)
+            glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAX_LEVEL,0)
+
+            glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,image.shape[1],image.shape[0],0,GL_RGBA,GL_UNSIGNED_BYTE,c_void_p(imageDataPointer))
+            self.currentTextureSize = (image.shape[1],image.shape[0])
+
+        glTexSubImage2D(GL_TEXTURE_2D,0,0,0,image.shape[1],image.shape[0],GL_RGBA,GL_UNSIGNED_BYTE,c_void_p(imageDataPointer))
+
+        glBufferData(GL_ARRAY_BUFFER,np.array(vertices,dtype=np.float32),GL_DYNAMIC_DRAW)
+        glEnable(GL_DEPTH_TEST)
+        glEnable(GL_BLEND)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+
+        glUseProgram(self.compiledProgram)
+
+        projection = QMatrix4x4()
+        projection.frustum(-1280/32,1280/32,720/32,-720/32,64,4096)
+        projection.translate(-1280/2,-720/2,-1024)
+        glUniformMatrix4fv(glGetUniformLocation(self.compiledProgram,"matrix"),1,GL_FALSE,np.array(projection.data(),dtype=np.float32))
+        glUniform1i(glGetUniformLocation(self.compiledProgram,"image"),0)
+
+        glActiveTexture(GL_TEXTURE0)
+        glDrawArrays(GL_TRIANGLES,0,6)
+
+        glBindTexture(GL_TEXTURE_2D,0)
+
     def sound(self,sample):
         if hasattr(self.imageparams.function(),"sound"):
             source = self.imageparams.function().sound(self.imageparams.params,sample-int(self.frame/60*48000))

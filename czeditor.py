@@ -105,37 +105,19 @@ class CzeVideoView(QOpenGLWidget):
         self.state = []
         self.parentclass =parentclass
     def initializeGL(self):
-        #super().initializeGL(self)
-        self.shader = compileProgram(compileShader("""#version 450 core
-layout (location=0) in vec3 vertexPos;
-layout (location=1) in vec2 vertexColor;
-uniform highp mat4 matrix;
-out vec2 fragmentColor;
-void main()
-{
-    //gl_Position = round(matrix*vec4(vertexPos, 1.0)*256)/256;
-    gl_Position = matrix*vec4(vertexPos, 1.0);
-    fragmentColor = vertexColor;
-}""",GL_VERTEX_SHADER),
-compileShader("""#version 450 core
-in vec2 fragmentColor;
-uniform sampler2D image;
-out vec4 color;
-void main()
-{
-    color = texture(image,fragmentColor);
-}""",GL_FRAGMENT_SHADER))
-        #self.fbo = glGenFramebuffers(1)
-        #self.renderbuffer = glGenRenderbuffers(1)
-        #glBindRenderbuffer(GL_RENDERBUFFER,self.renderbuffer)
-        #glRenderbufferStorage(GL_RENDERBUFFER, GL_RGBA8, 1280,720)
-        #glBindFramebuffer(GL_DRAW_FRAMEBUFFER,self.fbo)
-        #glFramebufferRenderbuffer(GL_DRAW_FRAMEBUFFER,GL_COLOR_ATTACHMENT0,GL_RENDERBUFFER,self.renderbuffer)
-        projection = QMatrix4x4()
-        projection.frustum(-1280/32,1280/32,720/32,-720/32,64,4096)
-        projection.translate(0,0,-1024)
-        glUseProgram(self.shader)
-        glUniformMatrix4fv(glGetUniformLocation(self.shader,"matrix"),1,GL_FALSE,np.array(projection.data(),dtype=np.float32))
+
+        self.vao = glGenVertexArrays(1)
+        glBindVertexArray(self.vao)
+        #Generate a vertex buffer
+        self.vbo = glGenBuffers(1)
+        glBindBuffer(GL_ARRAY_BUFFER,self.vbo)
+        #Set geometry of the quad
+        #glBufferData(GL_ARRAY_BUFFER,vertexes,GL_DYNAMIC_DRAW)
+        glEnableVertexAttribArray(0)
+        glVertexAttribPointer(0,3,GL_FLOAT,GL_FALSE,20,c_void_p(0))
+        glEnableVertexAttribArray(1)
+        glVertexAttribPointer(1,2,GL_FLOAT,GL_FALSE,20,c_void_p(12))
+
     def sizeHint(self):
         return QSize(1280,720)
     #def resizeGL(self, w: int, h: int) -> None:
@@ -143,15 +125,17 @@ void main()
         #return super().resizeGL(1280, 720)
     def paintGL(self):
         global rendered
-        #glBindFramebuffer(GL_DRAW_FRAMEBUFFER,self.fbo)
         
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
         glClearColor(0.1,0.2,0.2,1.0)
         glLoadIdentity()
-        glUseProgram(self.shader)
         
-        
-        getviewportimage(self.state,self.parentclass)
+        glBindBuffer(GL_ARRAY_BUFFER,self.vbo)
+        glBindVertexArray(self.vao)
+        for keyframe in self.state:
+            keyframe.composite(self.parentclass)
+        glBindBuffer(GL_ARRAY_BUFFER,0)
+        glBindVertexArray(0)
 
         rendered = glReadPixels(0,0,1280,720,GL_RGBA,GL_UNSIGNED_BYTE,None)
 
@@ -190,8 +174,11 @@ class CzeViewport(QWidget):
         #self.scene.addItem(self.somehandle)
         self.graphicsview.onmove = self.mmoveEvent
         self.graphicsview.onscroll = self.scrollEvent
+        self.vao = None
+        self.vbo = None
     def sizeHint(self):
         return QSize(1280,720)
+
     def updateviewportimage(self,state):
         global rendered
         self.videorenderer.state = state
@@ -202,6 +189,7 @@ class CzeViewport(QWidget):
             self.picture = QPixmap.fromImage(img)
             #self.picture = self.picture.scaled(QSize(min(self.size().width(),1280),min(self.size().height(),720)),Qt.AspectRatioMode.KeepAspectRatio)
             self.viewportimage.setPixmap(self.picture)
+
     def createhandle(self,keyframe,function,param):  #self , keyframe of the handle , function of the param , param itself
         #print(vars(function))
         if hasattr(function,"handle"):

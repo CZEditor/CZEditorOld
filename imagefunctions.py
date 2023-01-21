@@ -26,7 +26,7 @@ class NormalImage():
         path = param.imagepath()
         if(path in loadedimages):
             img = loadedimages[path]
-            return img,(img.shape[1],img.shape[0])
+            return img
         try:
             with open(path,"rb") as file:
                 img = pyspng.load(file.read())
@@ -34,9 +34,9 @@ class NormalImage():
             if(len(loadedimages.keys()) > 300):
                 del loadedimages[loadedimages.keys()[0]]
 
-            return img,(img.shape[1],img.shape[0])
+            return img
         except:
-            return np.array([[[0,0,0,0]]]),(1,1)
+            return np.array([[[0,0,0,0]]])
 
     def __str__(self):
         return self.name
@@ -58,7 +58,7 @@ class FilledRectangle():
     def image(param:Params,parentclass,frame):
         #return CreateFilledRectangle((param.width,param.height),tuple(param.color))
         made = np.full((param.width(),param.height(),4),np.array(param.color,dtype=np.uint8))
-        return made,(param.width(),param.height())
+        return made
 
     def __str__(self):
         return self.name
@@ -84,7 +84,7 @@ class XPError():
     def image(param:Params,parentclass,frame):
         #fillindefaults(param,{"text":"","title":"","buttons":[],"buttonstyles":emptylist(0),"erroricon":Selectable(1,[["Critical Error","xp/Critical Error.png"],["Exclamation","xp/Exclamation.png"],["Information","xp/Information.png"],["Question","xp/Question.png"],["None",""]])})
         generated = CreateXPWindow(param)
-        return np.array(generated),generated.size
+        return np.array(generated)
 
     def __str__(self):
         return self.name
@@ -99,7 +99,7 @@ class SoundFile():
     )
 
     def image(param:Params,parentclass,frame):
-        return np.array(emptyimage),(1,1)
+        return np.array(emptyimage)
 
     def __str__(self):
         return self.name
@@ -115,7 +115,7 @@ class ImageSequence():
         #return Image.open(param.imagespath.replace("*",str(int(parentclass.playbackframe))))
         with open(param.imagespath().replace("*",str(int(frame))),"rb") as file:
             img = pyspng.load(file.read())
-        return img,(img.shape[1],img.shape[0])
+        return img
 
     def __str__(self):
         return self.name
@@ -144,7 +144,7 @@ class Video():
         secrets = param.secrets()
         if(not os.path.exists(param.videopath())):
             param.duration.set(0)
-            return np.array(emptyimage),(1,1)
+            return np.array(emptyimage)
         if(param.videopath() != secrets.lastpath or secrets.pimsobject == None):
             if(secrets.pimsobject != None):
                 secrets.pimsobject.close()
@@ -163,10 +163,10 @@ class Video():
         # Correct the framerate from 60 fps to video fps
         frame = int(frame/60*secrets.pimsobject.frame_rate)
         if(frame >= len(secrets.pimsobject) or frame < 0): #Check if its after or before
-            return np.array(emptyimage),(1,1)
+            return np.array(emptyimage)
         img = secrets.pimsobject[int(frame)]
         img = np.pad(img,((0,0),(0,0),(0,1)),mode="constant",constant_values=255) # Add alpha 255, TODO : Maybe support alpha videos?
-        return img,(img.shape[1],img.shape[0])
+        return img
 
     def sound(param:Params,sample):
         secrets = param.secrets()
