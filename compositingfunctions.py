@@ -404,7 +404,7 @@ class CustomShader:
         if(transient.shader is None or params.custom() != transient.previousCustom or transient.previousIndex != index):
 
             transient.shader = compileShader("""#version 450 core
-                void shadercustom"""+str(index)+"""(in vec2 inpos, float variableA, float variableB, out vec2 outpos){
+                void shadercustom"""+str(index)+"""(in vec2 inpos, float frame, float variableA, float variableB, out vec2 outpos){
                     """+params.custom()+"""
                 }
             """,GL_FRAGMENT_SHADER)
@@ -413,8 +413,8 @@ class CustomShader:
             transient.previousIndex = index
 
         shader.append({"fragmentshader":transient.shader,
-                       "fragmentlinetoadd":"shadercustom"+str(index)+"($inpos,"+str(params.variableA())+","+str(params.variableB())+",$outpos);",
-                       "fragmentdeclaration":"void shadercustom"+str(index)+"(in vec2 inpos, float variableA, float variableB, out vec2 outpos);"})
+                       "fragmentlinetoadd":"shadercustom"+str(index)+"($inpos,frame,"+str(params.variableA())+","+str(params.variableB())+",$outpos);",
+                       "fragmentdeclaration":"void shadercustom"+str(index)+"(in vec2 inpos, float frame, float variableA, float variableB, out vec2 outpos);"})
         return image,vertices,shader
 
 class CustomCode:
