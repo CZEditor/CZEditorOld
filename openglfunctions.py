@@ -1,4 +1,5 @@
 from OpenGL.GL import *
+from OpenGL.GL.shaders import compileProgram,compileShader
 from ctypes import c_void_p
 import numpy as np
 from scipy.spatial.transform import Rotation
@@ -44,3 +45,66 @@ def RotatePoints(points, X, Y, Z):
                     points[:,3:]
                 )
             )
+
+
+def GenerateShader(shader,isframebuffer=False):
+    main = """#version 450 core
+in vec2 fragmentColor;
+uniform sampler2D image;
+uniform float frame;
+layout(location = 0) out vec4 color;
+""" if isframebuffer else """#version 450 core
+in vec2 fragmentColor;
+uniform sampler2D image;
+uniform float frame;
+out vec4 color;
+"""
+    for snippet in shader:
+        main += snippet[3]+"\n"
+        if(snippet[4]):
+            break
+
+    main+= """void main()
+{
+    vec2 pos1,pos2;
+    pos1 = fragmentColor;
+    pos2 = vec2(0,0);
+    """
+
+    curInPosName = "pos1"
+    curOutPosName = "pos2"
+    shaderlist = []
+    for snippet in shader:
+        shaderlist.append(snippet[1])
+        if(snippet[4]):
+            main += f"color = {snippet[2].replace('$inpos',curInPosName).replace('$outpos',curOutPosName)}\n}}"
+            break
+        else:
+            main += snippet[2].replace("$inpos",curInPosName).replace("$outpos",curOutPosName)+"\n    "
+        curInPosName,curOutPosName = curOutPosName,curInPosName #Swap them
+    else: #for has an else, it executes if the loop DIDN'T break.
+        main += f"color = texture(image,{curInPosName});\n}}"
+    #print(main)
+    shaders=[
+        compileShader("""#version 450 core
+layout (location=0) in vec3 vertexPos;
+layout (location=1) in vec2 vertexColor;
+uniform highp mat4 matrix;
+out vec2 fragmentColor;
+void main()
+{
+    gl_Position = matrix*vec4(vertexPos, 1.0);
+    fragmentColor = vertexColor;
+}""" if not isframebuffer else """#version 450 core
+layout (location=0) in vec3 vertexPos;
+layout (location=1) in vec2 vertexColor;
+out vec2 fragmentColor;
+void main()
+{
+    gl_Position = vec4(vertexPos.x, vertexPos.y, 0.0,1.0);
+    fragmentColor = vertexColor;
+}""",GL_VERTEX_SHADER)
+    ]+\
+    shaderlist+\
+    [compileShader(main,GL_FRAGMENT_SHADER)]
+    return shaders

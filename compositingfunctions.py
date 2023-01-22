@@ -334,9 +334,11 @@ class BasicShader:
                 }
             """,GL_FRAGMENT_SHADER)
         
-        shader[1].append(transient.shader)
-        shader[2].append("shaderbasic($inpos,$outpos);")
-        shader[3].append("void shaderbasic(in vec2 inpos, out vec2 outpos);")
+        shader.append([None,
+        transient.shader,
+        "shaderbasic($inpos,$outpos);",
+        "void shaderbasic(in vec2 inpos, out vec2 outpos);",
+        False])
         return image,vertices,shader
 
 class ScrollingShader:
@@ -358,9 +360,11 @@ class ScrollingShader:
                 }
             """,GL_FRAGMENT_SHADER)
         # TODO : Add more complex stuff, like custom equations or scaling the tile effect
-        shader[1].append(transient.shader)
-        shader[2].append("shaderscrolling($inpos,frame,"+str(params.speedX())+","+str(params.speedY())+",$outpos);")  # TODO : Do not pass in parameters like this (You would have to recompile every time if the properties were animated). Use a uniform.
-        shader[3].append("void shaderscrolling(in vec2 inpos, float frame, float speedx, float speedy, out vec2 outpos);")
+        shader.append([None, 
+        transient.shader,
+        "shaderscrolling($inpos,frame,"+str(params.speedX())+","+str(params.speedY())+",$outpos);",  # TODO : Do not pass in parameters like this (You would have to recompile every time if the properties were animated). Use a uniform.
+        "void shaderscrolling(in vec2 inpos, float frame, float speedx, float speedy, out vec2 outpos);",
+        False])
         return image,vertices,shader
 
 class TilingShader:
@@ -381,9 +385,11 @@ class TilingShader:
                     outpos = mod(inpos*vec2(amountx,amounty),1);
                 }
             """,GL_FRAGMENT_SHADER)
-        shader[1].append(transient.shader)
-        shader[2].append("shadertiling($inpos,"+str(params.amountX())+","+str(params.amountY())+",$outpos);")
-        shader[3].append("void shadertiling(in vec2 inpos, float amountx, float amounty, out vec2 outpos);")
+        shader.append([None,
+            transient.shader,
+            "shadertiling($inpos,"+str(params.amountX())+","+str(params.amountY())+",$outpos);",
+            "void shadertiling(in vec2 inpos, float amountx, float amounty, out vec2 outpos);",
+            False])
         return image,vertices,shader
 
 class CustomShader:
@@ -400,7 +406,7 @@ class CustomShader:
     })
     def composite(image,vertices,shader,params,windowObject,keyframe,frame):
         transient = params.transient()
-        index = len(shader[1]) #There may be a better way to avoid function name collisions, but this works, it's just not really efficient.
+        index = len(shader) #There may be a better way to avoid function name collisions, but this works, it's just not really efficient.
         if(transient.shader is None or params.custom() != transient.previousCustom or transient.previousIndex != index):
 
             transient.shader = compileShader("""#version 450 core
@@ -412,13 +418,16 @@ class CustomShader:
             transient.previousCustom = params.custom()
             transient.previousIndex = index
 
-        shader[1].append(transient.shader)
-        shader[2].append("shadercustom"+str(index)+"($inpos,"+str(params.variableA())+","+str(params.variableB())+",$outpos);")
-        shader[3].append("void shadercustom"+str(index)+"(in vec2 inpos, float variableA, float variableB, out vec2 outpos);")
+        shader.append([
+            None,
+            transient.shader,
+            "shadercustom"+str(index)+"($inpos,"+str(params.variableA())+","+str(params.variableB())+",$outpos);",
+            "void shadercustom"+str(index)+"(in vec2 inpos, float variableA, float variableB, out vec2 outpos);",
+            False])
         return image,vertices,shader
 
-class CustomVertexModifier:
-    name = "Custom Vertex Modifier"
+class CustomCode:
+    name = "Custom Code"
     params = Params({
         "code":StringProperty("")
     })
@@ -439,7 +448,35 @@ class Shader():
         }))
     })
     def composite(imageparam,params)"""
-compositingfunctionsdropdown = [["Media 2D",Media2D],["Media 3D",Media3D],["Basic Shader",BasicShader],["Scrolling Shader",ScrollingShader],["Tiling Shader",TilingShader],["Custom Shader",CustomShader],["Custom Vertex Modifier",CustomVertexModifier]]
+
+class BlurShader:
+    name = "Blur Shader"
+    params = Params({
+        "transient":TransientProperty(Params({
+            "shader":None
+        }))
+    })
+    def composite(image,vertices,shader,params,windowObject,keyframe,frame):
+        transient = params.transient()
+        if(transient.shader is None):
+
+            transient.shader = compileShader("""#version 450 core
+                vec4 shaderblur(in vec2 inpos,in sampler2D image){
+                    vec4 color;
+                    color = texture(image,inpos+vec2(1,1)/100)/9+texture(image,inpos+vec2(1,0)/100)/9+texture(image,inpos+vec2(1,-1)/100)/9+texture(image,inpos+vec2(0,1)/100)/9+texture(image,inpos+vec2(0,0)/100)/9+texture(image,inpos+vec2(0,-1)/100)/9+texture(image,inpos+vec2(-1,1)/100)/9+texture(image,inpos+vec2(-1,0)/100)/9+texture(image,inpos+vec2(-1,-1)/100)/9;
+                    return color;
+                }
+            """,GL_FRAGMENT_SHADER)
+        # TODO : Add more complex stuff, like custom equations or scaling the tile effect
+        shader.append([None, 
+        transient.shader,
+        "shaderblur($inpos,image);",  # TODO : Do not pass in parameters like this (You would have to recompile every time if the properties were animated). Use a uniform.
+        "vec4 shaderblur(in vec2 inpos, in sampler2D image);",
+        True])
+        return image,vertices,shader
+
+
+compositingfunctionsdropdown = [["Media 2D",Media2D],["Media 3D",Media3D],["Basic Shader",BasicShader],["Scrolling Shader",ScrollingShader],["Tiling Shader",TilingShader],["Custom Shader",CustomShader],["Custom Code",CustomCode],["Blur Shader",BlurShader]]
 #["Normal Media",ImageComposite],
 
 """vertexes = np.array([
