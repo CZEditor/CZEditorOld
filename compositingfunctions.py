@@ -334,11 +334,9 @@ class BasicShader:
                 }
             """,GL_FRAGMENT_SHADER)
         
-        shader.append([None,
-        transient.shader,
-        "shaderbasic($inpos,$outpos);",
-        "void shaderbasic(in vec2 inpos, out vec2 outpos);",
-        False])
+        shader.append({"fragmentshader":transient.shader,
+                       "fragmentlinetoadd":"shaderbasic($inpos,$outpos);",
+                       "fragmentdeclaration":"void shaderbasic(in vec2 inpos, out vec2 outpos);"})
         return image,vertices,shader
 
 class ScrollingShader:
@@ -360,11 +358,9 @@ class ScrollingShader:
                 }
             """,GL_FRAGMENT_SHADER)
         # TODO : Add more complex stuff, like custom equations or scaling the tile effect
-        shader.append([None, 
-        transient.shader,
-        "shaderscrolling($inpos,frame,"+str(params.speedX())+","+str(params.speedY())+",$outpos);",  # TODO : Do not pass in parameters like this (You would have to recompile every time if the properties were animated). Use a uniform.
-        "void shaderscrolling(in vec2 inpos, float frame, float speedx, float speedy, out vec2 outpos);",
-        False])
+        shader.append({"fragmentshader":transient.shader,
+                       "fragmentlinetoadd":"shaderscrolling($inpos,frame,"+str(params.speedX())+","+str(params.speedY())+",$outpos);", # TODO : Do not pass in parameters like this (You would have to recompile every time if the properties were animated). Use a uniform.
+                       "fragmentdeclaration":"void shaderscrolling(in vec2 inpos, float frame, float speedx, float speedy, out vec2 outpos);"})
         return image,vertices,shader
 
 class TilingShader:
@@ -385,11 +381,9 @@ class TilingShader:
                     outpos = mod(inpos*vec2(amountx,amounty),1);
                 }
             """,GL_FRAGMENT_SHADER)
-        shader.append([None,
-            transient.shader,
-            "shadertiling($inpos,"+str(params.amountX())+","+str(params.amountY())+",$outpos);",
-            "void shadertiling(in vec2 inpos, float amountx, float amounty, out vec2 outpos);",
-            False])
+        shader.append({"fragmentshader":transient.shader,
+                       "fragmentlinetoadd":"shadertiling($inpos,"+str(params.amountX())+","+str(params.amountY())+",$outpos);",
+                       "fragmentdeclaration":"void shadertiling(in vec2 inpos, float amountx, float amounty, out vec2 outpos);"})
         return image,vertices,shader
 
 class CustomShader:
@@ -418,12 +412,9 @@ class CustomShader:
             transient.previousCustom = params.custom()
             transient.previousIndex = index
 
-        shader.append([
-            None,
-            transient.shader,
-            "shadercustom"+str(index)+"($inpos,"+str(params.variableA())+","+str(params.variableB())+",$outpos);",
-            "void shadercustom"+str(index)+"(in vec2 inpos, float variableA, float variableB, out vec2 outpos);",
-            False])
+        shader.append({"fragmentshader":transient.shader,
+                       "fragmentlinetoadd":"shadercustom"+str(index)+"($inpos,"+str(params.variableA())+","+str(params.variableB())+",$outpos);",
+                       "fragmentdeclaration":"void shadercustom"+str(index)+"(in vec2 inpos, float variableA, float variableB, out vec2 outpos);"})
         return image,vertices,shader
 
 class CustomCode:
@@ -433,7 +424,11 @@ class CustomCode:
     })
     def composite(image,vertices,shader,params,windowObject,keyframe,frame):
         try:
-            exec(params.code())
+            localdict = {"image":image,"vertices":vertices,"shader":shader,"frame":frame,"keyframe":keyframe,"windowObject":windowObject}
+            exec(params.code(),globals(),localdict)
+            image = localdict["image"]
+            vertices = localdict["vertices"]
+            shader = localdict["shader"]
             return image,vertices,shader
         except Exception:
             print_exc()
@@ -461,22 +456,82 @@ class BlurShader:
         if(transient.shader is None):
 
             transient.shader = compileShader("""#version 450 core
-                vec4 shaderblur(in vec2 inpos,in sampler2D image){
-                    vec4 color;
-                    color = texture(image,inpos+vec2(1,1)/100)/9+texture(image,inpos+vec2(1,0)/100)/9+texture(image,inpos+vec2(1,-1)/100)/9+texture(image,inpos+vec2(0,1)/100)/9+texture(image,inpos+vec2(0,0)/100)/9+texture(image,inpos+vec2(0,-1)/100)/9+texture(image,inpos+vec2(-1,1)/100)/9+texture(image,inpos+vec2(-1,0)/100)/9+texture(image,inpos+vec2(-1,-1)/100)/9;
+                vec4 shaderblur(in vec2 inpos, int width, int height, in sampler2D image){
+                    vec4 color = vec4(0,0,0,0); // So you DO have to initialize it...
+                    //color = texture(image,inpos+1/vec2(width,height))/9+texture(image,inpos+1/vec2(width,0))/9+texture(image,inpos+1/vec2(width,-height))/9+texture(image,inpos+1/vec2(0,height))/9+texture(image,inpos)/9+texture(image,inpos+1/vec2(0,-height))/9+texture(image,inpos+1/vec2(-width,height))/9+texture(image,inpos+1/vec2(-width,0))/9+texture(image,inpos+1/vec2(-width,-height))/9;
+                    for(int x = -1; x<=1;x++){
+                        for(int y = -1; y<=1; y++){
+                            color = color+texture(image,inpos+vec2(x,y)/vec2(width,height))/9;
+                        }
+                    }
                     return color;
                 }
             """,GL_FRAGMENT_SHADER)
-        # TODO : Add more complex stuff, like custom equations or scaling the tile effect
-        shader.append([None, 
-        transient.shader,
-        "shaderblur($inpos,image);",  # TODO : Do not pass in parameters like this (You would have to recompile every time if the properties were animated). Use a uniform.
-        "vec4 shaderblur(in vec2 inpos, in sampler2D image);",
-        True])
+        shader.append({"fragmentshader":transient.shader,
+                       "fragmentlinetoadd":"shaderblur($inpos,width,height,image);",
+                       "fragmentdeclaration":"vec4 shaderblur(in vec2 inpos, int width, int height, in sampler2D image);",
+                       "ismultisample":True})
         return image,vertices,shader
 
+class GlitchShader:
+    name = "Glitch Shader"
+    params = Params({
+        "amount":IntProperty(1),
+        "transient":TransientProperty(Params({
+            "shader":None
+        }))
+    })
+    def composite(image,vertices,shader,params,windowObject,keyframe,frame):
+        transient = params.transient()
+        if(transient.shader is None):
 
-compositingfunctionsdropdown = [["Media 2D",Media2D],["Media 3D",Media3D],["Basic Shader",BasicShader],["Scrolling Shader",ScrollingShader],["Tiling Shader",TilingShader],["Custom Shader",CustomShader],["Custom Code",CustomCode],["Blur Shader",BlurShader]]
+            transient.shader = compileShader("""#version 450 core
+                vec4 shaderglitch(in vec2 inpos, int amount, in sampler2D image){
+                    vec4 color;
+                    for(int i=0; i<amount; i++){
+                        vec4 color += texture(image,inpos)/amount;
+                    }
+                    return color;
+                }
+            """,GL_FRAGMENT_SHADER)
+        shader.append({"fragmentshader":transient.shader,
+                       "fragmentlinetoadd":"shaderglitch($inpos,"+str(params.amount())+",image);", 
+                       "fragmentdeclaration":"vec4 shaderglitch(in vec2 inpos, int amount, in sampler2D image);",
+                       "ismultisample":True})
+        return image,vertices,shader
+
+class CustomVertexShader:
+    name = "Custom Vertex Shader"
+    params = Params({
+        "variableA":FloatProperty(0.0),
+        "variableB":FloatProperty(0.0),
+        "custom":StringProperty("outpos = inpos;"),
+        "transient":TransientProperty(Params({
+            "shader":None,
+            "previousCustom":"",
+            "previousIndex":None
+        }))
+    })
+    def composite(image,vertices,shader,params,windowObject,keyframe,frame):
+        transient = params.transient()
+        index = len(shader) #There may be a better way to avoid function name collisions, but this works, it's just not really efficient.
+        if(transient.shader is None or params.custom() != transient.previousCustom or transient.previousIndex != index):
+
+            transient.shader = compileShader("""#version 450 core
+                void shadercustom"""+str(index)+"""(in vec3 inpos, in vec2 vertexColor, float variableA, float variableB, float frame, out vec3 outpos){
+                    """+params.custom()+"""
+                }
+            """,GL_VERTEX_SHADER)
+
+            transient.previousCustom = params.custom()
+            transient.previousIndex = index
+
+        shader.append({"vertexshader":transient.shader,
+                       "vertexlinetoadd":"shadercustom"+str(index)+"($inpos,vertexColor,"+str(params.variableA())+","+str(params.variableB())+",frame,$outpos);",
+                       "vertexdeclaration":"void shadercustom"+str(index)+"(in vec3 inpos, in vec2 vertexColor, float variableA, float variableB, float frame, out vec3 outpos);"})
+        return image,vertices,shader
+
+compositingfunctionsdropdown = [["Media 2D",Media2D],["Media 3D",Media3D],["Basic Shader",BasicShader],["Scrolling Shader",ScrollingShader],["Tiling Shader",TilingShader],["Custom Shader",CustomShader],["Custom Code",CustomCode],["Blur Shader",BlurShader],["Glitch Shader",GlitchShader],["Custom Vertex Shader",CustomVertexShader]]
 #["Normal Media",ImageComposite],
 
 """vertexes = np.array([

@@ -1,5 +1,5 @@
 from OpenGL.GL import *
-from OpenGL.GL.shaders import compileProgram,compileShader
+from customShaderCompilation import compileProgram,compileShader
 from ctypes import c_void_p
 import numpy as np
 from scipy.spatial.transform import Rotation
@@ -48,23 +48,70 @@ def RotatePoints(points, X, Y, Z):
 
 
 def GenerateShader(shader,isframebuffer=False):
-    main = """#version 450 core
+    vertexshaderlist = []
+    if(not isframebuffer):
+        vertexDeclarations = "\n"
+        for snippet in shader:
+            if("vertexshader" in snippet):
+                vertexDeclarations += snippet["vertexdeclaration"]+"\n"
+                if("ismultisample" in snippet):
+                    break
+        addedVertexFunctions = ""
+        curInPosName = "pos1"
+        curOutPosName = "pos2"
+        for snippet in shader:
+            if("vertexshader" in snippet):
+                vertexshaderlist.append(snippet["vertexshader"])
+                addedVertexFunctions += snippet["vertexlinetoadd"].replace("$inpos",curInPosName).replace("$outpos",curOutPosName)+"\n    "
+                curInPosName,curOutPosName = curOutPosName,curInPosName #Swap them
+        addedVertexFunctions += f"gl_Position = matrix*vec4({curInPosName},1.0);"
+        mainvertexcode = """#version 450 core
+layout (location=0) in vec3 vertexPos;
+layout (location=1) in vec2 vertexColor;
+uniform highp mat4 matrix;
+uniform float frame;
+out vec2 fragmentColor;"""+vertexDeclarations+"""void main()
+{
+    vec3 pos1, pos2;
+    pos1 = vertexPos;
+    pos2 = vec3(0,0,0);
+    """+addedVertexFunctions+"""
+    fragmentColor = vertexColor;
+}"""
+    else:
+        mainvertexcode = """#version 450 core
+layout (location=0) in vec3 vertexPos;
+layout (location=1) in vec2 vertexColor;
+uniform float frame;
+out vec2 fragmentColor;
+void main()
+{
+    gl_Position = vec4(vertexPos.x, vertexPos.y, 0.0,1.0);
+    fragmentColor = vertexColor;
+}"""
+
+    mainfragmentcode = """#version 450 core
 in vec2 fragmentColor;
 uniform sampler2D image;
 uniform float frame;
+uniform int width;
+uniform int height;
 layout(location = 0) out vec4 color;
 """ if isframebuffer else """#version 450 core
 in vec2 fragmentColor;
 uniform sampler2D image;
 uniform float frame;
+uniform int width;
+uniform int height;
 out vec4 color;
 """
     for snippet in shader:
-        main += snippet[3]+"\n"
-        if(snippet[4]):
-            break
+        if("fragmentshader" in snippet):
+            mainfragmentcode += snippet["fragmentdeclaration"]+"\n"
+            if("ismultisample" in snippet):
+                break
 
-    main+= """void main()
+    mainfragmentcode+= """void main()
 {
     vec2 pos1,pos2;
     pos1 = fragmentColor;
@@ -73,38 +120,25 @@ out vec4 color;
 
     curInPosName = "pos1"
     curOutPosName = "pos2"
-    shaderlist = []
+    fragmentshaderlist = []
     for snippet in shader:
-        shaderlist.append(snippet[1])
-        if(snippet[4]):
-            main += f"color = {snippet[2].replace('$inpos',curInPosName).replace('$outpos',curOutPosName)}\n}}"
-            break
-        else:
-            main += snippet[2].replace("$inpos",curInPosName).replace("$outpos",curOutPosName)+"\n    "
-        curInPosName,curOutPosName = curOutPosName,curInPosName #Swap them
-    else: #for has an else, it executes if the loop DIDN'T break.
-        main += f"color = texture(image,{curInPosName});\n}}"
-    #print(main)
-    shaders=[
-        compileShader("""#version 450 core
-layout (location=0) in vec3 vertexPos;
-layout (location=1) in vec2 vertexColor;
-uniform highp mat4 matrix;
-out vec2 fragmentColor;
-void main()
-{
-    gl_Position = matrix*vec4(vertexPos, 1.0);
-    fragmentColor = vertexColor;
-}""" if not isframebuffer else """#version 450 core
-layout (location=0) in vec3 vertexPos;
-layout (location=1) in vec2 vertexColor;
-out vec2 fragmentColor;
-void main()
-{
-    gl_Position = vec4(vertexPos.x, vertexPos.y, 0.0,1.0);
-    fragmentColor = vertexColor;
-}""",GL_VERTEX_SHADER)
+        if("fragmentshader" in snippet):
+            fragmentshaderlist.append(snippet["fragmentshader"])
+            if("ismultisample" in snippet):
+                mainfragmentcode += f"color = {snippet['fragmentlinetoadd'].replace('$inpos',curInPosName).replace('$outpos',curOutPosName)}\n}}"
+                break
+            else:
+                mainfragmentcode += snippet["fragmentlinetoadd"].replace("$inpos",curInPosName).replace("$outpos",curOutPosName)+"\n    "
+            curInPosName,curOutPosName = curOutPosName,curInPosName #Swap them
+    else: #for DOES have an else, it executes if the loop DIDN'T break.
+        mainfragmentcode += f"color = texture(image,{curInPosName});\n}}"
+    
+    mainvertexshader = compileShader(mainvertexcode,GL_VERTEX_SHADER)
+    mainfragmentshader = compileShader(mainfragmentcode,GL_FRAGMENT_SHADER)
+    shaders=vertexshaderlist+\
+    [
+        mainvertexshader
     ]+\
-    shaderlist+\
-    [compileShader(main,GL_FRAGMENT_SHADER)]
-    return shaders
+    fragmentshaderlist+\
+    [mainfragmentshader]
+    return shaders,(mainvertexshader,mainfragmentshader)

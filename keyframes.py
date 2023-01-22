@@ -2,7 +2,7 @@ from typing import overload
 from util import *
 import numpy as np
 from OpenGL.GL import *
-from OpenGL.GL.shaders import compileProgram,compileShader
+from customShaderCompilation import compileProgram,compileShader
 from PySide6.QtGui import QMatrix4x4
 from ctypes import c_void_p
 from openglfunctions import *
@@ -40,7 +40,7 @@ class Keyframe():
         self.shared = Params({})
         self.lastShaderList = None
         self.compiledPrograms = None
-        #self.compiledShaders = None  # TODO : Somehow delete programs without deleting shaders.
+        self.shadersForDeletion = None  # TODO : Somehow delete programs without deleting shaders.
         self.currentTextureSize = None
         self.currentTexture = None
         self.fbo = None
@@ -68,40 +68,44 @@ class Keyframe():
             return
         vertices = vertices.flatten()
 
-        newPassIndexes = []
-        for i in range(len(shader)):
-            if(shader[i][4]):
-                newPassIndexes.append(i+1)
         if(self.fbo is None):
             self.fbo = glGenFramebuffers(1)
         #glBindFramebuffer(GL_FRAMEBUFFER,self.fbo)
 
         if(str(shader) != str(self.lastShaderList)):
             self.lastShaderList = shader
-            #if(self.compiledPrograms):
-                #for compiledShader in self.compiledShaders:
-                #    if(glIsShader(compiledShader)):
-                #        glDeleteShader(compiledShader)
-                #        print(f"DELETING SHADER {compiledShader}")
-                #for program in self.compiledPrograms:
-                #    glDeleteProgram(program)
-                #    print(f"DELETING PROGRAM {program}")
+            if(self.compiledPrograms):
+                
+                for shaderForDeletion in self.shadersForDeletion:
+                    if(glIsShader(shaderForDeletion)):
+                        glDeleteShader(shaderForDeletion)
+
+                for program in self.compiledPrograms:
+                    glDeleteProgram(program)
+                    #print(f"DELETING PROGRAM {program}")
+
+                
+                    #print(glGetShaderiv(compiledShader,GL_DELETE_STATUS))
+                    #if(glIsShader(compiledShader)):
+                        #glDeleteShader(compiledShader)
+                        #print(f"DELETING SHADER {compiledShader}")
+
             self.compiledPrograms = []
-            self.compiledShaders = []
+            self.shadersForDeletion = []
             shadersnippet = []
             i = 0
             for snippet in shader:
                 shadersnippet.append(snippet)
-                if(snippet[4] and i != len(shader)-1):
-                    shaderslist = GenerateShader(shadersnippet,True)
-                    #self.compiledShaders += shaderslist
+                if("ismultisample" in snippet and i != len(shader)-1):
+                    shaderslist,shadersForDeletion = GenerateShader(shadersnippet,True)
+                    self.shadersForDeletion += shadersForDeletion
                     #print(shadersnippet)
                     #print(f"SHADERS LIST {shaderslist}")
                     self.compiledPrograms.append(compileProgram(*shaderslist))
                     shadersnippet = []
                 elif(i == len(shader)-1):
-                    shaderslist = GenerateShader(shadersnippet,False)
-                    #self.compiledShaders += shaderslist
+                    shaderslist,shadersForDeletion = GenerateShader(shadersnippet,False)
+                    self.shadersForDeletion += shadersForDeletion
                     #print(f"SHADERS LIST {shaderslist}")
                     #print(shadersnippet)
                     #print(shaderslist)
@@ -157,8 +161,14 @@ class Keyframe():
             for program in self.compiledPrograms[:-1]:
                 
                 glUseProgram(program)
+
                 glUniform1i(glGetUniformLocation(program,"image"),0)
+
                 glUniform1f(glGetUniformLocation(program,"frame"),windowObject.playbackframe-self.frame)
+
+                glUniform1i(glGetUniformLocation(program,"width"),image.shape[1])
+                glUniform1i(glGetUniformLocation(program,"height"),image.shape[0])
+
                 glActiveTexture(GL_TEXTURE0)
                 glDrawArrays(GL_TRIANGLES,0,6)
 
@@ -180,11 +190,13 @@ class Keyframe():
 
         glUniform1f(glGetUniformLocation(self.compiledPrograms[-1],"frame"),windowObject.playbackframe-self.frame)
 
+        glUniform1i(glGetUniformLocation(self.compiledPrograms[-1],"width"),image.shape[1])
+        glUniform1i(glGetUniformLocation(self.compiledPrograms[-1],"height"),image.shape[0])
+
         glActiveTexture(GL_TEXTURE0)
         glDrawArrays(GL_TRIANGLES,0,int(vertices.shape[0]/5))
 
         glBindTexture(GL_TEXTURE_2D,0)
-        glUseProgram(0) # Hack
 
     def sound(self,sample):
         if hasattr(self.imageparams.function(),"sound"):
