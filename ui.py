@@ -2,7 +2,7 @@ from generate import *
 from PIL import Image
 from functools import cache
 from util import *
-from PySide6.QtWidgets import QWidget,QGraphicsScene,QGraphicsView,QGraphicsItem,QGraphicsRectItem,QGraphicsLineItem,QToolButton,QPushButton,QComboBox,QFrame,QSizePolicy,QScrollArea,QPlainTextEdit,QSpinBox,QLineEdit,QFormLayout
+from PySide6.QtWidgets import QWidget,QGraphicsScene,QGraphicsView,QGraphicsItem,QGraphicsRectItem,QGraphicsLineItem,QToolButton,QPushButton,QComboBox,QFrame,QSizePolicy,QScrollArea,QPlainTextEdit,QSpinBox,QLineEdit,QFormLayout,QGraphicsItemGroup,QGraphicsTextItem
 from PySide6.QtGui import QPen,QColor,QRadialGradient,QResizeEvent,QMouseEvent,QWheelEvent,QDrag,QDragEnterEvent,QDragLeaveEvent,QDragMoveEvent,QDropEvent,QTextOption,QKeyEvent,QFont
 from PySide6.QtCore import QSize,Qt,QRectF,QPoint,QLine,QMimeData,Qt
 from keyframes import *
@@ -227,8 +227,8 @@ class CzeKeyframeOptionCategory(QRedDropDownFrame):
         super().__init__(parent,name)
         self.parentclass = parentclass
         self.params = params
-        
-        self.whole.insertWidget(0,QRedSelectableProperty(None,params.function,self.parentclass,self.rebuild))
+        if(params.function):
+            self.whole.insertWidget(0,QRedSelectableProperty(None,params.function,self.parentclass,self.rebuild))
         self.iterate(self.params.params)
         self.parentclass.timeline.createKeyframeItem(self.parentclass.selectedframe,params)
 
@@ -247,11 +247,12 @@ class CzeKeyframeOptionCategory(QRedDropDownFrame):
             self.widgets.itemAt(i,QFormLayout.FieldRole).widget().updateself()
         
     def regenerate(self,params):
-        toremove = self.whole.itemAt(0).widget()
-        self.whole.removeItem(self.whole.itemAt(0))
-        toremove.setParent(None)
-        toremove.destroy()
-        self.whole.insertWidget(0,QRedSelectableProperty(None,params.function,self.parentclass,self.rebuild))
+        if(params.function):
+            toremove = self.whole.itemAt(0).widget()
+            self.whole.removeItem(self.whole.itemAt(0))
+            toremove.setParent(None)
+            toremove.destroy()
+            self.whole.insertWidget(0,QRedSelectableProperty(None,params.function,self.parentclass,self.rebuild))
         for i in range(self.widgets.rowCount()):
             self.widgets.removeRow(0)
         self.params = params
@@ -420,11 +421,17 @@ class CzeKeyframeOptions(QRedScrollArea):
         self.parentclass = parentclass
         self.viewframe = QRedFrame(None)
 
+        #self.whole = QVBoxLayout()
+
+        #self.whole.addWidget(self.keyframeNameWidget)
+
         self.widgets = QVBoxLayout()
         self.widgets.setSpacing(2)
         self.widgets.setContentsMargins(2,2,2,2)
 
         self.iterate(self.params)
+
+        #self.whole.addLayout(self.widgets)
 
         self.viewframe.setLayout(self.widgets)
 
@@ -554,6 +561,33 @@ class QGraphicsViewEvent(QGraphicsView):
         self.dragdrop(event)
 
 
+class CzeTimelineKeyframeItem(QGraphicsItem):
+    coolgradient = QRadialGradient(50,50,90)
+    coolgradient.setColorAt(1,QColor(255,255,255))
+    coolgradient.setColorAt(0,QColor(255,0,0))
+    selectedcoolgradient = QRadialGradient(30,30,60)
+    selectedcoolgradient.setColorAt(1,QColor(255,127,127))
+    selectedcoolgradient.setColorAt(0,QColor(255,0,0))
+
+    def __init__(self,keyframe):
+        super().__init__()
+        self.keyframe = keyframe
+        self.currentBrush = self.coolgradient
+
+    def boundingRect(self):
+        return QRectF(-30,-15,60,48)
+
+    def paint(self, painter: QPainter, option, widget) -> None:
+        painter.setPen(QPen(QColor(0,0,0),0))
+        painter.setBrush(self.currentBrush)
+        painter.drawPolygon([QPoint(-15,0),QPoint(0,-15),QPoint(15,0),QPoint(0,15)])
+        painter.setPen(QPen(QColor(255,255,255),0))
+        painter.setFont(QFont("Arial",8))
+        painter.drawText(QRectF(-30,16,60,32),self.keyframe.params.properties.params.name(),Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignHCenter)
+
+    def setBrush(self, brush):
+        self.currentBrush = brush
+
 class CzeTimeline(QWidget):
     coolgradient = QRadialGradient(50,50,90)
     coolgradient.setColorAt(1,QColor(255,255,255))
@@ -642,20 +676,20 @@ class CzeTimeline(QWidget):
     def pressEvent(self, event:QMouseEvent) -> None:
         if event.button() == Qt.MouseButton.LeftButton:
             founditem:QGraphicsItem = self.graphicsview.itemAt(event.pos().x(),event.pos().y())
-            if isinstance(founditem,QGraphicsRectItem) or founditem is None:
+            if isinstance(founditem,CzeTimelineKeyframeItem) or founditem is None:
                 if founditem != None:
                     if event.pos() == self.lastm1pos:
-                        self.parentclass.draggedpreset = founditem.data(0).params.copy()
+                        self.parentclass.draggedpreset = founditem.keyframe.copy()
                         drag = QDrag(self)
                         mime = QMimeData()
                         drag.setMimeData(mime)
                         drag.exec_(Qt.MoveAction)
                     else:
-                        self.draggedframe = founditem.data(0)
+                        self.draggedframe = founditem.keyframe
                         if self.parentclass.selectedframe:
                             self.keyframes[self.parentclass.selectedframe].setBrush(self.coolgradient)
                         founditem.setBrush(self.selectedcoolgradient)
-                        self.parentclass.selectedframe = founditem.data(0)
+                        self.parentclass.selectedframe = founditem.keyframe
                         self.parentclass.regeneratekeyframeoptions()
                         self.parentclass.viewport.updatehandles()
                     
@@ -685,7 +719,7 @@ class CzeTimeline(QWidget):
     def dropEvent(self, event: QDropEvent) -> None:
         #print(self.parentclass.draggedpreset)
         if self.parentclass.draggedpreset and not self.draggedframe:
-            keyframe = Keyframe(int(self.graphicsview.mapToScene(event.pos().x(),0).x()),self.parentclass.draggedpreset)
+            keyframe = Keyframe(int(self.graphicsview.mapToScene(event.pos().x(),0).x()),self.parentclass.draggedpreset.params.copy())
             self.parentclass.keyframes.add(keyframe)
             self.addKeyframe(keyframe)
             self.parentclass.draggedpreset = None
@@ -694,7 +728,6 @@ class CzeTimeline(QWidget):
     
     def releaseEvent(self, event:QMouseEvent) -> None:
         if event.button() == Qt.MouseButton.LeftButton:
-            founditem:QGraphicsItem = self.graphicsview.itemAt(event.pos().x(),event.pos().y())
             if self.draggedframe:
                 self.parentclass.keyframes.setframe(self.draggedframe,int(self.graphicsview.mapToScene(event.pos().x(),0).x()))
                 self.keyframes[self.draggedframe].setPos(self.draggedframe.frame,0)
@@ -725,10 +758,13 @@ class CzeTimeline(QWidget):
         self.playbackcursor.setLine(QLine(self.parentclass.playbackframe,boundingrect.top(),self.parentclass.playbackframe,boundingrect.bottom()))
     
     def addKeyframe(self,keyframe:Keyframe):
-        self.keyframes[keyframe] = self.scene.addRect(QRectF(-9,-9,18,18),QPen(QColor(0,0,0),0),self.coolgradient)
-        self.keyframes[keyframe].setRotation(45)
+        #self.keyframes[keyframe] = self.scene.addRect(QRectF(-9,-9,18,18),QPen(QColor(0,0,0),0),self.coolgradient)
+        #self.keyframes[keyframe].setRotation(45)
+        #
+        #self.keyframes[keyframe].setData(0,keyframe)
+        self.keyframes[keyframe] = CzeTimelineKeyframeItem(keyframe)
+        self.scene.addItem(self.keyframes[keyframe])
         self.keyframes[keyframe].setPos(keyframe.frame,0)
-        self.keyframes[keyframe].setData(0,keyframe)
         self.createKeyframeItem(keyframe,keyframe.params.image)
         for action in keyframe.params.states:
             self.createKeyframeItem(keyframe,action)
@@ -736,7 +772,8 @@ class CzeTimeline(QWidget):
             self.createKeyframeItem(keyframe,effect)
     
     def createKeyframeItem(self,keyframe:Keyframe,param:Params):
-        if hasattr(param.function(),"timelineitem"):
+        
+        if param.function and hasattr(param.function(),"timelineitem"):
             items = param.function().timelineitem(param,keyframe,self.parentclass)
             if(keyframe not in self.keyframeitems):
                 self.keyframeitems[keyframe] = {}
@@ -784,11 +821,35 @@ class CzeTimeline(QWidget):
             self.deleteKeyframeItems(self.parentclass.selectedframe)
             self.scene.removeItem(self.keyframes[self.parentclass.selectedframe])
             self.parentclass.keyframes.remove(self.parentclass.selectedframe)
+            del self.keyframes[self.parentclass.selectedframe]
             self.parentclass.selectedframe = None
             self.parentclass.regeneratekeyframeoptions()
             self.parentclass.viewport.updatehandles()
             self.parentclass.updateviewport()
+            
         return super().keyPressEvent(event)
+
+
+class CzePresetKeyframeItem(QGraphicsItem):
+    coolgradient = QRadialGradient(50,50,90)
+    coolgradient.setColorAt(1,QColor(255,255,255))
+    coolgradient.setColorAt(0,QColor(255,0,0))
+    def __init__(self,keyframe):
+        super().__init__()
+        self.keyframe = keyframe
+        self.name = keyframe.params.properties.params.name
+    def boundingRect(self):
+        return QRectF(-30,-20,60,45)
+    def paint(self, painter: QPainter, option, widget) -> None:
+        painter.setPen(QPen(QColor(0,0,0),0))
+        painter.setBrush(self.coolgradient)
+        painter.drawPolygon([QPoint(10,0),QPoint(0,10),QPoint(-10,0),QPoint(0,-10)])
+        painter.setBrush(Qt.BrushStyle.NoBrush)
+        painter.setPen(QPen(QColor(255,192,192),0))
+        painter.drawRect(-20,-20,40,40)
+        painter.setFont(QFont("Arial",8))
+        painter.drawText(QRectF(-30,20,60,20),self.name(),Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignHCenter)
+
 
 class CzePresets(QWidget):
     coolgradient = QRadialGradient(50,50,90)
@@ -807,11 +868,14 @@ class CzePresets(QWidget):
         self.keyframes = []
         self.drawnkeyframes = {}
         i = 0
-        for keyframe in self.keyframes:
-            self.drawnkeyframes[keyframe] = self.scene.addRect(QRectF(-9,-9,18,18),QPen(QColor(0,0,0),0),self.coolgradient)
-            self.drawnkeyframes[keyframe].setRotation(45)
-            self.drawnkeyframes[keyframe].setPos((i%6)*25,floor(i/6)*25)
-            self.drawnkeyframes[keyframe].setData(0,keyframe)
+        for keyframe in self.keyframes: # TODO : Maybe load from a file?
+            self.drawnkeyframes[keyframe] = CzePresetKeyframeItem(keyframe)
+            self.scene.addItem(self.drawnkeyframes[keyframe])
+            self.drawnkeyframes[keyframe].setPos((i%6)*64+30,floor(i/6)*44+20)
+            #self.drawnkeyframes[keyframe] = self.scene.addRect(QRectF(-9,-9,18,18),QPen(QColor(0,0,0),0),self.coolgradient)
+            #self.drawnkeyframes[keyframe].setRotation(45)
+            #self.drawnkeyframes[keyframe].setPos((i%6)*25,floor(i/6)*25)
+            #self.drawnkeyframes[keyframe].setData(0,keyframe)
             i+=1
         self.graphicsview.onpress = self.pressEvent
         self.setAcceptDrops(True)
@@ -851,10 +915,13 @@ class CzePresets(QWidget):
             keyframe = self.parentclass.draggedpreset.copy()
             i = len(self.keyframes)
             self.keyframes.append(self.parentclass.draggedpreset.copy())
-            self.drawnkeyframes[keyframe] = self.scene.addRect(QRectF(-9,-9,18,18),QPen(QColor(0,0,0),0),self.coolgradient)
-            self.drawnkeyframes[keyframe].setRotation(45)
-            self.drawnkeyframes[keyframe].setPos((i%6)*25,floor(i/6)*25)
-            self.drawnkeyframes[keyframe].setData(0,keyframe)
+            self.drawnkeyframes[keyframe] = CzePresetKeyframeItem(keyframe)
+            self.scene.addItem(self.drawnkeyframes[keyframe])
+            self.drawnkeyframes[keyframe].setPos((i%6)*64+30,floor(i/6)*44+20)
+            #self.drawnkeyframes[keyframe] = self.scene.addRect(QRectF(-9,-9,18,18),QPen(QColor(0,0,0),0),self.coolgradient)
+            #self.drawnkeyframes[keyframe].setRotation(45)
+            #self.drawnkeyframes[keyframe].setPos((i%6)*25,floor(i/6)*25)
+            #self.drawnkeyframes[keyframe].setData(0,keyframe)
             self.parentclass.draggedpreset = None
         event.accept()
     
@@ -862,7 +929,7 @@ class CzePresets(QWidget):
         if event.button() == Qt.MouseButton.LeftButton:
             founditem:QGraphicsItem = self.graphicsview.itemAt(event.pos().x(),event.pos().y())
             if founditem != None:
-                self.parentclass.draggedpreset = founditem.data(0).copy()
+                self.parentclass.draggedpreset = founditem.keyframe.copy()
                 #print(self.parentclass.draggedpreset)
                 drag = QDrag(self)
                 mime = QMimeData()

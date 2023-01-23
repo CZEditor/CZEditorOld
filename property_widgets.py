@@ -1,4 +1,4 @@
-from base_ui import QRedFrame,QRedSpinBox,QRedTextBox,QRedButton,QRedDecimalSpinBox
+from base_ui import QRedFrame,QRedSpinBox,QRedTextBox,QRedButton,QRedDecimalSpinBox,QRedTextEntry
 from PySide6.QtWidgets import QHBoxLayout,QSizePolicy,QFileDialog,QGridLayout,QLabel,QVBoxLayout
 from PySide6.QtCore import Qt
 
@@ -35,6 +35,25 @@ class StringPropertyWidget(QRedFrame):
         self.theproperty._val = self.textbox.toPlainText()
     def updateself(self):
         self.textbox.setPlainText(self.theproperty._val)
+
+class LineStringPropertyWidget(QRedFrame):
+    def __init__(self,property):
+        super().__init__(None)
+        self.theproperty = property
+        self.widgets = QHBoxLayout()
+        self.textbox = QRedTextEntry(self)
+        self.textbox.textChanged.connect(self.updateproperty)
+        self.textbox.setText(self.theproperty._val)
+        #self.setFixedHeight(self.textbox.sizeHint().height())
+        #self.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
+        self.widgets.addWidget(self.textbox)
+        self.setLayout(self.widgets)
+        #self.setStyleSheet("border-image:url(editor/Square Frame.png) 2; border-width:2;")
+        self.setStyleSheet("border-width:0px;")
+    def updateproperty(self):
+        self.theproperty._val = self.textbox.text()
+    def updateself(self):
+        self.textbox.setText(self.theproperty._val)
 
 class FilePropertyWidget(QRedFrame):
     def __init__(self,property):

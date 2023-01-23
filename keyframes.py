@@ -6,44 +6,31 @@ from customShaderCompilation import compileProgram,compileShader
 from PySide6.QtGui import QMatrix4x4
 from ctypes import c_void_p
 from openglfunctions import *
-#
-# Image, Vertices, Fragment Shader, Vertex Shader
-#
-# [["uniform float time"],["""pos = pos+sin(pos*9+time/70);""","""pos = pos+time/90;\npos = mod(pos,1);"""],["""color=color*2;"""]]
-#
-##version 450 core
-#in vec2 vertexColor;
-#...
-#out vec4 color;
-#void main()
-#{
-#    vec2 pos = vertexColor;
-#    //
-#    pos = pos+sin(pos*9);
-#    pos = pos+time/90;
-#    float beat = sin(time/);
-#    pos = mod(pos,1);
-#    //
-#    color = texture(image,pos);
-#    //
-#    color = color*2;
-#    //
-#}
-#
+from properties import LineStringProperty
+
 class Keyframe():
+
     def __init__(self, frame, param:Params):
+
         self.frame = frame
         self.params = param
+
         self.imageparams = param.image
         self.stateparams = param.states
         self.compositingparams = param.compositing
+
         self.shared = Params({})
+
         self.lastShaderList = None
         self.compiledPrograms = None
         self.shadersForDeletion = None  # TODO : Somehow delete programs without deleting shaders.
         self.currentTextureSize = None
         self.currentTexture = None
         self.fbo = None
+    
+    def copy(self):
+        return Keyframe(self.frame,self.params.copy())
+
     def image(self,parentclass): # TODO : Rename this to source
         return self.params.image.function().image(self.imageparams.params,parentclass,parentclass.playbackframe-self.frame)
     
@@ -60,6 +47,8 @@ class Keyframe():
         imageDataPointer = image.ctypes.data
         vertices = np.empty((0,5),dtype=np.float32)
         shader = []
+
+
 
         for compositingparam in self.compositingparams:
             if hasattr(compositingparam.function(),"composite"):
@@ -144,7 +133,9 @@ class Keyframe():
             
             glDrawBuffers(1,[GL_COLOR_ATTACHMENT0])
             glBindFramebuffer(GL_FRAMEBUFFER,0)
+
         glTexSubImage2D(GL_TEXTURE_2D,0,0,0,image.shape[1],image.shape[0],GL_RGBA,GL_UNSIGNED_BYTE,c_void_p(imageDataPointer))
+
         if(len(self.compiledPrograms)>1):
             glBindFramebuffer(GL_FRAMEBUFFER,self.fbo)
             glViewport(0,0,image.shape[1],image.shape[0])
@@ -303,6 +294,11 @@ class Keyframelist():
     def create(self,frame:int):
         addedkeyframe = Keyframe(frame,Params(
             {
+                "properties":{
+                    "params":{
+                        "name":LineStringProperty(""),
+                    }
+                },
                 "image":
                 {
                     "function":Selectable(0,self.windowClass.imagefunctionsdropdown),

@@ -478,6 +478,7 @@ class Shader():
     })
     def composite(imageparam,params)"""
 
+
 class BlurShader:
     name = "Blur Shader"
     params = Params({
@@ -506,6 +507,7 @@ class BlurShader:
                        "fragmentdeclaration":"vec4 shaderblur(in vec2 inpos, int width, int height, in sampler2D image);",
                        "ismultisample":True})
         return image,vertices,shader
+
 
 class GlitchShader:
     name = "Glitch Shader"

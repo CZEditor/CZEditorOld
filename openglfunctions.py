@@ -105,9 +105,11 @@ uniform int width;
 uniform int height;
 out vec4 color;
 """
+    addedDeclarations = []
     for snippet in shader:
-        if("fragmentshader" in snippet):
+        if("fragmentshader" in snippet and snippet["fragmentdeclaration"] not in addedDeclarations):
             mainfragmentcode += snippet["fragmentdeclaration"]+"\n"
+            addedDeclarations.append(snippet["fragmentdeclaration"])
             if("ismultisample" in snippet):
                 break
 
@@ -141,4 +143,5 @@ out vec4 color;
     ]+\
     fragmentshaderlist+\
     [mainfragmentshader]
+    print(mainfragmentcode)
     return shaders,(mainvertexshader,mainfragmentshader)

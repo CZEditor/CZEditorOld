@@ -53,6 +53,33 @@ class StringProperty:
     def __str__(self):
         return self._val
 
+class LineStringProperty:
+    def __init__(self,value):
+        self._val = value
+
+    def copy(self):
+        return LineStringProperty(self._val)
+
+    def __call__(self):
+        return self._val
+
+    def widget(self):
+        return LineStringPropertyWidget(self)
+
+    @property
+    def val(self):
+        return self._val
+
+    @val.setter
+    def val(self, value):
+        self._val = value
+
+    def set(self,value):
+        self._val = value
+
+    def __str__(self):
+        return self._val
+
 
 class FileProperty:
     def __init__(self,value):
