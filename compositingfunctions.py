@@ -417,6 +417,40 @@ class CustomShader:
                        "fragmentdeclaration":"void shadercustom"+str(index)+"(in vec2 inpos, float frame, float variableA, float variableB, out vec2 outpos);"})
         return image,vertices,shader
 
+class CustomColorShader:
+    name = "Custom Color Shader"
+    params = Params({
+        "variableA":FloatProperty(0.0),
+        "variableB":FloatProperty(0.0),
+        "custom":StringProperty("color = texture(image,inpos);"),
+        "transient":TransientProperty(Params({
+            "shader":None,
+            "previousCustom":"",
+            "previousIndex":None
+        }))
+    })
+    def composite(image,vertices,shader,params,windowObject,keyframe,frame):
+        transient = params.transient()
+        index = len(shader) #There may be a better way to avoid function name collisions, but this works, it's just not really efficient.
+        if(transient.shader is None or params.custom() != transient.previousCustom or transient.previousIndex != index):
+
+            transient.shader = compileShader("""#version 450 core
+                vec4 shadercustom"""+str(index)+"""(in vec2 inpos, float frame, int width, int height, in sampler2D image,float variableA, float variableB){
+                    vec4 color = vec4(1,1,1,1);
+                    """+params.custom()+"""
+                    return color;
+                }
+            """,GL_FRAGMENT_SHADER)
+
+            transient.previousCustom = params.custom()
+            transient.previousIndex = index
+
+        shader.append({"fragmentshader":transient.shader,
+                       "fragmentlinetoadd":"shadercustom"+str(index)+"($inpos,frame,width,height,image,"+str(params.variableA())+","+str(params.variableB())+");",
+                       "fragmentdeclaration":"vec4 shadercustom"+str(index)+"(in vec2 inpos, float frame, int width, int height, in sampler2D image,float variableA, float variableB);",
+                       "ismultisample":True})
+        return image,vertices,shader
+
 class CustomCode:
     name = "Custom Code"
     params = Params({
@@ -531,7 +565,7 @@ class CustomVertexShader:
                        "vertexdeclaration":"void shadercustom"+str(index)+"(in vec3 inpos, in vec2 vertexColor, float variableA, float variableB, float frame, out vec3 outpos);"})
         return image,vertices,shader
 
-compositingfunctionsdropdown = [["Media 2D",Media2D],["Media 3D",Media3D],["Basic Shader",BasicShader],["Scrolling Shader",ScrollingShader],["Tiling Shader",TilingShader],["Custom Shader",CustomShader],["Custom Code",CustomCode],["Blur Shader",BlurShader],["Glitch Shader",GlitchShader],["Custom Vertex Shader",CustomVertexShader]]
+compositingfunctionsdropdown = [["Media 2D",Media2D],["Media 3D",Media3D],["Basic Shader",BasicShader],["Scrolling Shader",ScrollingShader],["Tiling Shader",TilingShader],["Custom Shader",CustomShader],["Custom Code",CustomCode],["Blur Shader",BlurShader],["Glitch Shader",GlitchShader],["Custom Vertex Shader",CustomVertexShader],["Custom Color Shader",CustomColorShader]]
 #["Normal Media",ImageComposite],
 
 """vertexes = np.array([

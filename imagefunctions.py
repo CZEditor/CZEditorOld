@@ -5,11 +5,11 @@ from graphics import *
 #import ffmpeg
 from PySide6.QtCore import QByteArray,QBuffer,QIODevice
 import pyspng
-import pims
+from pims import PyAVReaderTimed
 import numpy as np
 from properties import *
 import os
-from moviepy.editor import AudioFileClip
+from moviepy.audio.io.AudioFileClip import AudioFileClip
 from timelineitems import *
 
 loadedimages = {}
@@ -137,13 +137,14 @@ class Video():
         "videopath":FileProperty(""),
         "startframe":IntProperty(0),
         "duration":IntProperty(0),
-        "secrets":TransientProperty(Params({
+        "transient":TransientProperty(Params({
             "pimsobject":None,
             "moviepyobject":None,
             "decodedaudio":None,
             "maxduration":0,
             "entirevideo":None,
-            "lastpath":""}))
+            "lastpath":"",
+            "handleHeight":0}))
     })
     """
     Return the current frame the cursor is on in a video file
@@ -151,61 +152,57 @@ class Video():
     
     def image(param:Params,parentclass,frame):
         #return Image.open(param.imagespath.replace("*",str(int(parentclass.playbackframe))))
-        secrets = param.secrets()
+        transient = param.transient()
         if(not os.path.exists(param.videopath())):
             param.duration.set(0)
             return np.array(emptyimage)
-        if(param.videopath() != secrets.lastpath or secrets.pimsobject == None):
-            if(secrets.pimsobject != None):
-                secrets.pimsobject.close()
-                secrets.moviepyobject.close()
-            secrets.pimsobject = pims.PyAVVideoReader(param.videopath())
-            #secrets.entirevideo = np.copy(secrets.pimsobject)
-            secrets.moviepyobject = AudioFileClip(param.videopath(),nbytes=2,fps=48000)
-            secrets.lastpath = param.videopath()
-            param.duration.set(int(len(secrets.pimsobject)/secrets.pimsobject.frame_rate*60)-param.startframe())
-            secrets.maxduration = int(len(secrets.pimsobject)/secrets.pimsobject.frame_rate*60)
-            #print(len(secrets.pimsobject)/secrets.pimsobject.frame_rate*60)
+        if(param.videopath() != transient.lastpath or transient.pimsobject == None):
+            if(transient.pimsobject != None):
+                transient.pimsobject.close()
+                transient.moviepyobject.close()
+            transient.pimsobject = PyAVReaderTimed(param.videopath(),cache_size=32)
+            transient.moviepyobject = AudioFileClip(param.videopath(),nbytes=2,fps=48000)
+            transient.lastpath = param.videopath()
+            param.duration.set(int(len(transient.pimsobject)/transient.pimsobject.frame_rate*60)-param.startframe())
+            transient.maxduration = int(len(transient.pimsobject)/transient.pimsobject.frame_rate*60)
 
         # Add the beginning frame offset
         frame += param.startframe()
 
         # Correct the framerate from 60 fps to video fps
-        frame = int(frame/60*secrets.pimsobject.frame_rate)
-        if(frame >= len(secrets.pimsobject) or frame < 0): #Check if its after or before
+        frame = int(frame/60*transient.pimsobject.frame_rate)
+        if(frame >= len(transient.pimsobject) or frame < 0): #Check if its after or before
             return np.array(emptyimage)
-        img = secrets.pimsobject[int(frame)]
+        img = transient.pimsobject[int(frame)]
         img = np.pad(img,((0,0),(0,0),(0,1)),mode="constant",constant_values=255) # Add alpha 255, TODO : Maybe support alpha videos?
         return img
 
     def sound(param:Params,sample):
-        secrets = param.secrets()
+        transient = param.transient()
         if(not os.path.exists(param.videopath())):
             return np.array((0)),1
-        if(param.videopath() != secrets.lastpath or secrets.moviepyobject == None):
-            if(secrets.moviepyobject != None):
-                secrets.pimsobject.close()
-                secrets.moviepyobject.close()
-            secrets.pimsobject = pims.PyAVVideoReader(param.videopath())
-            secrets.moviepyobject = AudioFileClip(param.videopath(),nbytes=2,fps=48000)
-            secrets.lastpath = param.videopath()
-            param.duration.set(int(len(secrets.pimsobject)/secrets.pimsobject.frame_rate*60)-param.startframe())
-            secrets.maxduration = int(len(secrets.pimsobject)/secrets.pimsobject.frame_rate*60)
-            #print(len(secrets.pimsobject)/secrets.pimsobject.frame_rate*60)
-        sample += int(param.startframe()/60*secrets.moviepyobject.fps)
-        if secrets.moviepyobject.reader.pos != sample:
-            secrets.moviepyobject.reader.seek(sample)
-            secrets.moviepyobject.reader.pos = sample
-        chunk = secrets.moviepyobject.reader.read_chunk(1024)
-        return chunk,secrets.moviepyobject.fps
+        if(param.videopath() != transient.lastpath or transient.moviepyobject == None):
+            if(transient.moviepyobject != None):
+                transient.pimsobject.close()
+                transient.moviepyobject.close()
+            transient.pimsobject = PyAVReaderTimed(param.videopath(),cache_size=32)
+            transient.moviepyobject = AudioFileClip(param.videopath(),nbytes=2,fps=48000)
+            transient.lastpath = param.videopath()
+            param.duration.set(int(len(transient.pimsobject)/transient.pimsobject.frame_rate*60)-param.startframe())
+            transient.maxduration = int(len(transient.pimsobject)/transient.pimsobject.frame_rate*60)
+        sample += int(param.startframe()/60*transient.moviepyobject.fps)
+        if transient.moviepyobject.reader.pos != sample:
+            transient.moviepyobject.reader.seek(sample)
+            transient.moviepyobject.reader.pos = sample
+        chunk = transient.moviepyobject.reader.read_chunk(1024)
+        return chunk,transient.moviepyobject.fps
 
     def timelineitem(param:Params,keyframe,windowClass):
-        return [TimelineDurationLineItem(param,windowClass,keyframe),TimelineDurationHandleItem(param,windowClass,keyframe),TimelineStartFrameHandleItem(param,windowClass,keyframe)]
+        return [TimelineDurationLineItem(param,windowClass,keyframe),TimelineDurationHandleItem(param,windowClass,keyframe),TimelineStartFrameHandleItem(param,windowClass,keyframe),TimelineVerticalLineItem(param,windowClass,keyframe)]
 
     def seek(params:Params,frame):
-        if frame < 1:
-            params.secrets().pimsobject[int(params.startframe()/60*params.secrets().pimsobject.frame_rate)]
-            params.secrets().moviepyobject.reader.seek(int(params.startframe()/60*params.secrets().moviepyobject.fps))
+        params.transient().pimsobject[int(max(params.startframe(),frame)/60*params.transient().pimsobject.frame_rate)]
+        params.transient().moviepyobject.reader.seek(int(max(params.startframe(),frame)/60*params.transient().moviepyobject.fps))
         
         #print(chunk)
         #print(sample,secrets.moviepyobject.reader.pos,secrets.moviepyobject.reader.nframes)

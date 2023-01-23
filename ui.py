@@ -3,7 +3,7 @@ from PIL import Image
 from functools import cache
 from util import *
 from PySide6.QtWidgets import QWidget,QGraphicsScene,QGraphicsView,QGraphicsItem,QGraphicsRectItem,QGraphicsLineItem,QToolButton,QPushButton,QComboBox,QFrame,QSizePolicy,QScrollArea,QPlainTextEdit,QSpinBox,QLineEdit,QFormLayout
-from PySide6.QtGui import QPen,QColor,QRadialGradient,QResizeEvent,QMouseEvent,QWheelEvent,QDrag,QDragEnterEvent,QDragLeaveEvent,QDragMoveEvent,QDropEvent,QTextOption,QKeyEvent
+from PySide6.QtGui import QPen,QColor,QRadialGradient,QResizeEvent,QMouseEvent,QWheelEvent,QDrag,QDragEnterEvent,QDragLeaveEvent,QDragMoveEvent,QDropEvent,QTextOption,QKeyEvent,QFont
 from PySide6.QtCore import QSize,Qt,QRectF,QPoint,QLine,QMimeData,Qt
 from keyframes import *
 from compositingfunctions import *
@@ -436,9 +436,10 @@ class CzeKeyframeOptions(QRedScrollArea):
         self.setWidgetResizable(True)
 
     def sizeHint(self):
-        return QSize(1280,250)
+        return QSize(400,720)
 
-    def changeEvent(self, arg__1) -> None:
+    
+    """def changeEvent(self, arg__1) -> None:
         if(hasattr(self,"viewframe")):
             self.setMaximumWidth(self.viewframe.contentsRect().width()+self.verticalScrollBar().width())
         return super().changeEvent(arg__1)
@@ -446,7 +447,7 @@ class CzeKeyframeOptions(QRedScrollArea):
     def resizeEvent(self, arg__1) -> None:
         if(hasattr(self,"viewframe")):
             self.setMaximumWidth(self.viewframe.contentsRect().width()+self.verticalScrollBar().width())
-        return super().resizeEvent(arg__1)
+        return super().resizeEvent(arg__1)"""
 
     def iterate(self,params):
         for key in vars(params).keys():
@@ -600,6 +601,13 @@ class CzeTimeline(QWidget):
         self.graphicsview.dragenter = self.dragEnterEvent
         self.graphicsview.dragdrop = self.dropEvent
         self.graphicsview.dragmove = self.dragMoveEvent
+        self.seekingBackground = None
+        self.seekingText = None
+        self.startTimer(0.25,Qt.TimerType.CoarseTimer)
+
+    def timerEvent(self, event) -> None:
+        self.updateSeekingState()
+        return super().timerEvent(event)
 
     def sizeHint(self):
         return QSize(self.size().width(),150)
@@ -607,13 +615,24 @@ class CzeTimeline(QWidget):
     def updateplaybackcursor(self,frame):
         boundingrect = self.graphicsview.mapToScene(self.graphicsview.viewport().geometry()).boundingRect()
         self.playbackcursor.setLine(QLine(frame,boundingrect.top(),frame,boundingrect.bottom()))
-    
+
+    def updateSeekingState(self):
+        if self.parentclass.seeking and not self.seekingBackground:
+            self.seekingBackground = self.scene.addPolygon(self.graphicsview.mapToScene(self.rect()),QColor(127,127,127,127),QColor(127,127,127,127))
+            self.seekingText = self.scene.addText("Seeking...",QFont("Arial",12))
+            self.seekingText.setPos(self.graphicsview.mapToScene(self.rect().center()))
+        elif not self.parentclass.seeking and self.seekingBackground:
+            self.scene.removeItem(self.seekingBackground)
+            self.scene.removeItem(self.seekingText)
+            self.seekingBackground = None
+            self.seekingText = None
+
     def mmoveEvent(self, event:QMouseEvent,prevpos:QPoint) -> None:
         if event.buttons() & Qt.MouseButton.MiddleButton:
             delta = (event.pos()-prevpos)*(self.graphicsview.sceneRect().width()/self.size().width())
             self.graphicsview.translate(delta.x(),delta.y())
             boundingrect = self.graphicsview.mapToScene(self.graphicsview.viewport().geometry()).boundingRect()
-            self.playbackcursor.setLine(QLine(playbackframe,boundingrect.top(),playbackframe,boundingrect.bottom()))
+            self.playbackcursor.setLine(QLine(self.parentclass.playbackframe,boundingrect.top(),self.parentclass.playbackframe,boundingrect.bottom()))
         if self.draggedframe and self.graphicsview.geometry().contains(event.pos()):
             self.parentclass.keyframes.setframe(self.draggedframe,int(self.graphicsview.mapToScene(event.pos().x(),0).x()))
             self.keyframes[self.draggedframe].setPos(self.draggedframe.frame,0)
@@ -688,11 +707,14 @@ class CzeTimeline(QWidget):
         #return super().mouseReleaseEvent(event)
     
     def resizeEvent(self, event:QResizeEvent) -> None:
-        #self.scene.setSceneRect(self.rect())
+        self.scene.setSceneRect(self.rect())
         r = self.graphicsview.sceneRect()
         r.setSize(event.size()/self.graphicsview.transform().m11()+QSize(1000,1000))  #hacky workaround, if this wasnt here it would snap to 0,0 every time you shrinked the view by more than 1 pixel per frame
         self.graphicsview.setSceneRect(r)
-        #self.graphicsview.setFixedSize(event.size())
+        self.graphicsview.setFixedSize(event.size())
+        self.graphicsview.size().setHeight(event.size().height())
+        self.graphicsview.size().setWidth(event.size().width())
+        #self.graphicsview.adjustSize()
         r = self.graphicsview.sceneRect()
         r.setSize(event.size()/self.graphicsview.transform().m11())
         self.graphicsview.setSceneRect(r)
@@ -700,7 +722,7 @@ class CzeTimeline(QWidget):
         #print(self.graphicsview.)
         super().resizeEvent(event)
         boundingrect = self.graphicsview.mapToScene(self.graphicsview.viewport().geometry()).boundingRect()
-        self.playbackcursor.setLine(QLine(playbackframe,boundingrect.top(),playbackframe,boundingrect.bottom()))
+        self.playbackcursor.setLine(QLine(self.parentclass.playbackframe,boundingrect.top(),self.parentclass.playbackframe,boundingrect.bottom()))
     
     def addKeyframe(self,keyframe:Keyframe):
         self.keyframes[keyframe] = self.scene.addRect(QRectF(-9,-9,18,18),QPen(QColor(0,0,0),0),self.coolgradient)
@@ -753,7 +775,7 @@ class CzeTimeline(QWidget):
         
         self.graphicsview.translate(delta.x(),delta.y())
         boundingrect = self.graphicsview.mapToScene(self.graphicsview.viewport().geometry()).boundingRect()
-        self.playbackcursor.setLine(QLine(playbackframe,boundingrect.top(),playbackframe,boundingrect.bottom()))
+        self.playbackcursor.setLine(QLine(self.parentclass.playbackframe,boundingrect.top(),self.parentclass.playbackframe,boundingrect.bottom()))
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
         if event.text() == "k":

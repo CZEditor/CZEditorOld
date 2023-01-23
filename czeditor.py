@@ -1,6 +1,6 @@
 from multiprocessing import dummy
 import numpy as np
-import moviepy.editor as mpy
+from moviepy.video.VideoClip import VideoClip
 import moviepy.config as mpyconfig
 from imagefunctions import *
 from statefunctions import *
@@ -86,7 +86,7 @@ def getsound(state,sample):
 mpyconfig.FFMPEG_BINARY = "ffmpeg"
 def render(filename, length, keyframes):
 
-    clip = mpy.VideoClip(getframeimage, duration=length / 60)
+    clip = VideoClip(getframeimage, duration=length / 60)
     #clip.write_videofile(filename=filename, fps=60, codec="libx264rgb", ffmpeg_params=["-strict","-2"]) perfection, doesnt embed | don't delete this
     clip.write_videofile(filename=filename, fps=60, codec="libvpx-vp9",ffmpeg_params=["-pix_fmt","yuv444p"],write_logfile=True) #perfection, embeds only on pc
 
@@ -291,13 +291,13 @@ class Window(QMainWindow):
         self.viewport = CzeViewport(topsplitter,self)
         self.presets = CzePresets(topsplitter,self)
         self.timeline = CzeTimeline(hozsplitter,self)
-    
+
         self.selectedframe = None
         self.setCentralWidget(hozsplitter)
         self.show()
         
         self.draggedpreset = None
-        self.startTimer(0.016,Qt.TimerType.PreciseTimer)
+        self.startTimer(0.016,Qt.TimerType.CoarseTimer)
         self.lastframetime = perf_counter()
         self.isplaying = False
         self.starttime = perf_counter()
@@ -354,6 +354,7 @@ class Window(QMainWindow):
         
     def threadseek(self,frame):
         self.seeking = True
+        
         for keyframe in getstate(self.playbackframe,self):
             if hasattr(keyframe.params.image.function(),"seek"):
                 keyframe.params.image.function().seek(keyframe.params.image.params,frame-keyframe.frame)
