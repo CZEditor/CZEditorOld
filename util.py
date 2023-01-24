@@ -86,6 +86,9 @@ class Params(object):
     def __setitem__(self,index,param):
         return self.__setattr__(index,param)
 
+    def set(self,index,value):
+        self.__setattr__(index,value)
+        return self
 class Selectable():
     def __init__(self,index=0,options=[["None",None]]):
         self.options = options

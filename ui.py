@@ -865,7 +865,62 @@ class CzePresets(QWidget):
         self.scene = QGraphicsScene(self)
         self.graphicsview = QGraphicsViewEvent(self)
         self.graphicsview.setScene(self.scene)
-        self.keyframes = []
+        self.keyframes = [Keyframe(0,Params({
+            "properties":{
+                "params":{
+                    "name":LineStringProperty("Image"),
+                }
+            },
+            "image":
+            {
+                "function":Selectable(0,self.parentclass.imagefunctionsdropdown),
+                "params":Selectable(0,self.parentclass.imagefunctionsdropdown)().params.copy()
+            },
+            "states":[
+                {
+                    "function":Selectable(0,self.parentclass.actionfunctionsdropdown),
+                    "params":Selectable(0,self.parentclass.actionfunctionsdropdown)().params.copy()
+                }
+            ],
+            "compositing":[
+                {
+                    "function":Selectable(0,self.parentclass.effectfunctionsdropdown),
+                    "params":Selectable(0,self.parentclass.effectfunctionsdropdown)().params.copy().set("x",IntProperty(640)).set("y",IntProperty(360))
+                },
+                {
+                    "function":Selectable(2,self.parentclass.effectfunctionsdropdown),
+                    "params":Selectable(2,self.parentclass.effectfunctionsdropdown)().params.copy()
+                }
+            ]
+        })),
+        Keyframe(0,Params({
+            "properties":{
+                "params":{
+                    "name":LineStringProperty("Video"),
+                }
+            },
+            "image":
+            {
+                "function":Selectable(5,self.parentclass.imagefunctionsdropdown),
+                "params":Selectable(5,self.parentclass.imagefunctionsdropdown)().params.copy()
+            },
+            "states":[
+                {
+                    "function":Selectable(0,self.parentclass.actionfunctionsdropdown),
+                    "params":Selectable(0,self.parentclass.actionfunctionsdropdown)().params.copy()
+                }
+            ],
+            "compositing":[
+                {
+                    "function":Selectable(0,self.parentclass.effectfunctionsdropdown),
+                    "params":Selectable(0,self.parentclass.effectfunctionsdropdown)().params.copy().set("x",IntProperty(640)).set("y",IntProperty(360))
+                },
+                {
+                    "function":Selectable(2,self.parentclass.effectfunctionsdropdown),
+                    "params":Selectable(2,self.parentclass.effectfunctionsdropdown)().params.copy()
+                }
+            ]
+        }))]
         self.drawnkeyframes = {}
         i = 0
         for keyframe in self.keyframes: # TODO : Maybe load from a file?

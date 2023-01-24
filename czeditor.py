@@ -278,6 +278,8 @@ class Window(QMainWindow):
         super().__init__()
         self.playbackframe = 100
         self.imagefunctionsdropdown = imagefunctionsdropdown
+        self.actionfunctionsdropdown = statefunctionsdropdown
+        self.effectfunctionsdropdown = compositingfunctionsdropdown
         self.keyframes = Keyframelist(self)
         self.setWindowTitle("CZEditor")
         self.setGeometry(100,100,1280,720)

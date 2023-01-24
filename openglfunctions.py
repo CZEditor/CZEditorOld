@@ -143,5 +143,5 @@ out vec4 color;
     ]+\
     fragmentshaderlist+\
     [mainfragmentshader]
-    print(mainfragmentcode)
+
     return shaders,(mainvertexshader,mainfragmentshader)
