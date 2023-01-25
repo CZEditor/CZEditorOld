@@ -1,6 +1,6 @@
 from PySide6.QtWidgets import QToolButton,QPushButton,QSpinBox,QSizePolicy,QFrame,QPlainTextEdit,QLineEdit,QScrollArea,QComboBox,QDoubleSpinBox
 from PySide6.QtGui import QTextOption
-from czeditor.util import dummyfunction
+from util import dummyfunction
 
 class QRedButton(QToolButton):
 

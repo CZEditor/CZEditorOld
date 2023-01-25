@@ -1,16 +1,16 @@
-from czeditor.generate import *
+from generate import *
 from PIL import Image
 from functools import cache
-from czeditor.util import *
+from util import *
 from PySide6.QtWidgets import QWidget,QGraphicsScene,QGraphicsView,QGraphicsItem,QGraphicsRectItem,QGraphicsLineItem,QToolButton,QPushButton,QComboBox,QFrame,QSizePolicy,QScrollArea,QPlainTextEdit,QSpinBox,QLineEdit,QFormLayout,QGraphicsItemGroup,QGraphicsTextItem
 from PySide6.QtGui import QPen,QColor,QRadialGradient,QResizeEvent,QMouseEvent,QWheelEvent,QDrag,QDragEnterEvent,QDragLeaveEvent,QDragMoveEvent,QDropEvent,QTextOption,QKeyEvent,QFont
 from PySide6.QtCore import QSize,Qt,QRectF,QPoint,QLine,QMimeData,Qt
-from czeditor.keyframes import *
-from czeditor.compositingfunctions import *
-from czeditor.imagefunctions import *
-from czeditor.statefunctions import *
+from keyframes import *
+from compositingfunctions import *
+from imagefunctions import *
+from statefunctions import *
 from copy import deepcopy
-from czeditor.base_ui import *
+from base_ui import *
 playbackframe = 100
 
 def updateplaybackframe(frame):

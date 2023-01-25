@@ -1,5 +1,5 @@
 from OpenGL.GL import *
-from czeditor.customShaderCompilation import compileProgram,compileShader
+from customShaderCompilation import compileProgram,compileShader
 from ctypes import c_void_p
 import numpy as np
 from scipy.spatial.transform import Rotation

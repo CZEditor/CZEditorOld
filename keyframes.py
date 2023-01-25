@@ -1,12 +1,12 @@
 from typing import overload
-from czeditor.util import *
+from util import *
 import numpy as np
 from OpenGL.GL import *
-from czeditor.customShaderCompilation import compileProgram,compileShader
+from customShaderCompilation import compileProgram,compileShader
 from PySide6.QtGui import QMatrix4x4
 from ctypes import c_void_p
-from czeditor.openglfunctions import *
-from czeditor.properties import LineStringProperty
+from openglfunctions import *
+from properties import LineStringProperty
 
 class Keyframe():
 
