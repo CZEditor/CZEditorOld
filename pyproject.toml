@@ -1,0 +1,30 @@
+[tool.poetry]
+name = "CZEditor"
+version = "0.1.0"
+description = "General purpose video editor. Made in Python."
+authors = []
+license = "GPLv3"
+readme = "README.md"
+repository = "https://github.com/CZEditor/CZEditor"
+
+[tool.poetry.dependencies]
+python = "^3.9,<=3.10"
+moviepy = "^1.0"
+numpy = "^1.24"
+Pillow = "^9.4"
+PIMS = "^0.6"
+PyOpenGl = "^3.1"
+PySide6 = "^6.4"
+pyspng_seunglab = "^1.1"
+scipy = "^1.10"
+sounddevice = "^0.4"
+orderedset = "^2.0"
+
+[tool.poetry.dev-dependencies]
+nuitka = "^1.3"
+autopep8 = "^2.0"
+pylint = "^2.14"
+
+[build-system]
+requires = ["poetry-core", "nuitka"]
+build-backend = "nuitka.distutils.Build"
