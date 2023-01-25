@@ -1,4 +1,4 @@
-from base_ui import QRedFrame,QRedSpinBox,QRedTextBox,QRedButton,QRedDecimalSpinBox,QRedTextEntry
+from czeditor.base_ui import QRedFrame,QRedSpinBox,QRedTextBox,QRedButton,QRedDecimalSpinBox,QRedTextEntry
 from PySide6.QtWidgets import QHBoxLayout,QSizePolicy,QFileDialog,QGridLayout,QLabel,QVBoxLayout
 from PySide6.QtCore import Qt
 

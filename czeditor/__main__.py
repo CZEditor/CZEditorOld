@@ -2,10 +2,10 @@ from multiprocessing import dummy
 import numpy as np
 from moviepy.video.VideoClip import VideoClip
 import moviepy.config as mpyconfig
-from imagefunctions import *
-from statefunctions import *
-from compositingfunctions import *
-from util import *
+from czeditor.imagefunctions import *
+from czeditor.statefunctions import *
+from czeditor.compositingfunctions import *
+from czeditor.util import *
 from PySide6.QtWidgets import QAbstractButton,QMainWindow,QApplication,QFrame,QScrollArea,QSplitter,QWidget,QGraphicsScene,QGraphicsView,QGraphicsItem,QGraphicsSceneMouseEvent,QComboBox,QPlainTextEdit,QLabel,QVBoxLayout,QHBoxLayout,QSizePolicy,QFormLayout,QLineEdit,QGridLayout,QSpinBox,QGraphicsPixmapItem,QStyle,QPushButton,QToolButton
 from PySide6.QtGui import QPixmap,QPainter,QPen,QBrush,QColor,QRadialGradient,QResizeEvent,QMouseEvent,QWheelEvent,QTextOption,QKeyEvent,QImage,QMatrix4x4
 from PySide6.QtCore import QSize,Qt,QRectF,QPoint,QLine,SIGNAL,QTimerEvent
@@ -13,13 +13,13 @@ from PySide6.QtMultimedia import QMediaPlayer,QAudioOutput
 from PySide6.QtOpenGLWidgets import QOpenGLWidget
 from OpenGL.GL.shaders import compileProgram,compileShader
 from PIL import Image,ImageQt
-from ui import *
+from czeditor.ui import *
 from typing import *
 import sys
-from keyframes import *
+from czeditor.keyframes import *
 from time import time,perf_counter
 from ctypes import c_void_p
-from base_ui import *
+from czeditor.base_ui import *
 import sounddevice
 import traceback
 import concurrent.futures

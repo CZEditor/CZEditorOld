@@ -1,6 +1,6 @@
 from PIL import Image
-from util import ParamLink,Params
-from handles import CzeViewportDraggableHandle
+from czeditor.util import ParamLink,Params
+from czeditor.handles import CzeViewportDraggableHandle
 from PySide6.QtGui import QMatrix4x4
 from PySide6.QtCore import QUrl
 from OpenGL.GL import *
@@ -10,8 +10,8 @@ from math import *
 from ctypes import c_void_p
 from random import random
 from scipy.spatial.transform import Rotation
-from properties import *
-from openglfunctions import *
+from czeditor.properties import *
+from czeditor.openglfunctions import *
 from OpenGL.GL.shaders import compileProgram,compileShader
 from traceback import print_exc
 imagecache = {}

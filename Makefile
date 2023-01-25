@@ -3,7 +3,7 @@ poetry.lock:
 dev: poetry.lock
 	poetry install
 run: | poetry.lock
-	poetry run python czeditor.py
+	poetry run python -m czeditor
 
 install:
 	poetry build
