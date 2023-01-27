@@ -78,6 +78,7 @@ class FilePropertyWidget(QRedFrame):
         self.textbox.setPlainText(self.theproperty._val)
     def browse(self):
         self.textbox.setPlainText(QFileDialog.getOpenFileUrl(self,"Open File")[0].path()[1:])
+        #,options=QFileDialog.Option.DontUseNativeDialog
 
 class SizePropertyWidget(QRedFrame):
     def __init__(self,property):

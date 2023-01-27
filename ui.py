@@ -524,6 +524,7 @@ class QGraphicsViewEvent(QGraphicsView):
         self.onpress = dummyfunction
         self.onmove = dummyfunction
         self.onrelease = dummyfunction
+        self.ondoubleclick = dummyfunction
         self.onscroll = dummyfunction
         self.dragenter = dummyfunction
         self.dragmove = dummyfunction
@@ -543,9 +544,14 @@ class QGraphicsViewEvent(QGraphicsView):
     def mouseMoveEvent(self, event:QMouseEvent) -> None:
         
         self.onmove(event,self.previousmouse)
-        #print(event)
         self.previousmouse = event.pos()
         return super().mouseMoveEvent(event)
+
+    def mouseDoubleClickEvent(self, event: QMouseEvent) -> None:
+
+        self.ondoubleclick(event)
+        self.previousmouse = event.pos()
+        return super().mouseDoubleClickEvent(event)
 
     def wheelEvent(self, event) -> None:
         self.onscroll(event)
@@ -588,6 +594,10 @@ class CzeTimelineKeyframeItem(QGraphicsItem):
     def setBrush(self, brush):
         self.currentBrush = brush
 
+
+
+
+
 class CzeTimeline(QWidget):
     coolgradient = QRadialGradient(50,50,90)
     coolgradient.setColorAt(1,QColor(255,255,255))
@@ -595,7 +605,9 @@ class CzeTimeline(QWidget):
     selectedcoolgradient = QRadialGradient(30,30,60)
     selectedcoolgradient.setColorAt(1,QColor(255,127,127))
     selectedcoolgradient.setColorAt(0,QColor(255,0,0))
-
+    hovergradient = QRadialGradient(50,50,120)
+    hovergradient.setColorAt(1,QColor(255,255,255))
+    hovergradient.setColorAt(0,QColor(255,0,0))
     def __init__(self,parent,parentclass):
         self.keyframes = {}
         self.keyframeitems = {}
@@ -624,11 +636,12 @@ class CzeTimeline(QWidget):
         self.graphicsview.onrelease = self.releaseEvent
         self.graphicsview.onmove = self.mmoveEvent
         self.graphicsview.onscroll = self.zoom
+        self.graphicsview.ondoubleclick = self.doubleClickEvent
         #self.graphicsview.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
         #self.graphicsview.setTransformationAnchor(QGraphicsView.ViewportAnchor.AnchorViewCenter)
         self.graphicsview.verticalScrollBar().setMaximum(200000000)
         self.graphicsview.horizontalScrollBar().setMaximum(200000000)
-        self.lastm1pos = None
+        
         self.setAcceptDrops(True)
         self.graphicsview.setAcceptDrops(True)
         self.graphicsview.viewport().setAcceptDrops(True)
@@ -638,6 +651,7 @@ class CzeTimeline(QWidget):
         self.seekingBackground = None
         self.seekingText = None
         self.startTimer(0.25,Qt.TimerType.CoarseTimer)
+        self.hoveredkeyframe = None
 
     def timerEvent(self, event) -> None:
         self.updateSeekingState()
@@ -662,47 +676,88 @@ class CzeTimeline(QWidget):
             self.seekingText = None
 
     def mmoveEvent(self, event:QMouseEvent,prevpos:QPoint) -> None:
+
         if event.buttons() & Qt.MouseButton.MiddleButton:
+
             delta = (event.pos()-prevpos)*(self.graphicsview.sceneRect().width()/self.size().width())
             self.graphicsview.translate(delta.x(),delta.y())
+
             boundingrect = self.graphicsview.mapToScene(self.graphicsview.viewport().geometry()).boundingRect()
             self.playbackcursor.setLine(QLine(self.parentclass.playbackframe,boundingrect.top(),self.parentclass.playbackframe,boundingrect.bottom()))
+
+        if not (event.buttons() & Qt.MouseButton.LeftButton):
+
+                
+
+            founditem:QGraphicsItem = self.graphicsview.itemAt(event.pos())
+            if isinstance(founditem,CzeTimelineKeyframeItem):
+                if founditem != self.hoveredkeyframe and self.hoveredkeyframe:
+                    self.hoveredkeyframe.setBrush(self.coolgradient)
+                    if founditem.currentBrush == self.coolgradient:
+                        founditem.setBrush(self.hovergradient)
+                        self.hoveredkeyframe = founditem
+                    self.graphicsview.update()
+                else:
+                    if founditem.currentBrush == self.coolgradient:
+                        founditem.setBrush(self.hovergradient)
+                        self.hoveredkeyframe = founditem
+                        self.graphicsview.update()
+            else:
+                if founditem != self.hoveredkeyframe and self.hoveredkeyframe:
+                    if(self.hoveredkeyframe.currentBrush == self.hovergradient):
+                        self.hoveredkeyframe.setBrush(self.coolgradient)
+                    self.hoveredkeyframe = None
+                    self.graphicsview.update()
+
         if self.draggedframe and self.graphicsview.geometry().contains(event.pos()):
-            self.parentclass.keyframes.setframe(self.draggedframe,int(self.graphicsview.mapToScene(event.pos().x(),0).x()))
-            self.keyframes[self.draggedframe].setPos(self.draggedframe.frame,0)
+
+            mapped = self.graphicsview.mapToScene(event.pos())
+
+            self.parentclass.keyframes.setframe(self.draggedframe,int(mapped.x()))
+            self.parentclass.keyframes.setlayer(self.draggedframe,-round(mapped.y()/25))
+
+            self.keyframes[self.draggedframe].setPos(self.draggedframe.frame,-self.draggedframe.layer*25)
+
             self.parentclass.updateviewport()
+
         return super().mouseMoveEvent(event)
     
+    def doubleClickEvent(self,event:QMouseEvent):
+        if event.button() == Qt.MouseButton.LeftButton:
+            founditem:QGraphicsItem = self.graphicsview.itemAt(event.pos().x(),event.pos().y())
+            if isinstance(founditem,CzeTimelineKeyframeItem):
+                self.parentclass.draggedpreset = founditem.keyframe.copy()
+                drag = QDrag(self)
+                mime = QMimeData()
+                drag.setMimeData(mime)
+                drag.exec_(Qt.MoveAction)
+            else:
+                if self.parentclass.selectedframe:
+                    self.keyframes[self.parentclass.selectedframe].setBrush(self.coolgradient)
+                    self.parentclass.selectedframe = None
+                    self.parentclass.updatekeyframeoptions()
+                    self.parentclass.viewport.updatehandles()
+                    self.graphicsview.update()
     def pressEvent(self, event:QMouseEvent) -> None:
         if event.button() == Qt.MouseButton.LeftButton:
             founditem:QGraphicsItem = self.graphicsview.itemAt(event.pos().x(),event.pos().y())
             if isinstance(founditem,CzeTimelineKeyframeItem) or founditem is None:
                 if founditem != None:
-                    if event.pos() == self.lastm1pos:
-                        self.parentclass.draggedpreset = founditem.keyframe.copy()
-                        drag = QDrag(self)
-                        mime = QMimeData()
-                        drag.setMimeData(mime)
-                        drag.exec_(Qt.MoveAction)
-                    else:
-                        self.draggedframe = founditem.keyframe
-                        if self.parentclass.selectedframe:
-                            self.keyframes[self.parentclass.selectedframe].setBrush(self.coolgradient)
-                        founditem.setBrush(self.selectedcoolgradient)
-                        self.parentclass.selectedframe = founditem.keyframe
-                        self.parentclass.regeneratekeyframeoptions()
-                        self.parentclass.viewport.updatehandles()
+                    self.draggedframe = founditem.keyframe
+                    if self.parentclass.selectedframe:
+                        self.keyframes[self.parentclass.selectedframe].setBrush(self.coolgradient)
+                    founditem.setBrush(self.selectedcoolgradient)
+                    self.parentclass.selectedframe = founditem.keyframe
+                    self.parentclass.regeneratekeyframeoptions()
+                    self.parentclass.viewport.updatehandles()
+                    self.graphicsview.update()
                     
                 else:
                     self.parentclass.seek(self.graphicsview.mapToScene(event.pos().x(),0).x())
                     self.updateplaybackcursor(self.graphicsview.mapToScene(event.pos().x(),0).x())
                     self.parentclass.updateviewport()
-                    if event.pos() == self.lastm1pos:
-                        
-                        if self.parentclass.selectedframe:
-                            self.keyframes[self.parentclass.selectedframe].setBrush(self.coolgradient)
-                            self.parentclass.selectedframe = None
-                            self.parentclass.updatekeyframeoptions()
+                    self.graphicsview.update()
+                    
             #elif hasattr(founditem,"pressEvent"):
             #    founditem.pressEvent(event,self.graphicsview.mapToScene(event.pos().x(),0).toPoint()) # TODO : Give more parameters to the function
 
@@ -719,7 +774,8 @@ class CzeTimeline(QWidget):
     def dropEvent(self, event: QDropEvent) -> None:
         #print(self.parentclass.draggedpreset)
         if self.parentclass.draggedpreset and not self.draggedframe:
-            keyframe = Keyframe(int(self.graphicsview.mapToScene(event.pos().x(),0).x()),self.parentclass.draggedpreset.params.copy())
+            mapped = self.graphicsview.mapToScene(event.pos())
+            keyframe = Keyframe(int(mapped.x()),-round(mapped.y()/25),self.parentclass.draggedpreset.params.copy())
             self.parentclass.keyframes.add(keyframe)
             self.addKeyframe(keyframe)
             self.parentclass.draggedpreset = None
@@ -729,8 +785,12 @@ class CzeTimeline(QWidget):
     def releaseEvent(self, event:QMouseEvent) -> None:
         if event.button() == Qt.MouseButton.LeftButton:
             if self.draggedframe:
-                self.parentclass.keyframes.setframe(self.draggedframe,int(self.graphicsview.mapToScene(event.pos().x(),0).x()))
-                self.keyframes[self.draggedframe].setPos(self.draggedframe.frame,0)
+                mapped = self.graphicsview.mapToScene(event.pos())
+
+                self.parentclass.keyframes.setframe(self.draggedframe,int(mapped.x()))
+                self.parentclass.keyframes.setlayer(self.draggedframe,-round(mapped.y()/25))
+
+                self.keyframes[self.draggedframe].setPos(self.draggedframe.frame,-self.draggedframe.layer*25)
                 self.draggedframe = None
                 self.parentclass.updateviewport()
             #elif hasattr(founditem,"pressEvent"):
@@ -764,7 +824,7 @@ class CzeTimeline(QWidget):
         #self.keyframes[keyframe].setData(0,keyframe)
         self.keyframes[keyframe] = CzeTimelineKeyframeItem(keyframe)
         self.scene.addItem(self.keyframes[keyframe])
-        self.keyframes[keyframe].setPos(keyframe.frame,0)
+        self.keyframes[keyframe].setPos(keyframe.frame,-keyframe.layer*25)
         self.createKeyframeItem(keyframe,keyframe.params.image)
         for action in keyframe.params.states:
             self.createKeyframeItem(keyframe,action)
@@ -865,7 +925,7 @@ class CzePresets(QWidget):
         self.scene = QGraphicsScene(self)
         self.graphicsview = QGraphicsViewEvent(self)
         self.graphicsview.setScene(self.scene)
-        self.keyframes = [Keyframe(0,Params({
+        self.keyframes = [Keyframe(0,0,Params({
             "properties":{
                 "params":{
                     "name":LineStringProperty("Image"),
@@ -893,7 +953,7 @@ class CzePresets(QWidget):
                 }
             ]
         })),
-        Keyframe(0,Params({
+        Keyframe(0,0,Params({
             "properties":{
                 "params":{
                     "name":LineStringProperty("Video"),
