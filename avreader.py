@@ -43,8 +43,7 @@ class PyAVSeekableVideoReader:
 
     def __getitem__(self,frame:int):
         if(frame < self._currentFrame):
-            self._cachedFrame = self.seek(frame).to_ndarray(format="rgb24")
-            self._cachedFrame = np.concatenate((self._cachedFrame,self._fullalpha),axis=2)
+            self._cachedFrame[:,:,:3] = self.seek(frame).to_ndarray(format="rgb24")
         if(frame > self._currentFrame):
             for i in self._keyframes:
                 if i < frame and i > self._currentFrame:
