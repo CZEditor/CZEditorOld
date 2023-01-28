@@ -337,7 +337,7 @@ class Window(QMainWindow):
         return super().keyPressEvent(event)
 
     def getnextsoundchunk(self,outdata,frames,time,status):
-        if self.isplaying:
+        if self.isplaying and not self.seeking:
             try:
                 outdata[:] = getsound(self.currentframestate,self.playbacksample)
             except Exception:
