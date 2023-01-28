@@ -233,6 +233,7 @@ class CzeKeyframeOptionCategory(QRedDropDownFrame):
         self.parentclass.timeline.createKeyframeItem(self.parentclass.selectedframe,params)
 
     def rebuild(self,name,index):
+        
         self.parentclass.timeline.deleteKeyframeItem(self.parentclass.selectedframe,self.params)
         self.params.function.index = index
         for i in range(self.widgets.rowCount()):
@@ -731,6 +732,14 @@ class CzeTimeline(QWidget):
 
         return super().mouseMoveEvent(event)
     
+    def deselectFrame(self):
+        if self.parentclass.selectedframe:
+            self.keyframes[self.parentclass.selectedframe].setBrush(self.coolgradient)
+            self.parentclass.selectedframe = None
+            self.parentclass.updatekeyframeoptions()
+            self.parentclass.viewport.updatehandles()
+            self.graphicsview.update()
+
     def doubleClickEvent(self,event:QMouseEvent):
         if event.button() == Qt.MouseButton.LeftButton:
             founditem:QGraphicsItem = self.graphicsview.itemAt(event.pos().x(),event.pos().y())
@@ -741,12 +750,7 @@ class CzeTimeline(QWidget):
                 drag.setMimeData(mime)
                 drag.exec_(Qt.MoveAction)
             else:
-                if self.parentclass.selectedframe:
-                    self.keyframes[self.parentclass.selectedframe].setBrush(self.coolgradient)
-                    self.parentclass.selectedframe = None
-                    self.parentclass.updatekeyframeoptions()
-                    self.parentclass.viewport.updatehandles()
-                    self.graphicsview.update()
+                self.deselectFrame()
     def pressEvent(self, event:QMouseEvent) -> None:
         if event.button() == Qt.MouseButton.LeftButton:
             founditem:QGraphicsItem = self.graphicsview.itemAt(event.pos().x(),event.pos().y())
@@ -841,7 +845,8 @@ class CzeTimeline(QWidget):
             self.createKeyframeItem(keyframe,effect)
     
     def createKeyframeItem(self,keyframe:Keyframe,param:Params):
-        
+        if(keyframe is None):
+            return
         if param.function and hasattr(param.function(),"timelineitem"):
             items = param.function().timelineitem(param,keyframe,self.parentclass)
             if(keyframe not in self.keyframeitems):
@@ -854,12 +859,16 @@ class CzeTimeline(QWidget):
                 self.scene.addItem(item)
 
     def deleteKeyframeItem(self,keyframe,param):
+        if(keyframe is None):
+            return
         if(keyframe in self.keyframeitems and param in self.keyframeitems[keyframe]):
             for item in self.keyframeitems[keyframe][param]:
                 self.scene.removeItem(item)
             del self.keyframeitems[keyframe][param]
 
     def deleteKeyframeItems(self,keyframe):
+        if(keyframe is None):
+            return
         if(keyframe in self.keyframeitems):
             for param in self.keyframeitems[keyframe].keys():
                 for item in self.keyframeitems[keyframe][param]:
@@ -1076,7 +1085,7 @@ class CzePresets(QWidget):
                 return super().mouseReleaseEvent(event)
             keyframe = self.parentclass.draggedpreset.copy()
             i = len(self.keyframes)
-            self.keyframes.append(self.parentclass.draggedpreset.copy())
+            self.keyframes.append(keyframe)
             self.drawnkeyframes[keyframe] = CzePresetKeyframeItem(keyframe)
             self.scene.addItem(self.drawnkeyframes[keyframe])
             self.drawnkeyframes[keyframe].setPos((i%6)*64+30,floor(i/6)*44+20)
@@ -1095,14 +1104,18 @@ class CzePresets(QWidget):
             self.selectedpreset = founditem
             if(founditem):
                 self.selectedpreset.setSelect(True)
+                
+                self.parentclass.timeline.deselectFrame()
                 self.parentclass.keyframeoptions.regenerate(self.selectedpreset.keyframe)
+                
             else:
                 self.parentclass.keyframeoptions.regenerate()
             self.graphicsview.update()
+            self.parentclass.draggedpreset = None
         return super().mousePressEvent(event)
 
     def mmoveEvent(self, event:QMouseEvent,prevpos:QPoint) -> None:
-        if not self.parentclass.draggedpreset and self.selectedpreset:
+        if not self.parentclass.draggedpreset and self.selectedpreset and event.buttons() & Qt.MouseButton.LeftButton:
             self.parentclass.draggedpreset = self.selectedpreset.keyframe.copy()
             drag = QDrag(self)
             mime = QMimeData()

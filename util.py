@@ -117,6 +117,7 @@ class emptylist():
         return self.default
     def __setitem__(self,index,param):
         return
+
 def dummyfunction(*args,**kwargs):
     pass
 

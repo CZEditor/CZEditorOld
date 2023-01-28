@@ -28,6 +28,7 @@ class Keyframe():
         self.currentTextureSize = None
         self.currentTexture = None
         self.fbo = None
+        self.pbo = None
     
     def copy(self):
         return Keyframe(self.frame,self.layer,self.params.copy())
@@ -60,6 +61,8 @@ class Keyframe():
 
         if(self.fbo is None):
             self.fbo = glGenFramebuffers(1)
+        if(self.pbo is None):
+            self.pbo = glGenBuffers(1)
         #glBindFramebuffer(GL_FRAMEBUFFER,self.fbo)
 
         if(str(shader) != str(self.lastShaderList)):
@@ -134,14 +137,16 @@ class Keyframe():
             
             glDrawBuffers(1,[GL_COLOR_ATTACHMENT0])
             glBindFramebuffer(GL_FRAMEBUFFER,0)
-
-        glTexSubImage2D(GL_TEXTURE_2D,0,0,0,image.shape[1],image.shape[0],GL_RGBA,GL_UNSIGNED_BYTE,c_void_p(imageDataPointer))
-
+        glBindBuffer(GL_PIXEL_UNPACK_BUFFER, self.pbo)
+        UpdateTextureWithBuffer(imageDataPointer,image.shape[0]*image.shape[1]*4,(image.shape[1],image.shape[0]))
+        #glTexSubImage2D(GL_TEXTURE_2D,0,0,0,image.shape[1],image.shape[0],GL_RGBA,GL_UNSIGNED_BYTE,c_void_p(imageDataPointer))
+        glBindBuffer(GL_PIXEL_UNPACK_BUFFER,0)
         if(len(self.compiledPrograms)>1):
             glBindFramebuffer(GL_FRAMEBUFFER,self.fbo)
             glViewport(0,0,image.shape[1],image.shape[0])
             #glClear(GL_COLOR_BUFFER_BIT)
             #glClearColor(0.0,0.0,0.0,0.0)
+            glDisable(GL_BLEND)
             glDisable(GL_DEPTH_TEST)
             glBufferData(GL_ARRAY_BUFFER,np.array([[-1,-1, 0.0, 0.0, 0.0],
             [1,  -1, 0.0, 1.0, 0.0],
@@ -165,7 +170,8 @@ class Keyframe():
                 glDrawArrays(GL_TRIANGLES,0,6)
 
             glBindFramebuffer(GL_FRAMEBUFFER,1) # WHAT
-            glEnable(GL_DEPTH_TEST)            
+            glEnable(GL_DEPTH_TEST)
+            glEnable(GL_BLEND)
             glViewport(0,0,1280,720)
         
         glBufferData(GL_ARRAY_BUFFER,np.array(vertices,dtype=np.float32),GL_DYNAMIC_DRAW)

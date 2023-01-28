@@ -13,7 +13,7 @@ class TimelineDurationLineItem(QGraphicsItem):
         self.setCursor(Qt.CursorShape.IBeamCursor)
 
     def boundingRect(self) -> QRectF:
-        return QRectF(0,-2,self.params.params.duration(),2)
+        return QRectF(0,-4,self.params.params.duration(),4)
 
     def paint(self, painter, option, widget):
         self.setPos(self.keyframe.frame,-self.keyframe.layer*25+self.params.params.transient().handleHeight)
@@ -110,7 +110,9 @@ class TimelineStartFrameHandleItem(QGraphicsItem):
     def mouseMoveEvent(self, event: QGraphicsSceneMouseEvent):
         scenepos = event.scenePos().toPoint()
         self.params.params.duration.set(min(self.params.params.transient().maxduration,self.params.params.duration()-scenepos.x()+self.keyframe.frame))
-        self.params.params.startframe.set(min(self.params.params.transient().maxduration,self.params.params.duration()+self.keyframe.frame,self.params.params.startframe()+scenepos.x()-self.keyframe.frame))
+        self.params.params.startframe.set(min(self.params.params.transient().maxduration,
+                                              self.params.params.duration()+self.keyframe.frame,
+                                              self.params.params.startframe()+scenepos.x()-self.keyframe.frame))
         self.params.params.duration.set(max(0,self.params.params.duration()))
         self.params.params.startframe.set(max(0,self.params.params.startframe()))
         clampedpos = max(self.keyframe.frame-self.params.params.startframe(),scenepos.x())
