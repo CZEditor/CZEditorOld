@@ -1085,7 +1085,7 @@ class CzePresets(QWidget):
                 return super().mouseReleaseEvent(event)
             keyframe = self.parentclass.draggedpreset.copy()
             i = len(self.keyframes)
-            self.keyframes.append(self.parentclass.draggedpreset.copy())
+            self.keyframes.append(keyframe)
             self.drawnkeyframes[keyframe] = CzePresetKeyframeItem(keyframe)
             self.scene.addItem(self.drawnkeyframes[keyframe])
             self.drawnkeyframes[keyframe].setPos((i%6)*64+30,floor(i/6)*44+20)
