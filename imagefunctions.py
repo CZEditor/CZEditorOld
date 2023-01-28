@@ -139,7 +139,7 @@ class Video():
         "startframe":IntProperty(0),
         "duration":IntProperty(0),
         "transient":TransientProperty(Params({
-            "pimsobject":None,
+            "pyavobject":None,
             "moviepyobject":None,
             "decodedaudio":None,
             "maxduration":0,
@@ -157,26 +157,26 @@ class Video():
         if(not os.path.exists(param.videopath())):
             param.duration.set(0)
             return np.array(emptyimage)
-        if(param.videopath() != transient.lastpath or transient.pimsobject == None):
-            if(transient.pimsobject != None):
-                transient.pimsobject.close()
+        if(param.videopath() != transient.lastpath or transient.pyavobject == None):
+            if(transient.pyavobject != None):
+                transient.pyavobject.close()
                 transient.moviepyobject.close()
             
-            #transient.pimsobject = PyAVReaderTimed(param.videopath(),cache_size=32)
-            transient.pimsobject = avreader.PyAVSeekableVideoReader(param.videopath())
+            #transient.pyavobject = PyAVReaderTimed(param.videopath(),cache_size=32)
+            transient.pyavobject = avreader.PyAVSeekableVideoReader(param.videopath())
             transient.moviepyobject = AudioFileClip(param.videopath(),nbytes=2,fps=48000)
             transient.lastpath = param.videopath()
-            param.duration.set(int(len(transient.pimsobject)/transient.pimsobject.frame_rate*60)-param.startframe())
-            transient.maxduration = int(len(transient.pimsobject)/transient.pimsobject.frame_rate*60)
+            param.duration.set(int(len(transient.pyavobject)/transient.pyavobject.frame_rate*60)-param.startframe())
+            transient.maxduration = int(len(transient.pyavobject)/transient.pyavobject.frame_rate*60)
             print(transient.maxduration)
         # Add the beginning frame offset
         frame += param.startframe()
 
         # Correct the framerate from 60 fps to video fps
-        frame = int(frame/60*transient.pimsobject.frame_rate)
-        if(frame >= len(transient.pimsobject) or frame < 0): #Check if its after or before
+        frame = int(frame/60*transient.pyavobject.frame_rate)
+        if(frame >= len(transient.pyavobject) or frame < 0): #Check if its after or before
             return np.array(emptyimage)
-        img = transient.pimsobject[int(frame)]
+        img = transient.pyavobject[int(frame)]
         img = np.pad(img,((0,0),(0,0),(0,1)),mode="constant",constant_values=255) # Add alpha 255, TODO : Maybe support alpha videos?
         return img
 
@@ -186,14 +186,14 @@ class Video():
             return np.array((0)),1
         if(param.videopath() != transient.lastpath or transient.moviepyobject == None):
             if(transient.moviepyobject != None):
-                transient.pimsobject.close()
+                transient.pyavobject.close()
                 transient.moviepyobject.close()
             
-            transient.pimsobject = PyAVReaderTimed(param.videopath(),cache_size=32)
+            transient.pyavobject = avreader.PyAVSeekableVideoReader(param.videopath())
             transient.moviepyobject = AudioFileClip(param.videopath(),nbytes=2,fps=48000)
             transient.lastpath = param.videopath()
-            param.duration.set(int(len(transient.pimsobject)/transient.pimsobject.frame_rate*60)-param.startframe())
-            transient.maxduration = int(len(transient.pimsobject)/transient.pimsobject.frame_rate*60)
+            param.duration.set(int(len(transient.pyavobject)/transient.pyavobject.frame_rate*60)-param.startframe())
+            transient.maxduration = int(len(transient.pyavobject)/transient.pyavobject.frame_rate*60)
             
         sample += int(param.startframe()/60*transient.moviepyobject.fps)
         if transient.moviepyobject.reader.pos != sample:
@@ -207,20 +207,20 @@ class Video():
 
     def seek(params:Params,frame):
         if(frame<params.transient().maxduration):
-            params.transient().pimsobject[int(max(params.startframe(),frame)/60*params.transient().pimsobject.frame_rate)]
+            params.transient().pyavobject[int(max(params.startframe(),frame)/60*params.transient().pyavobject.frame_rate)]
             params.transient().moviepyobject.reader.seek(int(max(params.startframe(),frame)/60*params.transient().moviepyobject.fps))
 
     def initialize(param:Params):
         transient = param.transient()
         if(param.videopath() != transient.lastpath or transient.moviepyobject == None):
             if(transient.moviepyobject != None):
-                transient.pimsobject.close()
+                transient.pyavobject.close()
                 transient.moviepyobject.close()
-            transient.pimsobject = PyAVReaderTimed(param.videopath(),cache_size=32)
+            transient.pyavobject = avreader.PyAVSeekableVideoReader(param.videopath())
             transient.moviepyobject = AudioFileClip(param.videopath(),nbytes=2,fps=48000)
             transient.lastpath = param.videopath()
-            param.duration.set(int(len(transient.pimsobject)/transient.pimsobject.frame_rate*60)-param.startframe())
-            transient.maxduration = int(len(transient.pimsobject)/transient.pimsobject.frame_rate*60)
+            param.duration.set(int(len(transient.pyavobject)/transient.pyavobject.frame_rate*60)-param.startframe())
+            transient.maxduration = int(len(transient.pyavobject)/transient.pyavobject.frame_rate*60)
         #print(chunk)
         #print(sample,secrets.moviepyobject.reader.pos,secrets.moviepyobject.reader.nframes)
         
