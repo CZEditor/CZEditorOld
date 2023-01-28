@@ -349,28 +349,41 @@ class Window(QMainWindow):
             self.playbacksample = int(self.playbackframe/60*48000)
 
     def seek(self,frame):
-        if self.skipfuturesobject is not None:
-            self.skipfuturesobject.cancel()
-        
-        self.skipfuturesobject = self.executor.submit(self.threadseek,frame)
-        
+        #if self.skipfuturesobject is not None:
+        #    self.skipfuturesobject.cancel()
+
+        if(not self.isplaying and not self.seeking):
+            self.skipfuturesobject = self.executor.submit(self.threadseek,frame)
+        else:
+            self.startframe = frame
+            self.starttime = perf_counter()
+            self.playbackframe = frame
+            self.playbacksample = int(frame/60*48000)
         
     def threadseek(self,frame):
+        
         self.seeking = True
         
-        for keyframe in getstate(self.playbackframe,self):
-            if hasattr(keyframe.params.image.function(),"seek"):
-                keyframe.params.image.function().seek(keyframe.params.image.params,frame-keyframe.frame)
-            for action in keyframe.params.states:
-                if hasattr(action.function(),"seek"):
-                    action.function().seek(action.params,frame-keyframe.frame)
-            for effect in keyframe.params.compositing:
-                if hasattr(effect.function(),"seek"):
-                    effect.function().seek(effect.params,frame-keyframe.frame)
+        try:
+            
+            for keyframe in self.currentframestate:
+                if hasattr(keyframe.params.image.function(),"seek"):
+                    keyframe.params.image.function().seek(keyframe.params.image.params,frame-keyframe.frame)
+                for action in keyframe.params.states:
+                    if hasattr(action.function(),"seek"):
+                        action.function().seek(action.params,frame-keyframe.frame)
+                for effect in keyframe.params.compositing:
+                    if hasattr(effect.function(),"seek"):
+                        effect.function().seek(effect.params,frame-keyframe.frame)
+        except Exception:
+            print("<ERROR DURING SEEKING>")
+            traceback.print_exc()
+            print("</ERROR DURING SEEKING>")
         self.startframe = frame
         self.starttime = perf_counter()
         self.playbackframe = frame
         self.playbacksample = int(frame/60*48000)
+        self.currentframestate = getstate(self.playbackframe,self)
         self.seeking = False
 
     def timerEvent(self, event: QTimerEvent) -> None:

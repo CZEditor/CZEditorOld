@@ -11,6 +11,7 @@ from properties import *
 import os
 from moviepy.audio.io.AudioFileClip import AudioFileClip
 from timelineitems import *
+import avreader
 
 loadedimages = {}
 
@@ -160,12 +161,14 @@ class Video():
             if(transient.pimsobject != None):
                 transient.pimsobject.close()
                 transient.moviepyobject.close()
-            transient.pimsobject = PyAVReaderTimed(param.videopath(),cache_size=32)
+            
+            #transient.pimsobject = PyAVReaderTimed(param.videopath(),cache_size=32)
+            transient.pimsobject = avreader.PyAVSeekableVideoReader(param.videopath())
             transient.moviepyobject = AudioFileClip(param.videopath(),nbytes=2,fps=48000)
             transient.lastpath = param.videopath()
             param.duration.set(int(len(transient.pimsobject)/transient.pimsobject.frame_rate*60)-param.startframe())
             transient.maxduration = int(len(transient.pimsobject)/transient.pimsobject.frame_rate*60)
-
+            print(transient.maxduration)
         # Add the beginning frame offset
         frame += param.startframe()
 
@@ -185,11 +188,13 @@ class Video():
             if(transient.moviepyobject != None):
                 transient.pimsobject.close()
                 transient.moviepyobject.close()
+            
             transient.pimsobject = PyAVReaderTimed(param.videopath(),cache_size=32)
             transient.moviepyobject = AudioFileClip(param.videopath(),nbytes=2,fps=48000)
             transient.lastpath = param.videopath()
             param.duration.set(int(len(transient.pimsobject)/transient.pimsobject.frame_rate*60)-param.startframe())
             transient.maxduration = int(len(transient.pimsobject)/transient.pimsobject.frame_rate*60)
+            
         sample += int(param.startframe()/60*transient.moviepyobject.fps)
         if transient.moviepyobject.reader.pos != sample:
             transient.moviepyobject.reader.seek(sample)
