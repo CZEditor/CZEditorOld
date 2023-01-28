@@ -60,7 +60,7 @@ class FilledRectangle():
 
     def image(param:Params,parentclass,frame):
         #return CreateFilledRectangle((param.width,param.height),tuple(param.color))
-        made = np.full((param.width(),param.height(),4),np.array(param.color,dtype=np.uint8))
+        made = np.full((param.height(),param.width(),4),np.array(param.color,dtype=np.uint8))
         return made
 
     def __str__(self):
@@ -201,9 +201,21 @@ class Video():
         return [TimelineDurationLineItem(param,windowClass,keyframe),TimelineDurationHandleItem(param,windowClass,keyframe),TimelineStartFrameHandleItem(param,windowClass,keyframe),TimelineVerticalLineItem(param,windowClass,keyframe)]
 
     def seek(params:Params,frame):
-        params.transient().pimsobject[int(max(params.startframe(),frame)/60*params.transient().pimsobject.frame_rate)]
-        params.transient().moviepyobject.reader.seek(int(max(params.startframe(),frame)/60*params.transient().moviepyobject.fps))
-        
+        if(frame<params.transient().maxduration):
+            params.transient().pimsobject[int(max(params.startframe(),frame)/60*params.transient().pimsobject.frame_rate)]
+            params.transient().moviepyobject.reader.seek(int(max(params.startframe(),frame)/60*params.transient().moviepyobject.fps))
+
+    def initialize(param:Params):
+        transient = param.transient()
+        if(param.videopath() != transient.lastpath or transient.moviepyobject == None):
+            if(transient.moviepyobject != None):
+                transient.pimsobject.close()
+                transient.moviepyobject.close()
+            transient.pimsobject = PyAVReaderTimed(param.videopath(),cache_size=32)
+            transient.moviepyobject = AudioFileClip(param.videopath(),nbytes=2,fps=48000)
+            transient.lastpath = param.videopath()
+            param.duration.set(int(len(transient.pimsobject)/transient.pimsobject.frame_rate*60)-param.startframe())
+            transient.maxduration = int(len(transient.pimsobject)/transient.pimsobject.frame_rate*60)
         #print(chunk)
         #print(sample,secrets.moviepyobject.reader.pos,secrets.moviepyobject.reader.nframes)
         

@@ -37,8 +37,9 @@ def stateprocessor(frame,keyframes,windowClass):
     state = []
     for keyframe in keyframes:
         if keyframe.frame > frame:
-            return state
+            break
         state = keyframe.state(state,windowClass)
+    state = sorted(state,key=lambda k: k.layer)
     return state
     
 
@@ -392,6 +393,7 @@ class Window(QMainWindow):
     def createKeyframe(self,keyframe:Keyframe):
         self.keyframes.add(keyframe)
         self.timeline.addKeyframe(keyframe)
+        keyframe.initialize()
 
 app = QApplication([])
 window = Window()

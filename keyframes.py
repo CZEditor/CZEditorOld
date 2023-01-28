@@ -10,9 +10,10 @@ from properties import LineStringProperty
 
 class Keyframe():
 
-    def __init__(self, frame, param:Params):
+    def __init__(self, frame, layer, param:Params):
 
         self.frame = frame
+        self.layer = layer
         self.params = param
 
         self.imageparams = param.image
@@ -29,7 +30,7 @@ class Keyframe():
         self.fbo = None
     
     def copy(self):
-        return Keyframe(self.frame,self.params.copy())
+        return Keyframe(self.frame,self.layer,self.params.copy())
 
     def image(self,parentclass): # TODO : Rename this to source
         return self.params.image.function().image(self.imageparams.params,parentclass,parentclass.playbackframe-self.frame)
@@ -173,7 +174,7 @@ class Keyframe():
         glUseProgram(self.compiledPrograms[-1])
 
         projection = QMatrix4x4()
-        projection.frustum(-1280/32,1280/32,720/32,-720/32,64,4096)
+        projection.frustum(-1280/32,1280/32,720/32,-720/32,64,131072)
         projection.translate(-1280/2,-720/2,-1024)
         glUniformMatrix4fv(glGetUniformLocation(self.compiledPrograms[-1],"matrix"),1,GL_FALSE,np.array(projection.data(),dtype=np.float32))
 
@@ -207,7 +208,18 @@ class Keyframe():
             if hasattr(effect.function(),"timelineitem"):
                 items.append(effect.function().timelineitem(effect.params,self))
         return items
-        
+    
+    def initialize(self):
+        if hasattr(self.params.image.function(),"initialize"):
+            self.params.image.function().initialize(self.params.image.params)
+        for action in self.params.states:
+            if hasattr(action.function(),"initialize"):
+                action.function().initialize(action.params)
+        for effect in self.params.compositing:
+            if hasattr(effect.function(),"initialize"):
+                effect.function().initialize(effect.params)
+
+
 class Keyframelist():
     def __init__(self,windowClass):
         self.windowClass = windowClass
@@ -279,9 +291,20 @@ class Keyframelist():
             i = self.keyframes.index(o)
         else:
             i = o
-        prevframe = self.keyframes[i].frame
         self.keyframes[i].frame = frame
         self.needssorting = True
+    @overload
+    def setlayer(self,keyframe:Keyframe,layer:int):
+        ...
+    @overload
+    def setlayer(self,i:int,layer:int):
+        ...
+    def setlayer(self,o,layer:int):
+        if isinstance(o,Keyframe):
+            i = self.keyframes.index(o)
+        else:
+            i = o
+        self.keyframes[i].layer = layer
     def isinrange(self,i) -> bool:
         return len(self.keyframes) > i and i > 0
     def getsafe(self,i):
@@ -292,7 +315,7 @@ class Keyframelist():
     def isin(self,keyframe:Keyframe) -> bool:
         return keyframe in self.keyframes
     def create(self,frame:int):
-        addedkeyframe = Keyframe(frame,Params(
+        addedkeyframe = Keyframe(frame,0,Params(
             {
                 "properties":{
                     "params":{
