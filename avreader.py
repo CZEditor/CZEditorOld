@@ -1,5 +1,6 @@
 import av
 import av.container
+import numpy as np
 # PyAV video reader with intelligent seeking.
 class PyAVSeekableVideoReader:
 
@@ -16,7 +17,10 @@ class PyAVSeekableVideoReader:
             self._keyframes.append(int(frame.pts*self._stream.time_base*self.frame_rate))
         self._stream.codec_context.skip_frame = "DEFAULT"
         self._container.seek(0)
-        self._cachedFrame = next(self._container.decode(self._stream)).to_ndarray(format="rgb24")
+        theframe = next(self._container.decode(self._stream)).to_ndarray(format="rgb24")
+        self._cachedFrame = np.full((theframe.shape[0],theframe.shape[1],4),255,dtype=np.uint8)
+        self._cachedFrame[:,:,:3] = theframe
+
         
         
 
@@ -40,14 +44,17 @@ class PyAVSeekableVideoReader:
     def __getitem__(self,frame:int):
         if(frame < self._currentFrame):
             self._cachedFrame = self.seek(frame).to_ndarray(format="rgb24")
+            self._cachedFrame = np.concatenate((self._cachedFrame,self._fullalpha),axis=2)
         if(frame > self._currentFrame):
             for i in self._keyframes:
                 if i < frame and i > self._currentFrame:
-                    self._cachedFrame = self.seek(frame).to_ndarray(format="rgb24")
+                    self._cachedFrame[:,:,:3] = self.seek(frame).to_ndarray(format="rgb24")
                     break
                 elif i > frame:
-                    self._cachedFrame = self.seekForward(frame).to_ndarray(format="rgb24")
+                    self._cachedFrame[:,:,:3] = self.seekForward(frame).to_ndarray(format="rgb24")
                     break
+            else:
+                self._cachedFrame[:,:,:3] = self.seekForward(frame).to_ndarray(format="rgb24")
         return self._cachedFrame
     
     def __len__(self):

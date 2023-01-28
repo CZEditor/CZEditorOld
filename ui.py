@@ -1111,6 +1111,7 @@ class CzePresets(QWidget):
             else:
                 self.parentclass.keyframeoptions.regenerate()
             self.graphicsview.update()
+            self.parentclass.draggedpreset = None
         return super().mousePressEvent(event)
 
     def mmoveEvent(self, event:QMouseEvent,prevpos:QPoint) -> None:

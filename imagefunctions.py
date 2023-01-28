@@ -177,7 +177,6 @@ class Video():
         if(frame >= len(transient.pyavobject) or frame < 0): #Check if its after or before
             return np.array(emptyimage)
         img = transient.pyavobject[int(frame)]
-        img = np.pad(img,((0,0),(0,0),(0,1)),mode="constant",constant_values=255) # Add alpha 255, TODO : Maybe support alpha videos?
         return img
 
     def sound(param:Params,sample):
