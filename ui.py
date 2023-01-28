@@ -4,7 +4,7 @@ from functools import cache
 from util import *
 from PySide6.QtWidgets import QWidget,QGraphicsScene,QGraphicsView,QGraphicsItem,QGraphicsRectItem,QGraphicsLineItem,QToolButton,QPushButton,QComboBox,QFrame,QSizePolicy,QScrollArea,QPlainTextEdit,QSpinBox,QLineEdit,QFormLayout,QGraphicsItemGroup,QGraphicsTextItem
 from PySide6.QtGui import QPen,QColor,QRadialGradient,QResizeEvent,QMouseEvent,QWheelEvent,QDrag,QDragEnterEvent,QDragLeaveEvent,QDragMoveEvent,QDropEvent,QTextOption,QKeyEvent,QFont
-from PySide6.QtCore import QSize,Qt,QRectF,QPoint,QLine,QMimeData,Qt
+from PySide6.QtCore import QSize,Qt,QRectF,QPoint,QLine,QMimeData,Qt,QEvent
 from keyframes import *
 from compositingfunctions import *
 from imagefunctions import *
@@ -477,7 +477,7 @@ class CzeKeyframeOptions(QRedScrollArea):
     def iterateRegenerate(self,params):
         if(self.widgets.count() == 0):
             self.params = params
-            self.rebuild()
+            self.rebuild(params)
             return
         i = 0
         for key in vars(params).keys():
@@ -489,8 +489,13 @@ class CzeKeyframeOptions(QRedScrollArea):
             i += 1
         self.setMaximumWidth(self.viewframe.contentsRect().width()+self.verticalScrollBar().width())
 
-    def rebuild(self):
-        if self.parentclass.selectedframe:
+    def rebuild(self,params=None):
+        if params:
+            self.params = params
+            for i in range(self.widgets.count()):
+                self.widgets.itemAt(0).widget().setParent(None)
+            self.iterate(self.params)
+        elif self.parentclass.selectedframe:
             self.params = self.parentclass.selectedframe.params
             for i in range(self.widgets.count()):
                 self.widgets.itemAt(0).widget().setParent(None)
@@ -508,8 +513,11 @@ class CzeKeyframeOptions(QRedScrollArea):
             for i in range(self.widgets.count()):
                 self.widgets.itemAt(0).widget().setParent(None)
 
-    def regenerate(self):
-        if self.parentclass.selectedframe:
+    def regenerate(self,keyframe=None):
+        if keyframe:
+            self.params = keyframe.params
+            self.iterateRegenerate(self.params)
+        elif self.parentclass.selectedframe:
             self.params = self.parentclass.selectedframe.params
             self.iterateRegenerate(self.params)
         else:
@@ -529,6 +537,7 @@ class QGraphicsViewEvent(QGraphicsView):
         self.dragenter = dummyfunction
         self.dragmove = dummyfunction
         self.dragdrop = dummyfunction
+        self.setMouseTracking(True)
         self.previousmouse = QPoint(0,0)
 
     def mousePressEvent(self, event) -> None:
@@ -542,7 +551,6 @@ class QGraphicsViewEvent(QGraphicsView):
         return super().mouseReleaseEvent(event)
 
     def mouseMoveEvent(self, event:QMouseEvent) -> None:
-        
         self.onmove(event,self.previousmouse)
         self.previousmouse = event.pos()
         return super().mouseMoveEvent(event)
@@ -565,6 +573,7 @@ class QGraphicsViewEvent(QGraphicsView):
 
     def dropEvent(self, event:QDropEvent) -> None:
         self.dragdrop(event)
+    
 
 
 class CzeTimelineKeyframeItem(QGraphicsItem):
@@ -778,7 +787,7 @@ class CzeTimeline(QWidget):
             keyframe = Keyframe(int(mapped.x()),-round(mapped.y()/25),self.parentclass.draggedpreset.params.copy())
             self.parentclass.keyframes.add(keyframe)
             self.addKeyframe(keyframe)
-            self.parentclass.draggedpreset = None
+        self.parentclass.draggedpreset = None
         event.accept()
         return super().dropEvent(event)
     
@@ -894,22 +903,57 @@ class CzePresetKeyframeItem(QGraphicsItem):
     coolgradient = QRadialGradient(50,50,90)
     coolgradient.setColorAt(1,QColor(255,255,255))
     coolgradient.setColorAt(0,QColor(255,0,0))
+    selectedcoolgradient = QRadialGradient(30,30,60)
+    selectedcoolgradient.setColorAt(1,QColor(255,127,127))
+    selectedcoolgradient.setColorAt(0,QColor(255,0,0))
+    selectedcoolgradientbackground = QRadialGradient(40,40,90)
+    selectedcoolgradientbackground.setColorAt(1,QColor(255,127,127,63))
+    selectedcoolgradientbackground.setColorAt(0,QColor(255,0,0,63))
+    hoveredcoolgradientbackground = QRadialGradient(40,40,80)
+    hoveredcoolgradientbackground.setColorAt(1,QColor(255,127,127,32))
+    hoveredcoolgradientbackground.setColorAt(0,QColor(255,0,0,32))
     def __init__(self,keyframe):
         super().__init__()
         self.keyframe = keyframe
         self.name = keyframe.params.properties.params.name
+        self.selected = False
+        self.hovered = False
+
     def boundingRect(self):
         return QRectF(-30,-20,60,45)
-    def paint(self, painter: QPainter, option, widget) -> None:
-        painter.setPen(QPen(QColor(0,0,0),0))
-        painter.setBrush(self.coolgradient)
-        painter.drawPolygon([QPoint(10,0),QPoint(0,10),QPoint(-10,0),QPoint(0,-10)])
-        painter.setBrush(Qt.BrushStyle.NoBrush)
-        painter.setPen(QPen(QColor(255,192,192),0))
-        painter.drawRect(-20,-20,40,40)
-        painter.setFont(QFont("Arial",8))
-        painter.drawText(QRectF(-30,20,60,20),self.name(),Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignHCenter)
+    
+    def setSelect(self,value):
+        self.selected = value
+    
+    def setHovered(self,value):
+        self.hovered = value
 
+    def paint(self, painter: QPainter, option, widget) -> None:
+        
+        if(self.selected):
+            painter.setBrush(self.selectedcoolgradientbackground)
+            painter.setPen(QPen(QColor(255,192,192,64),0))
+            painter.drawRect(-30,-20,60,45)
+            painter.setBrush(self.selectedcoolgradient)
+            painter.setPen(QPen(QColor(0,0,0),0))
+            painter.drawPolygon([QPoint(10,0),QPoint(0,10),QPoint(-10,0),QPoint(0,-10)])
+        elif(self.hovered):
+            painter.setBrush(self.hoveredcoolgradientbackground)
+            painter.setPen(QPen(QColor(255,192,192,32),0))
+            painter.drawRect(-30,-20,60,45)
+            painter.setBrush(self.coolgradient)
+            painter.setPen(QPen(QColor(0,0,0),0))
+            painter.drawPolygon([QPoint(10,0),QPoint(0,10),QPoint(-10,0),QPoint(0,-10)])
+        else:
+            painter.setBrush(self.coolgradient)
+            painter.setPen(QPen(QColor(0,0,0),0))
+            painter.drawPolygon([QPoint(10,0),QPoint(0,10),QPoint(-10,0),QPoint(0,-10)])
+        painter.setBrush(Qt.BrushStyle.NoBrush)
+        painter.setPen(QPen(QColor(255,192,192,64),0))
+        painter.drawRect(-20,-20,40,40)
+        painter.setPen(QPen(QColor(255,192,192),0))
+        painter.setFont(QFont("Arial",8))
+        painter.drawText(QRectF(-30,21,60,35),self.name(),Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignHCenter)
 
 class CzePresets(QWidget):
     coolgradient = QRadialGradient(50,50,90)
@@ -999,7 +1043,10 @@ class CzePresets(QWidget):
         self.graphicsview.dragenter = self.dragEnterEvent
         self.graphicsview.dragmove = self.dragMoveEvent
         self.graphicsview.dragdrop = self.dropEvent
-    
+        self.graphicsview.onmove = self.mmoveEvent
+        self.selectedpreset = None
+        self.hoveredpreset = None
+
     def resizeEvent(self, event:QResizeEvent) -> None:
         #self.scene.setSceneRect(self.rect())
         r = self.graphicsview.sceneRect()
@@ -1042,13 +1089,40 @@ class CzePresets(QWidget):
     
     def pressEvent(self, event:QMouseEvent) -> None:
         if event.button() == Qt.MouseButton.LeftButton:
-            founditem:QGraphicsItem = self.graphicsview.itemAt(event.pos().x(),event.pos().y())
-            if founditem != None:
-                self.parentclass.draggedpreset = founditem.keyframe.copy()
-                #print(self.parentclass.draggedpreset)
-                drag = QDrag(self)
-                mime = QMimeData()
-                drag.setMimeData(mime)
-                drag.exec_(Qt.MoveAction)
-                
-        return super().mouseReleaseEvent(event)
+            founditem:QGraphicsItem = self.graphicsview.itemAt(event.pos())
+            if(self.selectedpreset):
+                self.selectedpreset.setSelect(False)
+            self.selectedpreset = founditem
+            if(founditem):
+                self.selectedpreset.setSelect(True)
+                self.parentclass.keyframeoptions.regenerate(self.selectedpreset.keyframe)
+            else:
+                self.parentclass.keyframeoptions.regenerate()
+            self.graphicsview.update()
+        return super().mousePressEvent(event)
+
+    def mmoveEvent(self, event:QMouseEvent,prevpos:QPoint) -> None:
+        if not self.parentclass.draggedpreset and self.selectedpreset:
+            self.parentclass.draggedpreset = self.selectedpreset.keyframe.copy()
+            drag = QDrag(self)
+            mime = QMimeData()
+            drag.setMimeData(mime)
+            drag.exec_(Qt.MoveAction)
+        founditem:QGraphicsItem = self.graphicsview.itemAt(event.pos())
+        if founditem != self.hoveredpreset:
+            if self.hoveredpreset:
+                self.hoveredpreset.setHovered(False)
+            if isinstance(founditem,CzePresetKeyframeItem):
+                self.hoveredpreset = founditem
+                self.hoveredpreset.setHovered(True)
+            elif founditem is None:
+                self.hoveredpreset = founditem
+            self.graphicsview.update()
+
+    def keyPressEvent(self, event: QKeyEvent) -> None:
+        if(event.key() == Qt.Key.Key_Delete and self.selectedpreset):
+            self.keyframes.pop(self.keyframes.index(self.selectedpreset.keyframe))
+            self.drawnkeyframes[self.selectedpreset.keyframe] = None
+            self.scene.removeItem(self.selectedpreset)
+            self.selectedpreset = None
+
