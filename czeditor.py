@@ -138,12 +138,14 @@ class CzeVideoView(QOpenGLWidget):
         glBindVertexArray(self.vao)
         #for keyframeId in range(len(self.state)):
         #    self.state[-keyframeId-1].composite(self.parentclass) # It is required to composite from end to beginning because OpenGL renders front-to-back rather than back-to-front
+        self.parentclass.rendering = True
         for keyframe in self.state:
             keyframe.composite(self.parentclass)
         glBindBuffer(GL_ARRAY_BUFFER,0)
         glBindVertexArray(0)
 
         rendered = glReadPixels(0,0,1280,720,GL_RGBA,GL_UNSIGNED_BYTE,None)
+        self.parentclass.rendering = False
 
 class CzeViewport(QWidget):
     def __init__(self,parent,parentclass):
@@ -317,6 +319,7 @@ class Window(QMainWindow):
         self.executor = concurrent.futures.ThreadPoolExecutor()
         self.seeking = False
         self.skipfuturesobject = None
+        self.rendering = False
 
     def updateviewport(self):
         self.needtoupdate = True
