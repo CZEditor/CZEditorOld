@@ -96,6 +96,7 @@ uniform sampler2D image;
 uniform float frame;
 uniform int width;
 uniform int height;
+uniform float spectrum[512];
 layout(location = 0) out vec4 color;
 """ if isframebuffer else """#version 450 core
 in vec2 fragmentColor;
@@ -103,6 +104,7 @@ uniform sampler2D image;
 uniform float frame;
 uniform int width;
 uniform int height;
+uniform float spectrum[512];
 out vec4 color;
 """
     addedDeclarations = []

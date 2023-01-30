@@ -41,12 +41,13 @@ class Keyframe():
             statetomodify = stateparam.function().state(statetomodify,self,stateparam,windowClass.playbackframe-self.frame)
         return statetomodify
     
-    def composite(self,windowObject):
+    def composite(self,windowObject,spectrum):
 
         if(not hasattr(self.params.image.function(),"image")):
             return
         image = self.image(windowObject)
         imageDataPointer = image.ctypes.data
+        spectrumDataPointer = spectrum.ctypes.data
         vertices = np.empty((0,5),dtype=np.float32)
         shader = []
 
@@ -165,6 +166,7 @@ class Keyframe():
 
                 glUniform1i(glGetUniformLocation(program,"width"),image.shape[1])
                 glUniform1i(glGetUniformLocation(program,"height"),image.shape[0])
+                glUniform1fv(glGetUniformLocation(program,"spectrum"),512,spectrum)
 
                 glActiveTexture(GL_TEXTURE0)
                 glDrawArrays(GL_TRIANGLES,0,6)
@@ -190,6 +192,7 @@ class Keyframe():
 
         glUniform1i(glGetUniformLocation(self.compiledPrograms[-1],"width"),image.shape[1])
         glUniform1i(glGetUniformLocation(self.compiledPrograms[-1],"height"),image.shape[0])
+        glUniform1fv(glGetUniformLocation(self.compiledPrograms[-1],"spectrum"),512,spectrum)
 
         glActiveTexture(GL_TEXTURE0)
         glDrawArrays(GL_TRIANGLES,0,int(vertices.shape[0]/5))

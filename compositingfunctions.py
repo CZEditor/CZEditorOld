@@ -435,7 +435,7 @@ class CustomColorShader:
         if(transient.shader is None or params.custom() != transient.previousCustom or transient.previousIndex != index):
 
             transient.shader = compileShader("""#version 450 core
-                vec4 shadercustom"""+str(index)+"""(in vec2 inpos, float frame, int width, int height, in sampler2D image,float variableA, float variableB){
+                vec4 shadercustom"""+str(index)+"""(in vec2 inpos, float frame, int width, int height, in float spectrum[512], in sampler2D image,float variableA, float variableB){
                     vec4 color = vec4(1,1,1,1);
                     """+params.custom()+"""
                     return color;
@@ -446,8 +446,8 @@ class CustomColorShader:
             transient.previousIndex = index
 
         shader.append({"fragmentshader":transient.shader,
-                       "fragmentlinetoadd":"shadercustom"+str(index)+"($inpos,frame,width,height,image,"+str(params.variableA())+","+str(params.variableB())+");",
-                       "fragmentdeclaration":"vec4 shadercustom"+str(index)+"(in vec2 inpos, float frame, int width, int height, in sampler2D image,float variableA, float variableB);",
+                       "fragmentlinetoadd":"shadercustom"+str(index)+"($inpos,frame,width,height,spectrum,image,"+str(params.variableA())+","+str(params.variableB())+");",
+                       "fragmentdeclaration":"vec4 shadercustom"+str(index)+"(in vec2 inpos, float frame, int width, int height, in float spectrum[512], in sampler2D image,float variableA, float variableB);",
                        "ismultisample":True})
         return image,vertices,shader
 

@@ -104,6 +104,7 @@ class CzeVideoView(QOpenGLWidget):
         #print(parentclass,parent)
         super().__init__(parent)
         self.state = []
+        self.spectrum = np.zeros(512)
         self.parentclass =parentclass
     def initializeGL(self):
 
@@ -140,7 +141,7 @@ class CzeVideoView(QOpenGLWidget):
         #    self.state[-keyframeId-1].composite(self.parentclass) # It is required to composite from end to beginning because OpenGL renders front-to-back rather than back-to-front
         self.parentclass.rendering = True
         for keyframe in self.state:
-            keyframe.composite(self.parentclass)
+            keyframe.composite(self.parentclass,self.spectrum)
         glBindBuffer(GL_ARRAY_BUFFER,0)
         glBindVertexArray(0)
 
@@ -166,7 +167,7 @@ class CzeViewport(QWidget):
         self.infolabel.setStyleSheet("background: transparent;")
         self.parentclass = parentclass
         
-        self.updateviewportimage(getstate(self.parentclass.playbackframe,self.parentclass))
+        self.updateviewportimage(getstate(self.parentclass.playbackframe,self.parentclass),np.zeros(512))
         self.picture = QPixmap(1280,720)
         #self.viewportimage = self.scene.addPixmap(QPixmap.fromImage(ImageQt.ImageQt(getviewportimage(self.timestamp,self.parentclass))))
         self.viewportimage = self.scene.addPixmap(self.picture)
@@ -187,9 +188,10 @@ class CzeViewport(QWidget):
     def sizeHint(self):
         return QSize(1280,720)
 
-    def updateviewportimage(self,state):
+    def updateviewportimage(self,state,spectrum):
         global rendered
         self.videorenderer.state = state
+        self.videorenderer.spectrum = spectrum
         self.videorenderer.update()
         if(rendered):
             img = QImage(rendered,1280,720,QImage.Format_RGBA8888)
@@ -218,7 +220,7 @@ class CzeViewport(QWidget):
 
 
     def resizeEvent(self, event:QResizeEvent) -> None:
-        self.updateviewportimage(getstate(self.parentclass.playbackframe,self.parentclass))
+        self.updateviewportimage(getstate(self.parentclass.playbackframe,self.parentclass),np.zeros(512))
         self.graphicsview.setFixedSize(event.size())
         self.scene.setSceneRect(0,0,self.picture.width()-2,self.picture.height()-2)
         r = self.graphicsview.sceneRect()
@@ -310,9 +312,10 @@ class Window(QMainWindow):
         self.needtoupdate = True
         self.currentframestate = []
         #self.stream = self.pyaudio.open(format=self.pyaudio.get_format_from_width(1),channels=1,rate=48000,output=True)
+        self.currentaudio = np.zeros(1024)
         sounddevice.default.samplerate = 48000
         sounddevice.default.channels = 1
-        sounddevice.play(np.zeros(1024))
+        sounddevice.play(self.currentaudio)
         self.stream = sounddevice.OutputStream(channels=2,samplerate=48000,blocksize=1024,callback=self.getnextsoundchunk)
         self.stream.start()
         self.playbacksample = int(self.playbackframe/60*48000)
@@ -320,6 +323,7 @@ class Window(QMainWindow):
         self.seeking = False
         self.skipfuturesobject = None
         self.rendering = False
+        self.currentspectrum = np.zeros(512)
 
     def updateviewport(self):
         self.needtoupdate = True
@@ -342,13 +346,17 @@ class Window(QMainWindow):
     def getnextsoundchunk(self,outdata,frames,time,status):
         if self.isplaying and not self.seeking:
             try:
-                outdata[:] = getsound(self.currentframestate,self.playbacksample)
+                self.currentaudio = getsound(self.currentframestate,self.playbacksample)
+                outdata[:] = self.currentaudio
+                
             except Exception:
                 traceback.print_exc()
-                outdata[:] = np.zeros((1024,1))
+                self.currentaudio = np.zeros((1024,1))
+                outdata[:] = self.currentaudio
             self.playbacksample += 1024
         else:
-            outdata[:] = np.zeros((1024,1))
+            self.currentaudio = np.zeros((1024,1))
+            outdata[:] = self.currentaudio
             self.playbacksample = int(self.playbackframe/60*48000)
 
     def seek(self,frame):
@@ -392,14 +400,19 @@ class Window(QMainWindow):
     def timerEvent(self, event: QTimerEvent) -> None:
         
         if self.isplaying and not self.seeking:
+            firstcopy = np.copy(self.currentaudio)[:,0]
+            self.currentspectrum = np.fft.rfft(firstcopy)
+            #freq = np.fft.fftfreq(1)
+            self.currentspectrum = self.currentspectrum[:512]
+            self.currentspectrum = np.abs(self.currentspectrum)
             self.playbackframe = self.startframe+int((perf_counter()-self.starttime)*60)
             #self.playbackframe += 1
             self.currentframestate = getstate(self.playbackframe,self)
-            self.viewport.updateviewportimage(self.currentframestate)
+            self.viewport.updateviewportimage(self.currentframestate,self.currentspectrum)
             self.timeline.updateplaybackcursor(self.playbackframe)
             self.needtoupdate = False
         if self.needtoupdate and not self.seeking:
-            self.viewport.updateviewportimage(getstate(self.playbackframe,self))
+            self.viewport.updateviewportimage(getstate(self.playbackframe,self),self.currentspectrum)
             self.needtoupdate = False
         return super().timerEvent(event)
 
