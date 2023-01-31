@@ -84,7 +84,7 @@ def getsound(state,sample):
             buffer += gotten
     return buffer
     
-mpyconfig.FFMPEG_BINARY = "ffmpeg"
+#mpyconfig.FFMPEG_BINARY = "ffmpeg"
 def render(filename, length, keyframes):
 
     clip = VideoClip(getframeimage, duration=length / 60)

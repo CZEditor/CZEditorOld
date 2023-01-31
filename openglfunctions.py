@@ -70,28 +70,35 @@ layout (location=0) in vec3 vertexPos;
 layout (location=1) in vec2 vertexColor;
 uniform highp mat4 matrix;
 uniform float frame;
-out vec2 fragmentColor;"""+vertexDeclarations+"""void main()
+uniform float spectrum[512];
+out vec2 fragmentColor;
+out vec3 worldPos;"""+vertexDeclarations+"""void main()
 {
     vec3 pos1, pos2;
     pos1 = vertexPos;
     pos2 = vec3(0,0,0);
     """+addedVertexFunctions+"""
     fragmentColor = vertexColor;
+    worldPos = """+curInPosName+"""";
 }"""
     else:
         mainvertexcode = """#version 450 core
 layout (location=0) in vec3 vertexPos;
 layout (location=1) in vec2 vertexColor;
 uniform float frame;
+uniform float spectrum[512];
 out vec2 fragmentColor;
+out vec3 worldPos;
 void main()
 {
-    gl_Position = vec4(vertexPos.x, vertexPos.y, 0.0,1.0);
+    gl_Position = vec4(vertexColor.x*2-1, vertexColor.y*2-1, 0.0,1.0);
     fragmentColor = vertexColor;
+    worldPos = vertexPos;
 }"""
 
     mainfragmentcode = """#version 450 core
 in vec2 fragmentColor;
+in vec3 worldPos;
 uniform sampler2D image;
 uniform float frame;
 uniform int width;
@@ -100,6 +107,7 @@ uniform float spectrum[512];
 layout(location = 0) out vec4 color;
 """ if isframebuffer else """#version 450 core
 in vec2 fragmentColor;
+in vec3 worldPos;
 uniform sampler2D image;
 uniform float frame;
 uniform int width;

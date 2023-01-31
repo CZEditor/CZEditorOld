@@ -140,8 +140,12 @@ class Keyframe():
             glBindFramebuffer(GL_FRAMEBUFFER,0)
         glBindBuffer(GL_PIXEL_UNPACK_BUFFER, self.pbo)
         UpdateTextureWithBuffer(imageDataPointer,image.shape[0]*image.shape[1]*4,(image.shape[1],image.shape[0]))
+        
         #glTexSubImage2D(GL_TEXTURE_2D,0,0,0,image.shape[1],image.shape[0],GL_RGBA,GL_UNSIGNED_BYTE,c_void_p(imageDataPointer))
         glBindBuffer(GL_PIXEL_UNPACK_BUFFER,0)
+
+        glBufferData(GL_ARRAY_BUFFER,np.array(vertices,dtype=np.float32),GL_DYNAMIC_DRAW)
+        
         if(len(self.compiledPrograms)>1):
             glBindFramebuffer(GL_FRAMEBUFFER,self.fbo)
             glViewport(0,0,image.shape[1],image.shape[0])
@@ -149,12 +153,12 @@ class Keyframe():
             #glClearColor(0.0,0.0,0.0,0.0)
             glDisable(GL_BLEND)
             glDisable(GL_DEPTH_TEST)
-            glBufferData(GL_ARRAY_BUFFER,np.array([[-1,-1, 0.0, 0.0, 0.0],
+            """glBufferData(GL_ARRAY_BUFFER,np.array([[-1,-1, 0.0, 0.0, 0.0],
             [1,  -1, 0.0, 1.0, 0.0],
             [1,  1, 0.0, 1.0, 1.0],
             [-1,  -1, 0.0, 0.0, 0.0],
             [-1,  1, 0.0, 0.0, 1.0],
-            [1,  1, 0.0, 1.0, 1.0]],dtype=np.float32),GL_DYNAMIC_DRAW)
+            [1,  1, 0.0, 1.0, 1.0]],dtype=np.float32),GL_DYNAMIC_DRAW)"""
             
             for program in self.compiledPrograms[:-1]:
                 
@@ -176,7 +180,7 @@ class Keyframe():
             glEnable(GL_BLEND)
             glViewport(0,0,1280,720)
         
-        glBufferData(GL_ARRAY_BUFFER,np.array(vertices,dtype=np.float32),GL_DYNAMIC_DRAW)
+        
         
         #print(self.compiledPrograms)
         glUseProgram(self.compiledPrograms[-1])
