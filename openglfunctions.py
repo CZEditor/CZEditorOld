@@ -79,7 +79,7 @@ out vec3 worldPos;"""+vertexDeclarations+"""void main()
     pos2 = vec3(0,0,0);
     """+addedVertexFunctions+"""
     fragmentColor = vertexColor;
-    worldPos = """+curInPosName+"""";
+    worldPos = """+curInPosName+""";
 }"""
     else:
         mainvertexcode = """#version 450 core
