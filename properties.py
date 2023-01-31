@@ -82,17 +82,18 @@ class LineStringProperty:
 
 
 class FileProperty:
-    def __init__(self,value):
+    def __init__(self,value,filetypes=""):
         self._val = value
-
+        self._filetypes = filetypes
+        
     def copy(self):
-        return FileProperty(self._val)
+        return FileProperty(self._val,self._filetypes)
 
     def __call__(self):
         return self._val
 
     def widget(self):
-        return FilePropertyWidget(self)
+        return FilePropertyWidget(self,self._filetypes)
 
     @property
     def val(self):

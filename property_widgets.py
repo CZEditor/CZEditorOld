@@ -56,9 +56,10 @@ class LineStringPropertyWidget(QRedFrame):
         self.textbox.setText(self.theproperty._val)
 
 class FilePropertyWidget(QRedFrame):
-    def __init__(self,property):
+    def __init__(self,property,filetypes):
         super().__init__(None)
         self.theproperty = property
+        self.filetypes = filetypes
         self.widgets = QVBoxLayout()
         self.textbox = QRedTextBox(self)
         self.textbox.textChanged.connect(self.updateproperty)
@@ -77,7 +78,7 @@ class FilePropertyWidget(QRedFrame):
     def updateself(self):
         self.textbox.setPlainText(self.theproperty._val)
     def browse(self):
-        self.textbox.setPlainText(QFileDialog.getOpenFileUrl(self,"Open File")[0].path()[1:])
+        self.textbox.setPlainText(QFileDialog.getOpenFileUrl(self,"Open File",filter=self.filetypes)[0].path()[1:])
         #,options=QFileDialog.Option.DontUseNativeDialog
 
 class SizePropertyWidget(QRedFrame):

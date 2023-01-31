@@ -41,12 +41,13 @@ class Keyframe():
             statetomodify = stateparam.function().state(statetomodify,self,stateparam,windowClass.playbackframe-self.frame)
         return statetomodify
     
-    def composite(self,windowObject):
+    def composite(self,windowObject,spectrum):
 
         if(not hasattr(self.params.image.function(),"image")):
             return
         image = self.image(windowObject)
         imageDataPointer = image.ctypes.data
+        spectrumDataPointer = spectrum.ctypes.data
         vertices = np.empty((0,5),dtype=np.float32)
         shader = []
 
@@ -139,8 +140,12 @@ class Keyframe():
             glBindFramebuffer(GL_FRAMEBUFFER,0)
         glBindBuffer(GL_PIXEL_UNPACK_BUFFER, self.pbo)
         UpdateTextureWithBuffer(imageDataPointer,image.shape[0]*image.shape[1]*4,(image.shape[1],image.shape[0]))
+        
         #glTexSubImage2D(GL_TEXTURE_2D,0,0,0,image.shape[1],image.shape[0],GL_RGBA,GL_UNSIGNED_BYTE,c_void_p(imageDataPointer))
         glBindBuffer(GL_PIXEL_UNPACK_BUFFER,0)
+
+        glBufferData(GL_ARRAY_BUFFER,np.array(vertices,dtype=np.float32),GL_DYNAMIC_DRAW)
+        
         if(len(self.compiledPrograms)>1):
             glBindFramebuffer(GL_FRAMEBUFFER,self.fbo)
             glViewport(0,0,image.shape[1],image.shape[0])
@@ -148,12 +153,12 @@ class Keyframe():
             #glClearColor(0.0,0.0,0.0,0.0)
             glDisable(GL_BLEND)
             glDisable(GL_DEPTH_TEST)
-            glBufferData(GL_ARRAY_BUFFER,np.array([[-1,-1, 0.0, 0.0, 0.0],
+            """glBufferData(GL_ARRAY_BUFFER,np.array([[-1,-1, 0.0, 0.0, 0.0],
             [1,  -1, 0.0, 1.0, 0.0],
             [1,  1, 0.0, 1.0, 1.0],
             [-1,  -1, 0.0, 0.0, 0.0],
             [-1,  1, 0.0, 0.0, 1.0],
-            [1,  1, 0.0, 1.0, 1.0]],dtype=np.float32),GL_DYNAMIC_DRAW)
+            [1,  1, 0.0, 1.0, 1.0]],dtype=np.float32),GL_DYNAMIC_DRAW)"""
             
             for program in self.compiledPrograms[:-1]:
                 
@@ -165,6 +170,7 @@ class Keyframe():
 
                 glUniform1i(glGetUniformLocation(program,"width"),image.shape[1])
                 glUniform1i(glGetUniformLocation(program,"height"),image.shape[0])
+                glUniform1fv(glGetUniformLocation(program,"spectrum"),512,spectrum)
 
                 glActiveTexture(GL_TEXTURE0)
                 glDrawArrays(GL_TRIANGLES,0,6)
@@ -174,7 +180,7 @@ class Keyframe():
             glEnable(GL_BLEND)
             glViewport(0,0,1280,720)
         
-        glBufferData(GL_ARRAY_BUFFER,np.array(vertices,dtype=np.float32),GL_DYNAMIC_DRAW)
+        
         
         #print(self.compiledPrograms)
         glUseProgram(self.compiledPrograms[-1])
@@ -190,6 +196,7 @@ class Keyframe():
 
         glUniform1i(glGetUniformLocation(self.compiledPrograms[-1],"width"),image.shape[1])
         glUniform1i(glGetUniformLocation(self.compiledPrograms[-1],"height"),image.shape[0])
+        glUniform1fv(glGetUniformLocation(self.compiledPrograms[-1],"spectrum"),512,spectrum)
 
         glActiveTexture(GL_TEXTURE0)
         glDrawArrays(GL_TRIANGLES,0,int(vertices.shape[0]/5))

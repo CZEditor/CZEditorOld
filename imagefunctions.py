@@ -135,7 +135,7 @@ class ImageSequence():
 class Video():
     name = "Video"
     params = Params({
-        "videopath":FileProperty(""),
+        "videopath":FileProperty("","Video Files (*.mp4 *.mov *.mkv *.avi *.webm)"),
         "startframe":IntProperty(0),
         "duration":IntProperty(0),
         "transient":TransientProperty(Params({
