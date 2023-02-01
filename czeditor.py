@@ -312,7 +312,7 @@ class Window(QMainWindow):
         self.needtoupdate = True
         self.currentframestate = []
         #self.stream = self.pyaudio.open(format=self.pyaudio.get_format_from_width(1),channels=1,rate=48000,output=True)
-        self.currentaudio = np.zeros(1024)
+        self.currentaudio = np.zeros(2048)
         sounddevice.default.samplerate = 48000
         sounddevice.default.channels = 1
         sounddevice.play(self.currentaudio)
@@ -346,17 +346,25 @@ class Window(QMainWindow):
     def getnextsoundchunk(self,outdata,frames,time,status):
         if self.isplaying and not self.seeking:
             try:
-                self.currentaudio = getsound(self.currentframestate,self.playbacksample)
-                outdata[:] = self.currentaudio
+                self.currentaudio[1024:] = self.currentaudio[:1024]
+                sound = getsound(self.currentframestate,self.playbacksample)
+                self.currentaudio[:1024] = sound[:,0]
+                outdata[:] = sound
                 
             except Exception:
                 traceback.print_exc()
-                self.currentaudio = np.zeros((1024,1))
-                outdata[:] = self.currentaudio
+                self.currentaudio[1024:] = self.currentaudio[:1024]
+                sound = np.zeros((1024,1))
+                
+                self.currentaudio[:1024] = sound[:,0]
+                outdata[:] = sound
             self.playbacksample += 1024
         else:
-            self.currentaudio = np.zeros((1024,1))
-            outdata[:] = self.currentaudio
+            self.currentaudio[1024:] = self.currentaudio[:1024]
+            sound = np.zeros((1024,1))
+            
+            self.currentaudio[:1024] = sound[:,0]
+            outdata[:] = sound
             self.playbacksample = int(self.playbackframe/60*48000)
 
     def seek(self,frame):
@@ -400,10 +408,10 @@ class Window(QMainWindow):
     def timerEvent(self, event: QTimerEvent) -> None:
         
         if self.isplaying and not self.seeking:
-            firstcopy = np.copy(self.currentaudio)[:,0]
+            firstcopy = np.copy(self.currentaudio)
             self.currentspectrum = np.fft.rfft(firstcopy)
             #freq = np.fft.fftfreq(1)
-            self.currentspectrum = self.currentspectrum[:512]
+            self.currentspectrum = self.currentspectrum[:1024]
             self.currentspectrum = np.abs(self.currentspectrum)
             self.playbackframe = self.startframe+int((perf_counter()-self.starttime)*60)
             #self.playbackframe += 1

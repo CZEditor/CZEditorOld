@@ -170,7 +170,7 @@ class Keyframe():
 
                 glUniform1i(glGetUniformLocation(program,"width"),image.shape[1])
                 glUniform1i(glGetUniformLocation(program,"height"),image.shape[0])
-                glUniform1fv(glGetUniformLocation(program,"spectrum"),512,spectrum)
+                glUniform1fv(glGetUniformLocation(program,"spectrum"),1024,spectrum)
 
                 glActiveTexture(GL_TEXTURE0)
                 glDrawArrays(GL_TRIANGLES,0,6)
@@ -196,7 +196,7 @@ class Keyframe():
 
         glUniform1i(glGetUniformLocation(self.compiledPrograms[-1],"width"),image.shape[1])
         glUniform1i(glGetUniformLocation(self.compiledPrograms[-1],"height"),image.shape[0])
-        glUniform1fv(glGetUniformLocation(self.compiledPrograms[-1],"spectrum"),512,spectrum)
+        glUniform1fv(glGetUniformLocation(self.compiledPrograms[-1],"spectrum"),1024,spectrum)
 
         glActiveTexture(GL_TEXTURE0)
         glDrawArrays(GL_TRIANGLES,0,int(vertices.shape[0]/5))
