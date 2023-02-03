@@ -70,7 +70,7 @@ layout (location=0) in vec3 vertexPos;
 layout (location=1) in vec2 vertexColor;
 uniform highp mat4 matrix;
 uniform float frame;
-uniform float spectrum[1024];
+uniform float spectrum[512];
 out vec2 fragmentColor;
 out vec3 worldPos;"""+vertexDeclarations+"""void main()
 {
@@ -86,7 +86,7 @@ out vec3 worldPos;"""+vertexDeclarations+"""void main()
 layout (location=0) in vec3 vertexPos;
 layout (location=1) in vec2 vertexColor;
 uniform float frame;
-uniform float spectrum[1024];
+uniform float spectrum[512];
 out vec2 fragmentColor;
 out vec3 worldPos;
 void main()
@@ -103,7 +103,7 @@ uniform sampler2D image;
 uniform float frame;
 uniform int width;
 uniform int height;
-uniform float spectrum[1024];
+uniform float spectrum[512];
 layout(location = 0) out vec4 color;
 """ if isframebuffer else """#version 450 core
 in vec2 fragmentColor;
@@ -112,7 +112,7 @@ uniform sampler2D image;
 uniform float frame;
 uniform int width;
 uniform int height;
-uniform float spectrum[1024];
+uniform float spectrum[512];
 out vec4 color;
 """
     addedDeclarations = []

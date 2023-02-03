@@ -404,7 +404,7 @@ class CustomShader:
         if(transient.shader is None or params.custom() != transient.previousCustom or transient.previousIndex != index):
 
             transient.shader = compileShader("""#version 450 core
-                void shadercustom"""+str(index)+"""(in vec2 inpos, float frame, vec3 worldpos, in float spectrum[1024], float variableA, float variableB, out vec2 outpos){
+                void shadercustom"""+str(index)+"""(in vec2 inpos, float frame, vec3 worldpos, in float spectrum[512], float variableA, float variableB, out vec2 outpos){
                     """+params.custom()+"""
                 }
             """,GL_FRAGMENT_SHADER)
@@ -414,7 +414,7 @@ class CustomShader:
 
         shader.append({"fragmentshader":transient.shader,
                        "fragmentlinetoadd":"shadercustom"+str(index)+"($inpos,frame,worldPos,spectrum"+str(params.variableA())+","+str(params.variableB())+",$outpos);",
-                       "fragmentdeclaration":"void shadercustom"+str(index)+"(in vec2 inpos, float frame, vec3 worldpos, in float spectrum[1024], float variableA, float variableB, out vec2 outpos);"})
+                       "fragmentdeclaration":"void shadercustom"+str(index)+"(in vec2 inpos, float frame, vec3 worldpos, in float spectrum[512], float variableA, float variableB, out vec2 outpos);"})
         return image,vertices,shader
 
 class CustomColorShader:
@@ -435,7 +435,7 @@ class CustomColorShader:
         if(transient.shader is None or params.custom() != transient.previousCustom or transient.previousIndex != index):
 
             transient.shader = compileShader("""#version 450 core
-                vec4 shadercustom"""+str(index)+"""(in vec2 inpos, float frame, int width, int height, vec3 worldpos, in float spectrum[1024], in sampler2D image,float variableA, float variableB){
+                vec4 shadercustom"""+str(index)+"""(in vec2 inpos, float frame, int width, int height, vec3 worldpos, in float spectrum[512], in sampler2D image,float variableA, float variableB){
                     vec4 color = vec4(1,1,1,1);
                     """+params.custom()+"""
                     return color;
@@ -447,7 +447,7 @@ class CustomColorShader:
 
         shader.append({"fragmentshader":transient.shader,
                        "fragmentlinetoadd":"shadercustom"+str(index)+"($inpos,frame,width,height,worldPos,spectrum,image,"+str(params.variableA())+","+str(params.variableB())+");",
-                       "fragmentdeclaration":"vec4 shadercustom"+str(index)+"(in vec2 inpos, float frame, int width, int height, vec3 worldpos, in float spectrum[1024], in sampler2D image,float variableA, float variableB);",
+                       "fragmentdeclaration":"vec4 shadercustom"+str(index)+"(in vec2 inpos, float frame, int width, int height, vec3 worldpos, in float spectrum[512], in sampler2D image,float variableA, float variableB);",
                        "ismultisample":True})
         return image,vertices,shader
 
@@ -554,7 +554,7 @@ class CustomVertexShader:
         if(transient.shader is None or params.custom() != transient.previousCustom or transient.previousIndex != index):
 
             transient.shader = compileShader("""#version 450 core
-                void shadercustom"""+str(index)+"""(in vec3 inpos, in vec2 vertexColor, in float spectrum[1024], float variableA, float variableB, float frame, out vec3 outpos){
+                void shadercustom"""+str(index)+"""(in vec3 inpos, in vec2 vertexColor, in float spectrum[512], float variableA, float variableB, float frame, out vec3 outpos){
                     """+params.custom()+"""
                 }
             """,GL_VERTEX_SHADER)
@@ -564,7 +564,7 @@ class CustomVertexShader:
 
         shader.append({"vertexshader":transient.shader,
                        "vertexlinetoadd":"shadercustom"+str(index)+"($inpos,vertexColor,spectrum,"+str(params.variableA())+","+str(params.variableB())+",frame,$outpos);",
-                       "vertexdeclaration":"void shadercustom"+str(index)+"(in vec3 inpos, in vec2 vertexColor, in float spectrum[1024], float variableA, float variableB, float frame, out vec3 outpos);"})
+                       "vertexdeclaration":"void shadercustom"+str(index)+"(in vec3 inpos, in vec2 vertexColor, in float spectrum[512], float variableA, float variableB, float frame, out vec3 outpos);"})
         return image,vertices,shader
 
 compositingfunctionsdropdown = [["Media 2D",Media2D],["Media 3D",Media3D],["Basic Shader",BasicShader],["Scrolling Shader",ScrollingShader],["Tiling Shader",TilingShader],["Custom Shader",CustomShader],["Custom Code",CustomCode],["Blur Shader",BlurShader],["Glitch Shader",GlitchShader],["Custom Vertex Shader",CustomVertexShader],["Custom Color Shader",CustomColorShader]]
