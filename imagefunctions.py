@@ -12,6 +12,7 @@ import os
 from moviepy.audio.io.AudioFileClip import AudioFileClip
 from timelineitems import *
 import avreader
+import sounddevice
 
 loadedimages = {}
 
@@ -198,7 +199,7 @@ class Video():
         if transient.moviepyobject.reader.pos != sample:
             transient.moviepyobject.reader.seek(sample)
             transient.moviepyobject.reader.pos = sample
-        chunk = transient.moviepyobject.reader.read_chunk(1024)
+        chunk = transient.moviepyobject.reader.read_chunk(512)
         return chunk,transient.moviepyobject.fps
 
     def timelineitem(param:Params,keyframe,windowClass):
@@ -243,4 +244,25 @@ class Video():
         return self.name
 
 
-imagefunctionsdropdown = [["Image",NormalImage],["Windows XP Error",XPError],["Filled Rectangle",FilledRectangle],["Sound",SoundFile],["Image Sequence",ImageSequence],["Video",Video]]
+class Record():
+    name = "Record"
+    params = Params({
+        "transient":TransientProperty(Params({
+            "sounddevice": None
+        }
+        ))
+    })
+
+    def sound(param:Params,sample):
+        transient = param.transient()
+        if transient.sounddevice is None:
+            transient.sounddevice = sounddevice.rec(512,48000,1)
+        sounddevice.wait()
+        samples = transient.sounddevice
+        transient.sounddevice = sounddevice.rec(512,48000,1)
+        return samples,48000
+
+    def __str__(self):
+        return self.name
+
+imagefunctionsdropdown = [["Image",NormalImage],["Windows XP Error",XPError],["Filled Rectangle",FilledRectangle],["Sound",SoundFile],["Image Sequence",ImageSequence],["Video",Video],["Record",Record]]

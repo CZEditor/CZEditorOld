@@ -76,11 +76,11 @@ def getviewportimage(state,parentclass):
 
 def getsound(state,sample):
     first = True
-    buffer = np.zeros((1024,2))
+    buffer = np.zeros((512,2))
     for keyframe in state:
         gotten = keyframe.sound(sample)[0]
         if(len(gotten.shape) != 0):
-            gotten = np.pad(gotten,((0,1024-gotten.shape[0]),(0,0)),"constant",constant_values=(0,0))
+            gotten = np.pad(gotten,((0,512-gotten.shape[0]),(0,0)),"constant",constant_values=(0,0))
             buffer += gotten
     return buffer
     
@@ -316,7 +316,7 @@ class Window(QMainWindow):
         sounddevice.default.samplerate = 48000
         sounddevice.default.channels = 1
         sounddevice.play(self.currentaudio)
-        self.stream = sounddevice.OutputStream(channels=2,samplerate=48000,blocksize=1024,callback=self.getnextsoundchunk)
+        self.stream = sounddevice.OutputStream(channels=2,samplerate=48000,blocksize=512,callback=self.getnextsoundchunk)
         self.stream.start()
         self.playbacksample = int(self.playbackframe/60*48000)
         self.executor = concurrent.futures.ThreadPoolExecutor()
@@ -346,17 +346,26 @@ class Window(QMainWindow):
     def getnextsoundchunk(self,outdata,frames,time,status):
         if self.isplaying and not self.seeking:
             try:
-                self.currentaudio = getsound(self.currentframestate,self.playbacksample)
-                outdata[:] = self.currentaudio
+                sound = getsound(self.currentframestate,self.playbacksample)
+                if(sound[32,0] != self.currentaudio[512+32]):
+                    self.currentaudio[:512] = self.currentaudio[512:]
+                    self.currentaudio[512:] = sound[:,0]
+                outdata[:] = sound
                 
             except Exception:
                 traceback.print_exc()
-                self.currentaudio = np.zeros((1024,1))
-                outdata[:] = self.currentaudio
-            self.playbacksample += 1024
+                self.currentaudio[:512] = self.currentaudio[512:]
+                sound = np.zeros((512,1))
+                
+                self.currentaudio[512:] = sound[:,0]
+                outdata[:] = sound
+            self.playbacksample += 512
         else:
-            self.currentaudio = np.zeros((1024,1))
-            outdata[:] = self.currentaudio
+            self.currentaudio[:512] = self.currentaudio[512:]
+            sound = np.zeros((512,1))
+            
+            self.currentaudio[512:] = sound[:,0]
+            outdata[:] = sound
             self.playbacksample = int(self.playbackframe/60*48000)
 
     def seek(self,frame):
@@ -400,11 +409,13 @@ class Window(QMainWindow):
     def timerEvent(self, event: QTimerEvent) -> None:
         
         if self.isplaying and not self.seeking:
-            firstcopy = np.copy(self.currentaudio)[:,0]
+            firstcopy = np.copy(self.currentaudio)
+            
             self.currentspectrum = np.fft.rfft(firstcopy)
             #freq = np.fft.fftfreq(1)
             self.currentspectrum = self.currentspectrum[:512]
             self.currentspectrum = np.abs(self.currentspectrum)
+            
             self.playbackframe = self.startframe+int((perf_counter()-self.starttime)*60)
             #self.playbackframe += 1
             self.currentframestate = getstate(self.playbackframe,self)
