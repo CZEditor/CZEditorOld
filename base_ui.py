@@ -16,6 +16,9 @@ class QRedButton(QToolButton):
         self.setStyleSheet("QToolButton { border-image:url(editor/Button.png) 3; border-width: 3; color: rgb(255,192,192);} QToolButton:hover {border-image:url(editor/Button Highlighted.png) 3; border-width: 3; color: rgb(255,192,192);} QToolButton:pressed {border-image:url(editor/Button Pressed.png) 3; border-width: 3;}")
     def pressedevent(self):
         self.pressedfunction(*self.args,**self.kwargs)
+    def __del__(self):
+        self.pressedfunction = None
+
 class QRedExpandableButton(QPushButton):
     def __init__(self,parent,text,onpress = dummyfunction,*args,**kwargs):
         super().__init__(parent)
