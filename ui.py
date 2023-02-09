@@ -371,8 +371,8 @@ class CzeKeyframeOptionCategoryList(QRedFrame):
         self.thelist[index],self.thelist[index+1] = self.thelist[index+1],self.thelist[index]
         self.entries[index].regenerate(self.thelist[index])
         self.entries[index+1].regenerate(self.thelist[index+1])
-        #self.entries[index].updatetextbox()
-        #self.entries[index+1].updatetextbox()
+        self.entries[index].updatetextbox()
+        self.entries[index+1].updatetextbox()
         self.parentclass.updateviewport()
 
     def remove(self,arow):
@@ -464,6 +464,7 @@ class CzeKeyframeOptions(QRedScrollArea):
                 self.widgets.addWidget(CzeKeyframeOptionCategory(None,"Expand/Collapse",param,self.parentclass)) #Make it display the actual name!
             elif isinstance(param,list):
                 self.widgets.addWidget(CzeKeyframeOptionCategoryList(None,param,self.baseparams[key],self.parentclass))
+                
 
     def iterateUpdate(self,params):
         i = 0
@@ -473,6 +474,7 @@ class CzeKeyframeOptions(QRedScrollArea):
                 self.widgets.itemAt(i).widget().updateParam()
             elif isinstance(param,list):
                 self.widgets.itemAt(i).widget().updateParam()
+            
             i += 1
 
     def iterateRegenerate(self,params):
@@ -487,6 +489,7 @@ class CzeKeyframeOptions(QRedScrollArea):
                 self.widgets.itemAt(i).widget().regenerate(param)
             elif isinstance(param,list):
                 self.widgets.itemAt(i).widget().regenerate(param,self.baseparams[key])
+                
             i += 1
         self.setMaximumWidth(self.viewframe.contentsRect().width()+self.verticalScrollBar().width())
 
