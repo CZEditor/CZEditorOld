@@ -478,8 +478,3 @@ class Window(QMainWindow):
         self.keyframes.add(keyframe)
         self.timeline.addKeyframe(keyframe)
         keyframe.initialize()
-
-
-app = QApplication([])
-window = Window()
-sys.exit(app.exec())

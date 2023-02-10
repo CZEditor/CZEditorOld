@@ -17,7 +17,13 @@ class QRedButton(QToolButton):
         self.kwargs = kwargs
         self.setFixedHeight(24)
         self.setBaseSize(24, 24)
-        self.setStyleSheet("QToolButton { border-image:url(editor/Button.png) 3; border-width: 3; color: rgb(255,192,192);} QToolButton:hover {border-image:url(editor/Button Highlighted.png) 3; border-width: 3; color: rgb(255,192,192);} QToolButton:pressed {border-image:url(editor/Button Pressed.png) 3; border-width: 3;}")
+        self.setStyleSheet(
+            """
+        QToolButton { border-image:url(editor:Button.png) 3; border-width: 3; color: rgb(255,192,192);}
+        QToolButton:hover {border-image:url(editor:Button Highlighted.png) 3; border-width: 3; color: rgb(255,192,192);}
+        QToolButton:pressed {border-image:url(editor:Button Pressed.png) 3; border-width: 3;}
+        """
+        )
 
     def pressedevent(self):
         self.pressedfunction(*self.args, **self.kwargs)
@@ -36,7 +42,13 @@ class QRedExpandableButton(QPushButton):
         self.setFixedHeight(24)
         self.setSizePolicy(QSizePolicy.Policy.Preferred,
                            QSizePolicy.Policy.Preferred)
-        self.setStyleSheet("QPushButton { border-image:url(editor/Button.png) 3; border-width: 3; color: rgb(255,192,192);} QPushButton:hover {border-image:url(editor/Button Highlighted.png) 3; border-width: 3; color: rgb(255,192,192);} QPushButton:pressed {border-image:url(editor/Button Pressed.png) 3; border-width: 3;}")
+        self.setStyleSheet(
+            """
+            QPushButton { border-image:url(editor:Button.png) 3; border-width: 3; color: rgb(255,192,192);}
+            QPushButton:hover {border-image:url(editor:Button Highlighted.png) 3; border-width: 3; color: rgb(255,192,192);}
+            QPushButton:pressed {border-image:url(editor:Button Pressed.png) 3; border-width: 3;}
+        """
+        )
         self.args = args
         self.kwargs = kwargs
 
@@ -48,14 +60,14 @@ class QRedFrame(QFrame):
     def __init__(self, parent):
         super().__init__(parent)
         self.setStyleSheet(
-            "border-image:url(editor/Square Frame.png) 2; border-width:2;")
+            "border-image:url(editor:Square Frame.png) 2; border-width:2;")
 
 
 class QRedScrollArea(QScrollArea):
     def __init__(self, parent):
         super().__init__(parent)
         self.setStyleSheet(
-            "border-image:url(editor/Square Frame.png) 2; border-width:2;")
+            "border-image:url(editor:Square Frame.png) 2; border-width:2;")
 
 
 class QRedTextBox(QPlainTextEdit):
@@ -63,7 +75,7 @@ class QRedTextBox(QPlainTextEdit):
         super().__init__(parent)
         self.onchange = onchange
         self.setStyleSheet(
-            "border-image:url(editor/Text Box.png) 2; border-width:2;")
+            "border-image:url(editor:Text Box.png) 2; border-width:2;")
         self.setWordWrapMode(QTextOption.WrapMode.NoWrap)
         # self.setMaximumHeight(150)
         self.textChanged.connect(self.change)
@@ -77,7 +89,7 @@ class QRedTextEntry(QLineEdit):
         super().__init__(parent)
         self.onchange = onchange
         self.setStyleSheet(
-            "border-image:url(editor/Text Box.png) 2; border-width:2;")
+            "border-image:url(editor:Text Box.png) 2; border-width:2;")
         # self.setWordWrapMode(QTextOption.WrapMode.NoWrap)
         # self.setMaximumHeight(150)
         self.textChanged.connect(self.change)
@@ -91,7 +103,7 @@ class QRedSpinBox(QSpinBox):
         super().__init__(parent)
         self.onchange = onchange
         self.setStyleSheet(
-            "border-image:url(editor/Text Box.png) 2; border-width:2;")
+            "border-image:url(editor:Text Box.png) 2; border-width:2;")
         self.setMaximum(50000)
         self.setMinimum(-50000)
         self.valueChanged.connect(self.change)
@@ -110,7 +122,7 @@ class QRedDecimalSpinBox(QDoubleSpinBox):
         super().__init__(parent)
         self.onchange = onchange
         self.setStyleSheet(
-            "border-image:url(editor/Text Box.png) 2; border-width:2;")
+            "border-image:url(editor:Text Box.png) 2; border-width:2;")
         self.setMaximum(50000)
         self.setMinimum(-50000)
         self.setDecimals(3)
@@ -134,7 +146,12 @@ class QRedComboBox(QComboBox):
         # p.pixmap(16,16).save("arrow.png")
         # self.setStyleSheet("border-image:url(editor/Text Box.png) 2; border-width:2;")
         self.setStyleSheet(
-            "QComboBox { background:none; border-image:url(editor/Text Box.png); border-width:2;} QComboBox::drop-down { border-image:url(editor/Button.png); border-width:3; } QComboBox::down-arrow { image: url(editor/Arrow Down.png); }")
+            """
+            QComboBox { background:none; border-image:url(editor:Text Box.png); border-width:2;}
+            QComboBox::drop-down { border-image:url(editor:Button.png); border-width:3; }
+            QComboBox::down-arrow { image: url(editor:Arrow Down.png); }
+        """
+        )
         self.addItems(elements)
         self.currentIndexChanged.connect(self.valuechanged)
 

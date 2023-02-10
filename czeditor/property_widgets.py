@@ -138,7 +138,7 @@ class SizePropertyWidget(QRedFrame):
             self.theproperty._relativeheight*100)
 
         self.setStyleSheet(
-            "border-image:url(editor/Square Frame.png) 2; border-width:2;")
+            "border-image:url(editor:Square Frame.png) 2; border-width:2;")
         self.setLayout(self.widgets)
 
     def updateproperty(self, value):

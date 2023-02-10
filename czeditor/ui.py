@@ -708,7 +708,7 @@ class CzeTimeline(QWidget):
         # kefrmae = self.scene.addRect(QRectF(0,0,18,18),QPen(QColor(0,0,0),0),coolgradient)
         # self.scene.addLine(QLine(0,0,0,self.scene.height()),QPen(QColor(0,0,0),0))
         self.graphicsview.setStyleSheet(
-            "border-image:url(editor/Square Frame.png) 2; border-width:2;")
+            "border-image:url(editor:Square Frame.png) 2; border-width:2;")
         # self.graphicsview.setTransformationAnchor(QGraphicsView.ViewportAnchor.AnchorUnderMouse)
         for keyframe in self.parentclass.keyframes:
             self.addKeyframe(keyframe)
