@@ -1,9 +1,9 @@
 from PIL import Image,ImageFilter,ImageChops
 import numpy as np
-from generate import put
+from czeditor.generate import put
 from scipy.spatial.transform import Rotation as R
 from math import pi
-from util import *
+from czeditor.util import *
 
 
 

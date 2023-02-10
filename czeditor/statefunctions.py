@@ -1,6 +1,6 @@
-from util import Params,ParamLink
-from handles import CzeViewportDraggableOffsetLine,CzeViewportDraggableOffset
-from properties import *
+from czeditor.util import Params,ParamLink
+from czeditor.handles import CzeViewportDraggableOffsetLine,CzeViewportDraggableOffset
+from czeditor.properties import *
 class NormalKeyframe():
     name = "Media"
     params = Params({})

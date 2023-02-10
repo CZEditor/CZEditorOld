@@ -1,7 +1,7 @@
 from PySide6.QtWidgets import QGraphicsItem,QGraphicsSceneMouseEvent
 from PySide6.QtGui import QPainter,QPen,QColor,QMouseEvent
 from PySide6.QtCore import QRectF,QPointF,Qt
-from keyframes import Keyframe
+from czeditor.keyframes import Keyframe
 
 class TimelineDurationLineItem(QGraphicsItem):
     def __init__(self,params,windowClass,keyframe):

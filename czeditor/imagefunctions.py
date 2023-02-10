@@ -1,17 +1,17 @@
 from PIL import Image
-from util import *
-from generate import CreateXPWindow
-from graphics import *
+from czeditor.util import *
+from czeditor.generate import CreateXPWindow
+from czeditor.graphics import *
 #import ffmpeg
 from PySide6.QtCore import QByteArray,QBuffer,QIODevice
 import pyspng
 from pims import PyAVReaderTimed
 import numpy as np
-from properties import *
+from czeditor.properties import *
 import os
 from moviepy.audio.io.AudioFileClip import AudioFileClip
-from timelineitems import *
-import avreader
+from czeditor.timelineitems import *
+import czeditor.avreader
 import sounddevice
 
 loadedimages = {}

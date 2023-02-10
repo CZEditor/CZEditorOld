@@ -1,4 +1,4 @@
-from property_widgets import *
+from czeditor.property_widgets import *
 
 
 class IntProperty:
