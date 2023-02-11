@@ -1,6 +1,4 @@
-from PySide6.QtCore import Qt
-from PySide6.QtWidgets import (QFileDialog, QGridLayout, QHBoxLayout, QLabel,
-                               QSizePolicy, QVBoxLayout)
+from PySide6.QtWidgets import QFileDialog, QHBoxLayout, QLabel, QVBoxLayout
 
 from czeditor.base_ui import (QRedButton, QRedDecimalSpinBox, QRedFrame,
                               QRedSpinBox, QRedTextBox, QRedTextEntry)

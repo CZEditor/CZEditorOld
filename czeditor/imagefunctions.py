@@ -5,11 +5,8 @@ import pyspng
 import sounddevice
 from moviepy.audio.io.AudioFileClip import AudioFileClip
 from PIL import Image
-from pims import PyAVReaderTimed
-# import ffmpeg
-from PySide6.QtCore import QBuffer, QByteArray, QIODevice
 
-import czeditor.avreader
+from czeditor.avreader import PyAVSeekableVideoReader
 from czeditor.generate import CreateXPWindow
 from czeditor.graphics import *
 from czeditor.properties import *
@@ -168,7 +165,7 @@ class Video():
                 transient.moviepyobject.close()
 
             # transient.pyavobject = PyAVReaderTimed(param.videopath(),cache_size=32)
-            transient.pyavobject = avreader.PyAVSeekableVideoReader(
+            transient.pyavobject = PyAVSeekableVideoReader(
                 param.videopath())
             transient.moviepyobject = AudioFileClip(
                 param.videopath(), nbytes=2, fps=48000)
@@ -197,7 +194,7 @@ class Video():
                 transient.pyavobject.close()
                 transient.moviepyobject.close()
 
-            transient.pyavobject = avreader.PyAVSeekableVideoReader(
+            transient.pyavobject = PyAVSeekableVideoReader(
                 param.videopath())
             transient.moviepyobject = AudioFileClip(
                 param.videopath(), nbytes=2, fps=48000)
@@ -230,7 +227,7 @@ class Video():
             if (transient.moviepyobject != None):
                 transient.pyavobject.close()
                 transient.moviepyobject.close()
-            transient.pyavobject = avreader.PyAVSeekableVideoReader(
+            transient.pyavobject = PyAVSeekableVideoReader(
                 param.videopath())
             transient.moviepyobject = AudioFileClip(
                 param.videopath(), nbytes=2, fps=48000)

@@ -1,18 +1,10 @@
-from copy import deepcopy
-from functools import cache
-
-from PIL import Image
-from PySide6.QtCore import QEvent, QLine, QMimeData, QPoint, QRectF, QSize, Qt
-from PySide6.QtGui import (QColor, QDrag, QDragEnterEvent, QDragLeaveEvent,
-                           QDragMoveEvent, QDropEvent, QFont, QKeyEvent,
-                           QMouseEvent, QPen, QRadialGradient, QResizeEvent,
-                           QTextOption, QWheelEvent)
-from PySide6.QtWidgets import (QComboBox, QFormLayout, QFrame, QGraphicsItem,
-                               QGraphicsItemGroup, QGraphicsLineItem,
-                               QGraphicsRectItem, QGraphicsScene,
-                               QGraphicsTextItem, QGraphicsView, QLineEdit,
-                               QPlainTextEdit, QPushButton, QScrollArea,
-                               QSizePolicy, QSpinBox, QToolButton, QWidget)
+from PySide6.QtCore import QLine, QMimeData, QPoint, QRectF, QSize, Qt
+from PySide6.QtGui import (QColor, QDrag, QDragEnterEvent, QDragMoveEvent,
+                           QDropEvent, QFont, QKeyEvent, QMouseEvent, QPainter,
+                           QPen, QRadialGradient, QResizeEvent, QWheelEvent)
+from PySide6.QtWidgets import (QFormLayout, QGraphicsItem, QGraphicsScene,
+                               QGraphicsView, QGridLayout, QSizePolicy,
+                               QWidget)
 
 from czeditor.base_ui import *
 from czeditor.compositingfunctions import *
@@ -23,68 +15,6 @@ from czeditor.statefunctions import *
 from czeditor.util import *
 
 playbackframe = 100
-
-
-def updateplaybackframe(frame):
-    global playbackframe
-    playbackframe = frame
-
-
-@cache
-def CreateRedButton(text, style):
-    styles = ["editor/Button.png", "editor/Button Highlighted.png",
-              "editor/Button Pressed.png"]
-    Button = Image.open(styles[style]).convert("RGBA")
-    col = (0, 0, 0, 255)
-    textsize = measuretext7(text, "7/fonts/text/", kerningadjust=-1)
-    Button = resize(Button, max(
-        textsize[0]+16, 86), max(24, textsize[1]+9), 3, 3, 3, 3, Image.NEAREST)
-    Button = createtext7(Button, w(
-        Button)//2-textsize[0]//2, 4, text, "7/fonts/text/", color=(255, 128, 128), kerningadjust=-1)
-    return Button
-
-
-@cache
-def CreateRedStretchableButton(text, style, width):
-    styles = ["editor/Button.png", "editor/Button Highlighted.png",
-              "editor/Button Pressed.png"]
-    Button = Image.open(styles[style]).convert("RGBA")
-    col = (0, 0, 0, 255)
-    textsize = measuretext7(text, "7/fonts/text/", kerningadjust=-1)
-    Button = resize(Button, max(
-        textsize[0]+16, width), max(24, textsize[1]+9), 3, 3, 3, 3, Image.NEAREST)
-    Button = createtext7(Button, w(
-        Button)//2-textsize[0]//2, 4, text, "7/fonts/text/", color=(255, 128, 128), kerningadjust=-1)
-    return Button
-
-
-@cache
-def CreateRedSmallButton(text, style):
-    styles = ["editor/Button.png", "editor/Button Highlighted.png",
-              "editor/Button Pressed.png"]
-    Button = Image.open(styles[style]).convert("RGBA")
-    col = (0, 0, 0, 255)
-    textsize = measuretext7(text, "7/fonts/text/", kerningadjust=-1)
-    Button = resize(
-        Button, textsize[0]+16, max(24, textsize[1]+9), 3, 3, 3, 3, Image.NEAREST)
-    Button = createtext7(Button, w(
-        Button)//2-textsize[0]//2, 4, text, "7/fonts/text/", color=(255, 128, 128), kerningadjust=-1)
-    return Button
-
-
-def CreateRedTab(text, active=True):
-    if active:
-        TabImg = Image.open(
-            "editor/Selected Tab.png").convert("RGBA").transpose(Image.ROTATE_90)
-    else:
-        TabImg = Image.open(
-            "editor/Unselected Tab.png").convert("RGBA").transpose(Image.ROTATE_90)
-    textsize = measuretext7(text, "7/fonts/text/", kerningadjust=-1)
-    Tab = resize(TabImg, textsize[0]+10,
-                 textsize[1]+9, 3, 3, 3, 3, Image.NEAREST)
-    Tab = createtext7(Tab, 5, 4, text, "7/fonts/text/",
-                      color=(255, 128, 128), kerningadjust=-1)
-    return Tab.transpose(Image.ROTATE_270)
 
 
 class QRedSelectableProperty(QRedFrame):

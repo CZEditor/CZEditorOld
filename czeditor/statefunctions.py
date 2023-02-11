@@ -1,7 +1,7 @@
 from czeditor.handles import (CzeViewportDraggableOffset,
                               CzeViewportDraggableOffsetLine)
 from czeditor.properties import *
-from czeditor.util import ParamLink, Params
+from czeditor.util import Params
 
 
 class NormalKeyframe():

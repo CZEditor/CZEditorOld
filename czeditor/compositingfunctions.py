@@ -1,14 +1,11 @@
 from ctypes import c_void_p
 from math import *
-from random import random
-from time import time
 from traceback import print_exc
 
 import numpy as np
 from OpenGL.GL import *
 from OpenGL.GL.shaders import compileProgram, compileShader
 from PIL import Image
-from PySide6.QtCore import QUrl
 from PySide6.QtGui import QMatrix4x4
 from scipy.spatial.transform import Rotation
 

@@ -1,9 +1,8 @@
 from typing import *
 
 from PySide6.QtCore import QRectF, Qt
-from PySide6.QtGui import QColor, QPainter, QPen, QTransform
-from PySide6.QtWidgets import (QGraphicsItem, QGraphicsItemGroup,
-                               QGraphicsSceneMouseEvent, QWidget)
+from PySide6.QtGui import QColor, QPainter, QPen
+from PySide6.QtWidgets import QGraphicsItem, QGraphicsSceneMouseEvent, QWidget
 
 
 class CzeViewportDraggableHandle(QGraphicsItem):

@@ -1,8 +1,7 @@
-from math import ceil, cos, floor, sin
+from math import ceil, floor
 
 import numpy as np
-from PIL import (Image, ImageChops, ImageDraw, ImageFilter, ImageFont,
-                 ImageMath, ImageOps)
+from PIL import Image, ImageChops, ImageMath
 
 # _IMAGE = Image.new("RGBA", (200,100), (255,255,255,255))
 

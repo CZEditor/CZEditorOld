@@ -5,7 +5,7 @@ import numpy as np
 from OpenGL.GL import *
 from PySide6.QtGui import QMatrix4x4
 
-from czeditor.customShaderCompilation import compileProgram, compileShader
+from czeditor.customShaderCompilation import compileProgram
 from czeditor.openglfunctions import *
 from czeditor.properties import LineStringProperty
 from czeditor.util import *

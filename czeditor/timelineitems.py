@@ -1,5 +1,5 @@
 from PySide6.QtCore import QPointF, QRectF, Qt
-from PySide6.QtGui import QColor, QMouseEvent, QPainter, QPen
+from PySide6.QtGui import QColor, QPen
 from PySide6.QtWidgets import QGraphicsItem, QGraphicsSceneMouseEvent
 
 from czeditor.keyframes import Keyframe
