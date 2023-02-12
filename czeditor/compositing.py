@@ -76,7 +76,7 @@ def ExecuteCustomWindowAnimation(image, coeffs, time, wallpaper=None, pos=None, 
 # warp image by coefficients and composite with Windows 7 method
 def Composite7(img, GlassMask, time, startpos, startrotation, origin, wallpaper, pos, align):
     wallpaper = wallpaper.copy()
-    GlassImg = openimage("7/Glass.png")
+    GlassImg = openimage("W7:Glass.png")
     WithBorder = put(Image.new("RGBA", (800, 602), (0, 0, 0, 0)), GlassImg.resize(
         wallpaper.size, 0), int(-pos[0]+w(img)/16-wallpaper.size[0]/16+pos[0]/8), -pos[1])
     GlassMask = put(Image.new("RGBA", img.size,

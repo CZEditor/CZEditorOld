@@ -5,6 +5,7 @@ import pyspng
 import sounddevice
 from moviepy.audio.io.AudioFileClip import AudioFileClip
 from PIL import Image
+from PySide6.QtCore import QFileInfo
 
 from czeditor.avreader import PyAVSeekableVideoReader
 from czeditor.generate import CreateXPWindow
@@ -34,7 +35,7 @@ class NormalImage():
                 with open(path, "rb") as file:
                     img = pyspng.load(file.read())
             else:
-                img = np.array(Image.open(path).convert("RGBA"))
+                img = np.array(Image.open(QFileInfo(path).canonicalFilePath()).convert("RGBA"))
             loadedimages[path] = img
             if (len(loadedimages.keys()) > 300):
                 del loadedimages[loadedimages.keys()[0]]
@@ -79,10 +80,10 @@ class XPError():
             "buttons": StringList(["OK"]),
             "buttonstyles": emptylist(0),
             "erroricon": Selectable(0, [
-                ["Critical Error", "xp/Critical Error.png"],
-                ["Exclamation", "xp/Exclamation.png"],
-                ["Information", "xp/Information.png"],
-                ["Question", "xp/Question.png"],
+                ["Critical Error", "Wxp:Critical Error.png"],
+                ["Exclamation", "Wxp:Exclamation.png"],
+                ["Information", "Wxp:Information.png"],
+                ["Question", "Wxp:Question.png"],
                 ["None", ""]]),
             "transient": TransientProperty(Params({
                 "cached": None,

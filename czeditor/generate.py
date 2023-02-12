@@ -1,7 +1,10 @@
 from math import ceil, floor
 
 import numpy as np
+import os
+
 from PIL import Image, ImageChops, ImageMath
+from PySide6.QtCore import QFileInfo
 
 # _IMAGE = Image.new("RGBA", (200,100), (255,255,255,255))
 
@@ -150,11 +153,12 @@ def take(img, n, i):
 
 def createtext(text, fontdirectory, color=(255, 255, 255, 255), buffersize=(3000, 3000), underline=False, underlineoffset=0, kerningadjust=0):
     drawntext = Image.new("RGBA", buffersize, (255, 127, 127, 0))
+    fontdirectory = QFileInfo(fontdirectory).canonicalFilePath()
     width = 0
     height = 0
     line = 0
     cursorpos = 0
-    newlinesizefile = open(fontdirectory+"newlinesize.txt")
+    newlinesizefile = open(os.path.join(fontdirectory, "newlinesize.txt"))
     newlinesize = int(newlinesizefile.read())
     newlinesizefile.close()
     if (underline):
@@ -164,9 +168,10 @@ def createtext(text, fontdirectory, color=(255, 255, 255, 255), buffersize=(3000
             line += newlinesize
             cursorpos = 0
         else:
-            char = Image.open(fontdirectory+str(ord(i))+".png").convert("RGBA")
+            char = Image.open(os.path.join(
+                fontdirectory, str(ord(i))+".png")).convert("RGBA")
             whitechar = Image.open(
-                fontdirectory+"white"+str(ord(i))+".png").convert("RGBA")
+                os.path.join(fontdirectory, "white"+str(ord(i))+".png")).convert("RGBA")
             char = put(char, Image.new("RGBA", (w(char), 1),
                        (255, 255, 255, 255)), 0, h(char)-2+underlineoffset)
             whitechar = put(whitechar, Image.new(
@@ -190,9 +195,10 @@ def createtext(text, fontdirectory, color=(255, 255, 255, 255), buffersize=(3000
             line += newlinesize
             cursorpos = 0
             continue
-        char = Image.open(fontdirectory+str(ord(i))+".png").convert("RGBA")
-        whitechar = Image.open(fontdirectory+"white" +
-                               str(ord(i))+".png").convert("RGBA")
+        char = Image.open(os.path.join(
+            fontdirectory, str(ord(i))+".png")).convert("RGBA")
+        whitechar = Image.open(
+            os.path.join(fontdirectory, "white"+str(ord(i))+".png")).convert("RGBA")
         cred, cgreen, wcblue, calpha = char.split()
         wcred, wcgreen, cblue, wcalpha = whitechar.split()
         alpha2 = ImageMath.eval("convert( int( (r1-r2+255+g1-g2+255+b1-b2+255)/3*alp/255 ), 'L')",
@@ -210,11 +216,12 @@ def createtext(text, fontdirectory, color=(255, 255, 255, 255), buffersize=(3000
 
 def createtextmac(text, fontdirectory, color=(0, 0, 0, 255), buffersize=(3000, 3000), underline=False, underlineoffset=0, kerningadjust=0):
     drawntext = Image.new("RGBA", buffersize, (255, 127, 127, 0))
+    fontdirectory = QFileInfo(fontdirectory).canonicalFilePath()
     width = 0
     height = 0
     line = 0
     cursorpos = 0
-    newlinesizefile = open(fontdirectory+"newlinesize.txt")
+    newlinesizefile = open(os.path.join(fontdirectory, "newlinesize.txt"))
     newlinesize = int(newlinesizefile.read())
     newlinesizefile.close()
     if (underline):
@@ -224,7 +231,8 @@ def createtextmac(text, fontdirectory, color=(0, 0, 0, 255), buffersize=(3000, 3
             line += newlinesize
             cursorpos = 0
         else:
-            char = Image.open(fontdirectory+str(ord(i))+".png").convert("RGBA")
+            char = Image.open(os.path.join(
+                fontdirectory, str(ord(i))+".png")).convert("RGBA")
             char = put(char, Image.new("RGBA", (w(char), 1),
                        (255, 255, 255, 255)), 0, h(char)-2+underlineoffset)
             colorimg = Image.new("RGBA", (w(char), h(char)),
@@ -241,7 +249,8 @@ def createtextmac(text, fontdirectory, color=(0, 0, 0, 255), buffersize=(3000, 3
             line += newlinesize
             cursorpos = 0
             continue
-        char = Image.open(fontdirectory+str(ord(i))+".png").convert("RGBA")
+        char = Image.open(os.path.join(
+            fontdirectory, str(ord(i))+".png")).convert("RGBA")
         colorimg = Image.new("RGBA", (w(char), h(char)),
                              (color[0], color[1], color[2], 255))
         char = ImageChops.multiply(char, colorimg)
@@ -269,11 +278,12 @@ def createtext7(im, x, y, text, fontdirectory, color=(0, 0, 0, 255), buffersize=
         buffersize)+",0", lambda: Image.new("RGBA", buffersize, (255, 255, 0, 0))).copy()
     whitedrawntext = getfromcache(buffercache, str(
         buffersize)+",1", lambda: Image.new("RGBA", buffersize, (0, 0, 255, 0))).copy()
+    fontdirectory = QFileInfo(fontdirectory).canonicalFilePath()
     width = 0
     height = 0
     line = 0
     cursorpos = 0
-    newlinesizefile = open(fontdirectory+"newlinesize.txt")
+    newlinesizefile = open(os.path.join(fontdirectory, "newlinesize.txt"))
     newlinesize = int(newlinesizefile.read())
     newlinesizefile.close()
     for i in text:
@@ -282,14 +292,15 @@ def createtext7(im, x, y, text, fontdirectory, color=(0, 0, 0, 255), buffersize=
             line += newlinesize
             cursorpos = 0
             continue
-        char = Image.open(fontdirectory+str(ord(i))+".png").convert("RGBA")
+        char = Image.open(os.path.join(
+            fontdirectory, str(ord(i))+".png")).convert("RGBA")
         if (cursorpos+w(char)+kerningadjust > fit):
             height += newlinesize
             line += newlinesize
             cursorpos = 0
             continue
-        whitechar = Image.open(fontdirectory+"white" +
-                               str(ord(i))+".png").convert("RGBA")
+        whitechar = Image.open(os.path.join(
+            fontdirectory, "white"+str(ord(i))+".png")).convert("RGBA")
         # colorimg = Image.new("RGBA",(w(char),h(char)),(color[0],color[1],color[2],255))
         # char = ImageChops.multiply(char,colorimg)
         drawntext.paste(char, (cursorpos, line))
@@ -337,7 +348,8 @@ def measuretext7(text, fontdirectory, buffersize=(3000, 3000), kerningadjust=0, 
     height = 0
     line = 0
     cursorpos = 0
-    newlinesizefile = open(fontdirectory+"newlinesize.txt")
+    fontdirectory = QFileInfo(fontdirectory).canonicalFilePath()
+    newlinesizefile = open(os.path.join(fontdirectory, "newlinesize.txt"))
     newlinesize = int(newlinesizefile.read())
     newlinesizefile.close()
     for i in text:
@@ -346,7 +358,8 @@ def measuretext7(text, fontdirectory, buffersize=(3000, 3000), kerningadjust=0, 
             line += newlinesize
             cursorpos = 0
             continue
-        char = Image.open(fontdirectory+str(ord(i))+".png").convert("RGBA")
+        char = Image.open(os.path.join(
+            fontdirectory, str(ord(i))+".png")).convert("RGBA")
         if (cursorpos+w(char)+kerningadjust > fit):
             height += newlinesize
             line += newlinesize
@@ -363,11 +376,12 @@ def measuretext7(text, fontdirectory, buffersize=(3000, 3000), kerningadjust=0, 
 
 def createtextubuntu(im, x, y, text, fontdirectory, color=(0, 0, 0, 255), buffersize=(3000, 3000), align="00"):
     drawntext = Image.new("RGBA", buffersize, (255, 255, 0, 0))
+    fontdirectory = QFileInfo(fontdirectory).canonicalFilePath()
     width = 0
     height = 0
     line = 0
     cursorpos = 0
-    newlinesizefile = open(fontdirectory+"newlinesize.txt")
+    newlinesizefile = open(os.path.join(fontdirectory, "newlinesize.txt"))
     newlinesize = int(newlinesizefile.read())
     newlinesizefile.close()
     for i in text:
@@ -376,7 +390,8 @@ def createtextubuntu(im, x, y, text, fontdirectory, color=(0, 0, 0, 255), buffer
             line += newlinesize
             cursorpos = 0
             continue
-        char = Image.open(fontdirectory+str(ord(i))+".png").convert("RGBA")
+        char = Image.open(os.path.join(
+            fontdirectory, str(ord(i))+".png")).convert("RGBA")
         # colorimg = Image.new("RGBA",(w(char),h(char)),(color[0],color[1],color[2],255))
         # char = ImageChops.multiply(char,colorimg)
         drawntext.paste(char, (cursorpos, line))
@@ -458,13 +473,14 @@ def tile(im, width, height):  # this tiles an image
 
 
 def CreateXPButton(text, style=0):
-    styles = ["xp/Button.png", "xp/Button Hovered.png", "xp/Button Clicked.png",
-              "xp/Button Disabled.png", "xp/Button Default.png"]
-    Button = Image.open(styles[style]).convert("RGBA")
+    styles = ["Wxp:Button.png", "Wxp:Button Hovered.png", "Wxp:Button Clicked.png",
+              "Wxp:Button Disabled.png", "Wxp:Button Default.png"]
+    Button = Image.open(
+        QFileInfo(styles[style]).canonicalFilePath()).convert("RGBA")
     col = (0, 0, 0, 255)
     if (style == 3):
         col = (161, 161, 146, 255)
-    textgraphic = createtext(text, "./xp/fonts/text/", col)
+    textgraphic = createtext(text, r"Wxp:fonts/text", col)
     Button = resize(Button, max(w(textgraphic)+16, 75),
                     max(23, h(textgraphic)+10), 8, 8, 9, 9, Image.NEAREST)
     Button = put(Button, textgraphic, w(Button)//2-w(textgraphic)//2, 5)
@@ -472,16 +488,17 @@ def CreateXPButton(text, style=0):
 
 
 def CreateMacButton(text, style=0):
-    styles = ["mac/Button.png", "mac/Button Disabled.png"]
-    Button = Image.open(styles[style]).convert("RGBA")
+    styles = ["mac:Button.png", "mac:Button Disabled.png"]
+    Button = Image.open(
+        QFileInfo(styles[style]).canonicalFilePath()).convert("RGBA")
     col = (0, 0, 0, 255)
     if (style == 1):
         col = (161, 161, 146, 255)
-        textgraphic = createtextmac(text, "./mac/fonts/caption/", col)
+        textgraphic = createtextmac(text, r"mac:fonts/caption", col)
         Button = resize(Button, max(w(textgraphic)+10, 60),
                         max(20, h(textgraphic)+4), 2, 2, 2, 2, Image.NEAREST)
     else:
-        textgraphic = createtextmac(text, "./mac/fonts/caption/", col)
+        textgraphic = createtextmac(text, r"mac:fonts/caption", col)
         Button = resize(Button, max(w(textgraphic)+10, 60),
                         max(20, h(textgraphic)+4), 4, 4, 4, 4, Image.NEAREST)
     Button = put(Button, textgraphic, floor(w(Button)/2-w(textgraphic)/2), 2)
@@ -489,46 +506,49 @@ def CreateMacButton(text, style=0):
 
 
 def Create7Button(text, style=0):
-    styles = ["7/Button.png", "", "", "7/Button Disabled.png",
-              "7/Button Defaulted.png", "7/Button Defaulted Animation.png"]
-    Button = Image.open(styles[style]).convert("RGBA")
+    styles = ["W7:Button.png", "", "", "W7:Button Disabled.png",
+              "W7:Button Defaulted.png", "W7:Button Defaulted Animation.png"]
+    Button = Image.open(
+        QFileInfo(styles[style]).canonicalFilePath()).convert("RGBA")
     col = (0, 0, 0, 255)
     # if(style==3):
     #    col = (161,161,146,255)
     # textgraphic = createtext(text,"./7/fonts/text/",col)
-    textsize = measuretext7(text, "7/fonts/text/", kerningadjust=-1)
+    textsize = measuretext7(text, r"W7:fonts/text", kerningadjust=-1)
     Button = resize(Button, max(
         textsize[0]+16, 86), max(24, textsize[1]+9), 3, 3, 3, 3, Image.NEAREST)
     Button = createtext7(Button, w(
-        Button)//2-textsize[0]//2, 4, text, "7/fonts/text/", kerningadjust=-1)
+        Button)//2-textsize[0]//2, 4, text, r"W7:fonts/text", kerningadjust=-1)
     return Button
 
 
 def Create7TaskDialogButton(text, style=0):
-    styles = ["7/Button.png", "", "", "7/Button Disabled.png",
-              "7/Button Defaulted.png", "7/Button Defaulted Animation.png"]
-    Button = Image.open(styles[style]).convert("RGBA")
+    styles = ["W7:Button.png", "", "", "W7:Button Disabled.png",
+              "W7:Button Defaulted.png", "W7:Button Defaulted Animation.png"]
+    Button = Image.open(
+        QFileInfo(styles[style]).canonicalFilePath()).convert("RGBA")
     col = (0, 0, 0, 255)
     # if(style==3):
     #    col = (161,161,146,255)
     # textgraphic = createtext(text,"./7/fonts/text/",col)
-    textsize = measuretext7(text, "7/fonts/text/", kerningadjust=-1)
+    textsize = measuretext7(text, r"W7:fonts/text", kerningadjust=-1)
     Button = resize(Button, max(
         textsize[0]+30, 66), max(21, textsize[1]+6), 3, 3, 3, 3, Image.NEAREST)
     Button = createtext7(Button, w(
-        Button)//2-textsize[0]//2, 3, text, "7/fonts/text/", kerningadjust=-1)
+        Button)//2-textsize[0]//2, 3, text, r"W7:fonts/text", kerningadjust=-1)
     return Button
 
 
 def Create3_1Button(text, style=0, underline=False):
-    styles = ["3.1/Button.png", "3.1/Button Default.png"]
-    Button = Image.open(styles[style]).convert("RGBA")
+    styles = ["W3.1:Button.png", "W3.1:Button Default.png"]
+    Button = Image.open(
+        QFileInfo(styles[style]).canonicalFilePath()).convert("RGBA")
     textgraphic = createtextmac(
-        text, "3.1//fonts//text//", underline=underline)
+        text, r"W3.1:fonts/text", underline=underline)
     if style == 1:
         Button = resize(Button, max(58, w(textgraphic)+5+5),
                         h(textgraphic)+6+6, 4, 4, 4, 4)
-        Border = Image.open("3.1//Button Text Outline.png").convert("RGBA")
+        Border = Image.open(r"W3.1:Button Text Outline.png").convert("RGBA")
         BorderImg = tile(Border, max(58, w(textgraphic)+5+5),
                          h(textgraphic)+6+6)
         textx = floor(w(Button)/2-w(textgraphic)/2-1)
@@ -551,12 +571,13 @@ def Create3_1Button(text, style=0, underline=False):
 
 
 def CreateUbuntuButton(text, style=0, predefinedsize=[]):
-    styles = ["ubuntu/Button.png", "ubuntu/Button Default.png"]
-    Button = Image.open(styles[style]).convert("RGBA")
+    styles = ["ubuntu:Button.png", "ubuntu:Button Default.png"]
+    Button = Image.open(
+        QFileInfo(styles[style]).canonicalFilePath()).convert("RGBA")
     if predefinedsize:
         size = predefinedsize
     else:
-        size = measuretext7(text, "ubuntu/fonts/text/")
+        size = measuretext7(text, r"ubuntu:fonts/text")
         size[0] += 16
         size[1] += 10
         size[0] = max(85, size[0])
@@ -564,19 +585,21 @@ def CreateUbuntuButton(text, style=0, predefinedsize=[]):
     Button = resize(Button, size[0], size[1], 5, 5,
                     5, 5, scalingmethod=Image.BICUBIC)
     Button = createtextubuntu(
-        Button, size[0]//2, size[1]//2, text, "ubuntu/fonts/text/", (60, 59, 55, 255), align="11")
+        Button, size[0]//2, size[1]//2, text, r"ubuntu:fonts/text/", (60, 59, 55, 255), align="11")
     return Button
 
 
 def Create95Button(text, style=0, underline=False):
-    styles = ["95/Button.png", "95/Button Default.png"]
-    Button = Image.open(styles[style]).convert("RGBA")
+    styles = ["W95:Button.png", "W95:Button Default.png"]
+    Button = Image.open(
+        QFileInfo(styles[style]).canonicalFilePath()).convert("RGBA")
     textgraphic = createtextmac(
-        text, "95//fonts//text//", underline=underline, underlineoffset=1)
+        text, r"W95:fonts/text", underline=underline, underlineoffset=1)
     if style == 1:
         Button = resize(Button, max(75, w(textgraphic)+5+5),
                         h(textgraphic)+6+4, 3, 3, 3, 3)
-        Border = Image.open("95//Button Text Outline.png").convert("RGBA")
+        Border = Image.open(
+            QFileInfo("W95:Button Text Outline.png").canonicalFilePath()).convert("RGBA")
         BorderImg = tile(Border, max(75, w(textgraphic)+5+5),
                          h(textgraphic)+6+4)
         textx = floor(w(Button)/2-w(textgraphic)/2)
@@ -601,14 +624,16 @@ def Create95Button(text, style=0, underline=False):
 
 
 def Create2000Button(text, style=0, underline=False):
-    styles = ["2000/Button.png", "2000/Button Default.png"]
-    Button = Image.open(styles[style]).convert("RGBA")
-    textgraphic = createtext(text, "xp//fonts//text//",
+    styles = ["W2000:Button.png", "W2000:Button Default.png"]
+    Button = Image.open(
+        QFileInfo(styles[style]).canonicalFilePath()).convert("RGBA")
+    textgraphic = createtext(text, r"Wxp:fonts/text",
                              (0, 0, 0, 255), underline=underline, underlineoffset=1)
     if style == 1:
         Button = resize(Button, max(75, w(textgraphic)+5+5),
                         h(textgraphic)+6+4, 3, 3, 3, 3)
-        Border = Image.open("95//Button Text Outline.png").convert("RGBA")
+        Border = Image.open(
+            QFileInfo(r"W95:Button Text Outline.png").canonicalFilePath()).convert("RGBA")
         BorderImg = tile(Border, max(75, w(textgraphic)+5+5),
                          h(textgraphic)+6+4)
         textx = floor(w(Button)/2-w(textgraphic)/2)
@@ -649,22 +674,17 @@ def CreateXPWindow(param):
             button3style = 0
 
     path_activity = "Active" if param.active else "Inactive"
-    TopFrame = Image.open(f"xp/Frame Up {path_activity}.png").convert("RGBA")
-    LeftFrame = Image.open(
-        f"xp/Frame Left {path_activity}.png").convert("RGBA")
-    RightFrame = Image.open(
-        f"xp/Frame Right {path_activity}.png").convert("RGBA")
-    BottomFrame = Image.open(
-        f"xp/Frame Bottom {path_activity}.png").convert("RGBA")
-    CloseButton = Image.open(
-        f"xp/Close button {path_activity}.png").convert("RGBA")
-
+    _paths = [f"Wxp:Frame Up {path_activity}.png", f"Wxp:Frame Left {path_activity}.png",
+              f"Wxp:Frame Right {path_activity}.png", f"Wxp:Frame Bottom {path_activity}.png",
+              f"Wxp:Close button {path_activity}.png"]
+    TopFrame, LeftFrame, RightFrame, BottomFrame, CloseButton = [Image.open(
+        QFileInfo(path).canonicalFilePath()).convert("RGBA") for path in _paths]
     textposx = 15+3
     textposy = 11+h(TopFrame)
-    captiontextimg = createtext(param.title(), "./xp/fonts/caption/")
+    captiontextimg = createtext(param.title(), "Wxp:fonts/caption/")
     captiontextwidth = w(captiontextimg)
     width = max(width, captiontextwidth+43)
-    createdtext = createtext(param.text(), "./xp/fonts/text/", (0, 0, 0, 255))
+    createdtext = createtext(param.text(), "Wxp:fonts/text/", (0, 0, 0, 255))
     # textposy -= min(15,h(createdtext)//2)
     width = max(width, w(createdtext)+textposx+8+3)
     height = max(height, h(createdtext)+h(TopFrame)+3+25)
@@ -672,7 +692,8 @@ def CreateXPWindow(param):
     #    insideimage = Image.open(insideimagepath).convert("RGBA")
     #    width = max(width,w(insideimage)+6)
     if (param.erroricon()):
-        erroricon = Image.open(param.erroricon()).convert("RGBA")
+        erroricon = Image.open(
+            QFileInfo(param.erroricon()).canonicalFilePath()).convert("RGBA")
         textposx += 15+w(erroricon)
         textposy = max(textposy, 11+floor(h(erroricon) /
                        2-h(createdtext)/2)+h(TopFrame))
@@ -734,11 +755,11 @@ def CreateXPWindow(param):
     IMAGE = put(IMAGE, CloseButton, width-5, 5, "20")
     if param.active:
         IMAGE = put(IMAGE, createtext(
-            param.title(), "./xp/fonts/captionshadow/", (10, 24, 131, 255)), 8, 8, "00")
+            param.title(), r"Wxp:fonts/captionshadow", (10, 24, 131, 255)), 8, 8, "00")
         IMAGE = put(IMAGE, captiontextimg, 7, 7, "00")
     else:
         IMAGE = put(IMAGE, createtext(param.title(),
-                    "./xp/fonts/caption/", (216, 228, 248, 255)), 7, 7, "00")
+                    r"Wxp:fonts/caption", (216, 228, 248, 255)), 7, 7, "00")
     # if(insideimagepath != ""):
     #    IMAGE = put(IMAGE,insideimage,3,h(TopFrame))
     if (param.erroricon() != ""):
@@ -749,10 +770,10 @@ def CreateXPWindow(param):
 
 
 def CreateMacAlertDialog(width, height, title="", bar=True, icon="", errortext="", subtext="", button1="", button2="", button3="", button1default=False, button2default=False, button3default=False, button1style=0, button2style=0, button3style=0):
-    WindowBar = Image.open("mac/Error Window With bar.png").convert("RGBA")
-    WindowNoBar = Image.open("mac/Error Window No bar.png").convert("RGBA")
-    Ridges = Image.open("mac/Red Ridges.png").convert("RGBA")
-    ButtonBorder = Image.open("mac//Button Outline.png").convert("RGBA")
+    _paths = ["mac:Error Window With bar.png", "mac:Error Window No bar.png",
+              "mac:Red Ridges.png", "mac:Button Outline.png"]
+    WindowBar, WindowNoBar, Ridges, ButtonBorder = [Image.open(
+        QFileInfo(path).canonicalFilePath()).convert("RGBA") for path in _paths]
     TextHeight = 0
     IconPadding = 0
     Paddingwidth = 7
@@ -765,20 +786,21 @@ def CreateMacAlertDialog(width, height, title="", bar=True, icon="", errortext="
         Barheight = 0
 
     if (errortext != ""):
-        ErrorTextImg = createtextmac(errortext, "mac//fonts//caption//")
+        ErrorTextImg = createtextmac(errortext, r"mac:fonts/caption")
         width = max(width, w(ErrorTextImg)+79+90)
         # height = max(height,h(ErrorTextImg)+Paddingheight+20)
         TextHeight += h(ErrorTextImg)
 
     if (subtext != ""):
-        SubTextImg = createtextmac(subtext, "mac//fonts//text//")
+        SubTextImg = createtextmac(subtext, r"mac:fonts/text")
         SubTextPos = TextHeight
         width = max(width, w(SubTextImg)+79+90)
         TextHeight += h(SubTextImg)
 
     height += TextHeight + Paddingheight
     if (icon != ""):
-        IconImg = Image.open(icon).convert("RGBA")
+        IconImg = Image.open(
+            QFileInfo(icon).canonicalFilePath()).convert("RGBA")
         height = max(height, h(IconImg)+Paddingheight)
         width += w(IconImg)
         IconPadding = w(IconImg)
@@ -807,7 +829,7 @@ def CreateMacAlertDialog(width, height, title="", bar=True, icon="", errortext="
             IMAGE = put(IMAGE, resizeanchor(
                 Ridges, 5, 4, width-6, 16, 1, 1, 1, 1), 5, 4)
         else:
-            TitleImage = createtextmac(title, "mac//fonts//caption//")
+            TitleImage = createtextmac(title, r"mac:fonts/caption")
             IMAGE = put(IMAGE, TitleImage, width//2-w(TitleImage)//2, 3)
             IMAGE = put(IMAGE, resizeanchor(Ridges, 5, 4, width //
                         2-w(TitleImage)//2-3, 16, 1, 1, 1, 1), 5, 4)
@@ -848,17 +870,19 @@ def CreateMacAlertDialog(width, height, title="", bar=True, icon="", errortext="
 
 
 def CreateMacWindow(width, height, title="", icon="", errortext="", button1="", button2="", button3="", button1default=False, button2default=False, button3default=False, button1style=0, button2style=0, button3style=0):
-    WindowBar = Image.open("mac/Window With bar.png").convert("RGBA")
-    Ridges = Image.open("mac/Ridges.png").convert("RGBA")
-    ButtonBorder = Image.open("mac//Button Outline.png").convert("RGBA")
+    _paths = ["mac:Window With bar.png",
+              "mac:Ridges.png", "mac:Button Outline.png"]
+    WindowBar, Ridges, ButtonBorder = [Image.open(
+        QFileInfo(path).canonicalFilePath()).convert("RGBA") for path in _paths]
     Paddingheight = 29+4
     TextHeight = 0
     iconsize = 0
     if (icon != ""):
-        IconImg = Image.open(icon).convert("RGBA")
+        IconImg = Image.open(
+            QFileInfo(icon).canonicalFilePath()).convert("RGBA")
         iconsize = w(IconImg)+26
     if (errortext != ""):
-        ErrorTextImg = createtextmac(errortext, "mac//fonts//caption//")
+        ErrorTextImg = createtextmac(errortext, r"mac:fonts/caption")
         width = max(width, w(ErrorTextImg)+iconsize+20+20)
         # height = max(height,h(ErrorTextImg)+Paddingheight+20)
         TextHeight += h(ErrorTextImg)+36
@@ -876,7 +900,7 @@ def CreateMacWindow(width, height, title="", icon="", errortext="", button1="", 
         IMAGE = put(IMAGE, resizeanchor(
             Ridges, 5, 4, width-6, 16, 1, 1, 1, 1), 5, 4)
     else:
-        TitleImage = createtextmac(title, "mac//fonts//caption//")
+        TitleImage = createtextmac(title, r"mac:fonts/caption")
         IMAGE = put(IMAGE, TitleImage, width//2-w(TitleImage)//2, 3)
         IMAGE = put(IMAGE, resizeanchor(Ridges, 5, 4, width //
                     2-w(TitleImage)//2-3, 16, 1, 1, 1, 1), 5, 4)
@@ -915,15 +939,20 @@ def CreateMacWindow(width, height, title="", icon="", errortext="", button1="", 
 
 
 def CreateMacWindoid(icon="", text="", collapsed=False):
+    _paths = ["mac:Windoid.png", "mac:Windoid Hidden.png", "mac:Studs.png",
+              "mac:Windoid Close Button.png", "mac:Windoid Hide Button.png"]
+    Border, CollapsedBorder, Studs, CloseButton, HideButton = [Image.open(
+        QFileInfo(path).canonicalFilePath()).convert("RGBA") for path in _paths]
     contentwidth = 0
     contentheight = 0
     textpos = 6
     if (text != ""):
-        TextImg = createtextmac(text, "mac//fonts//text//")
+        TextImg = createtextmac(text, r"mac:fonts/text")
         contentwidth += w(TextImg)+7
         contentheight += h(TextImg)+3
     if (icon != ""):
-        IconImg = Image.open(icon).convert("RGBA")
+        IconImg = Image.open(
+            QFileInfo(icon).canonicalFilePath()).convert("RGBA")
         contentwidth += w(IconImg) + 7
         contentheight = max(contentheight, h(IconImg))
         textpos += w(IconImg) + 7
@@ -934,11 +963,6 @@ def CreateMacWindoid(icon="", text="", collapsed=False):
         CONTENT = put(CONTENT, TextImg, textpos, 5)
     if (icon != ""):
         CONTENT = put(CONTENT, IconImg, 6, 4)
-    Border = Image.open("mac//Windoid.png").convert("RGBA")
-    CollapsedBorder = Image.open("mac//Windoid Hidden.png").convert("RGBA")
-    Studs = Image.open("mac//Studs.png").convert("RGBA")
-    CloseButton = Image.open("mac//Windoid Close Button.png").convert("RGBA")
-    HideButton = Image.open("mac//Windoid Hide Button.png").convert("RGBA")
     width = contentwidth + 19
     height = contentheight + 9
     IMAGE = Image.new("RGBA", (width, height), (0, 0, 0, 0))
@@ -982,29 +1006,20 @@ def Create7Glass(width, height, active=True):
     screenres = (1920, 1080)
     pos = (500, 300)
     if active:
-        Window = Image.open("7//Glass Frame.png")
-        # CloseButton = Image.open("7//Close Button Single.png")
-        SideGlowLeft = Image.open("7//Sideglow 1 Left.png")
-        SideShine = Image.open("7//Side Shine.png")
-        SideGlowRight = Image.open("7//Sideglow 1 Right.png")
-        ShadowTop = Image.open("7//Shadow Top.png")
-        ShadowRight = Image.open("7//Shadow Right.png")
-        ShadowBottom = Image.open("7//Shadow Bottom.png")
-        ShadowLeft = Image.open("7//Shadow Left.png")
+        _paths = ["W7:Glass Frame.png", "W7:Close Button Single.png", "W7:Sideglow 1 Left.png",
+                  "W7:Side Shine.png", "W7:Sideglow 1 Right.png", "W7:Shadow Top.png", "W7:Shadow Right.png",
+                  "W7:Shadow Bottom.png", "W7:Shadow Left.png"]
+        Window, CloseButton, SideGlowLeft, SideShine, SideGlowRight, ShadowTop, \
+            ShadowRight, ShadowBottom, ShadowLeft = [Image.open(
+                QFileInfo(path).canonicalFilePath()).convert("RGBA") for path in _paths]
     else:
-        Window = Image.open("7//Glass Frame Inactive.png")
-        # CloseButton = Image.open("7//Close Button Single Inactive.png")
-        SideGlowLeft = Image.open("7//Sideglow 2 Left.png")
-        SideShine = Image.open("7//Side Shine Inactive.png")
-        SideGlowRight = Image.open("7//Sideglow 2 Right.png")
-        ShadowTop = Image.open("7//Shadow Top Inactive.png")
-        ShadowRight = Image.open("7//Shadow Right Inactive.png")
-        ShadowBottom = Image.open("7//Shadow Bottom Inactive.png")
-        ShadowLeft = Image.open("7//Shadow Left Inactive.png")
-    # CloseSymbol = Image.open("7//Close Symbol.png").convert("RGBA")
-    GlassImg = Image.open("7//Glass.png")
-    GlassMask = Image.open("7//Glass Mask.png").convert("RGBA")
-    # TextGlow = Image.open("7//Text Glow.png").convert("RGBA")
+        _paths = ["W7:Glass Frame Inactive.png", "W7:Close Button Single Inactive.png", "W7:Sideglow 2 Left.png",
+                  "W7:Side Shine Inactive.png", "W7:Sideglow 2 Right.png", "W7:Shadow Top Inactive.png",
+                  "W7:Shadow Right Inactive.png", "W7:Shadow Bottom Inactive.png", "W7:Shadow Left Inactive.png",
+                  "W7:Close Symbol.png", "W7:Glass.png", "W7:Glass Mask.png", "W7:Text Glow.png"]
+        Window, CloseButton, SideGlowLeft, SideShine, SideGlowRight, ShadowTop, \
+            ShadowRight, ShadowBottom, ShadowLeft, CloseSymbol, GlassImg, GlassMask, TextGlow = [Image.open(
+                QFileInfo(path).canonicalFilePath()).convert("RGBA") for path in _paths]
     width = contentwidth+8+8
     height = contentheight+8+30
     GlassMask = resize(GlassMask, width, height, 8, 8, 30, 8)
@@ -1069,12 +1084,13 @@ def Create7Window(icon="", text="", title="", active=True, buttons=[]):
     textpos = 0
     textposy = 25+13
     if (text != ""):
-        TextDim = measuretext7(text, "7//fonts//text//", kerningadjust=-1)
+        TextDim = measuretext7(text, r"W7:fonts/text", kerningadjust=-1)
         contentwidth = max(contentwidth, TextDim[0]+38+12)
         contentheight += TextDim[1]
         textposy = textposy-min(TextDim[1], 21)
     if (icon != ""):
-        IconImg = Image.open(icon).convert("RGBA")
+        IconImg = Image.open(
+            QFileInfo(icon).canonicalFilePath()).convert("RGBA")
         contentwidth = max(contentwidth, w(IconImg)+25+25)
         contentheight = max(contentheight, h(IconImg)+26+26)
         textpos += w(IconImg)-4+25
@@ -1082,13 +1098,13 @@ def Create7Window(icon="", text="", title="", active=True, buttons=[]):
         if (text != ""):
             contentwidth = max(contentwidth, w(IconImg)+25+TextDim[0]+38+9)
     if (title != ""):
-        TitleDim = measuretext7(title, "7//fonts//text//", kerningadjust=-1)
+        TitleDim = measuretext7(title, r"W7:fonts/text", kerningadjust=-1)
         contentwidth = max(contentwidth, TitleDim[0]+49)
     buttonswidth = 0
     # len(buttons)*95
     for i in buttons:
         tempbuttontextsize = measuretext7(
-            i[0], "7/fonts/text/", kerningadjust=-1)
+            i[0], r"W7:fonts/text", kerningadjust=-1)
         buttonswidth += max(tempbuttontextsize[0]+16, 86) + 10
     if (buttons):
         contentheight += 49
@@ -1098,7 +1114,7 @@ def Create7Window(icon="", text="", title="", active=True, buttons=[]):
         CONTENT = put(CONTENT, IconImg, 25, 26)
     if (text != ""):
         CONTENT = createtext7(CONTENT, textpos+12, textposy,
-                              text, "7//fonts//text//", kerningadjust=-1)
+                              text, r"W7:fonts/text", kerningadjust=-1)
     if (buttons):
         CONTENT = put(CONTENT, Image.new("RGBA", (contentwidth, 49),
                       (240, 240, 240)), 0, contentheight, "02")
@@ -1110,29 +1126,20 @@ def Create7Window(icon="", text="", title="", active=True, buttons=[]):
                        buttonpos, contentheight-12, "22")
         buttonpos += w(Button)
     if active:
-        Window = Image.open("7//Window.png")
-        CloseButton = Image.open("7//Close Button Single.png")
-        SideGlowLeft = Image.open("7//Sideglow 1 Left.png")
-        SideShine = Image.open("7//Side Shine.png")
-        SideGlowRight = Image.open("7//Sideglow 1 Right.png")
-        ShadowTop = Image.open("7//Shadow Top.png")
-        ShadowRight = Image.open("7//Shadow Right.png")
-        ShadowBottom = Image.open("7//Shadow Bottom.png")
-        ShadowLeft = Image.open("7//Shadow Left.png")
+        _paths = ["W7:Window.png", "W7:Close Button Single.png", "W7:Sideglow 1 Left.png",
+                  "W7:Side Shine.png", "W7:Sideglow 1 Right.png", "W7:Shadow Top.png",
+                  "W7:Shadow Right.png", "W7:Shadow Bottom.png", "W7:Shadow Left.png"]
     else:
-        Window = Image.open("7//Window Inactive.png")
-        CloseButton = Image.open("7//Close Button Single Inactive.png")
-        SideGlowLeft = Image.open("7//Sideglow 2 Left.png")
-        SideShine = Image.open("7//Side Shine Inactive.png")
-        SideGlowRight = Image.open("7//Sideglow 2 Right.png")
-        ShadowTop = Image.open("7//Shadow Top Inactive.png")
-        ShadowRight = Image.open("7//Shadow Right Inactive.png")
-        ShadowBottom = Image.open("7//Shadow Bottom Inactive.png")
-        ShadowLeft = Image.open("7//Shadow Left Inactive.png")
-    CloseSymbol = Image.open("7//Close Symbol.png").convert("RGBA")
-    GlassImg = Image.open("7//Glass.png")
-    GlassMask = Image.open("7//Glass Mask.png").convert("RGBA")
-    TextGlow = Image.open("7//Text Glow.png").convert("RGBA")
+        _paths = ["W7:Window Inactive.png", "W7:Close Button Single Inactive.png", "W7:Sideglow 2 Left.png",
+                  "W7:Side Shine Inactive.png", "W7:Sideglow 2 Right.png", "W7:Shadow Top Inactive.png",
+                  "W7:Shadow Right Inactive.png", "W7:Shadow Bottom Inactive.png", "W7:Shadow Left Inactive.png"]
+    Window, CloseButton, SideGlowLeft, SideShine, SideGlowRight, \
+        ShadowTop, ShadowRight, ShadowBottom, ShadowLeft = [Image.open(
+            QFileInfo(path).canonicalFilePath()).convert("RGBA") for path in _paths]
+    _paths = ["W7:Close Symbol.png", "W7:Glass.png",
+              "W7:Glass Mask.png", "W7:Text Glow.png"]
+    CloseSymbol, GlassImg, GlassMask, TextGlow = [Image.open(
+        QFileInfo(path).canonicalFilePath()).convert("RGBA") for path in _paths]
     width = contentwidth+8+8
     height = contentheight+8+30
     GlassMask = resize(GlassMask, width, height, 8, 8, 30, 8)
@@ -1151,7 +1158,7 @@ def Create7Window(icon="", text="", title="", active=True, buttons=[]):
         WithBorder = put(WithBorder, resize(
             TextGlow, TitleDim[0]+7+14+10, h(TextGlow), 23, 23, 1, 1), -7, 0)
         WithBorder = createtext7(
-            WithBorder, 8, 7, title, "7//fonts//text//", kerningadjust=-1)
+            WithBorder, 8, 7, title, r"W7:fonts/text", kerningadjust=-1)
 
     WithBorder = put(WithBorder, resize(
         Window, width, height, 8, 8, 30, 8), 0, 0)
@@ -1217,19 +1224,20 @@ def Create7TaskDialog(icon="", textbig="", textsmall="", title="", buttons=[], c
     height = 0
     iconsize = 0
     if (title != ""):
-        TitleDim = measuretext7(title, "7//fonts//text//", kerningadjust=-1)
+        TitleDim = measuretext7(title, r"W7:fonts/text", kerningadjust=-1)
     if (icon != ""):
-        IconImg = Image.open(icon).convert("RGBA")
+        IconImg = Image.open(
+            QFileInfo(icon).canonicalFilePath()).convert("RGBA")
         iconsize = w(IconImg)+10
         height += iconsize+10
     textbigheight = 0
     if (textbig != ""):
         textbigheight = measuretext7(
-            textbig, "7/fonts/bigtext/", fit=width-iconsize-10-10)[1]+10
+            textbig, r"W7:fonts/bigtext", fit=width-iconsize-10-10)[1]+10
         height = max(height, textbigheight+10+30)
     if (textsmall != ""):
         height = max(height, measuretext7(
-            textsmall, "7/fonts/text/", fit=width-iconsize-10-10)[1]+15+15)
+            textsmall, r"W7:fonts/text", fit=width-iconsize-10-10)[1]+15+15)
     if buttons:
         height += 41
     CONTENT = Image.new("RGBA", (width, height), (255, 255, 255, 255))
@@ -1237,11 +1245,11 @@ def Create7TaskDialog(icon="", textbig="", textsmall="", title="", buttons=[], c
         CONTENT = put(CONTENT, IconImg, 10, 10)
 
     if (textbig != ""):
-        CONTENT = createtext7(CONTENT, iconsize+10, 10, textbig, "7/fonts/bigtext/",
+        CONTENT = createtext7(CONTENT, iconsize+10, 10, textbig, r"W7:fonts/bigtext",
                               (0, 51, 153, 255), kerningadjust=-1, fit=width-iconsize-10-10)
     if (textsmall != ""):
         CONTENT = createtext7(CONTENT, iconsize+10, textbigheight+15, textsmall,
-                              "7/fonts/text/", kerningadjust=-1, fit=width-iconsize-10-10)
+                              r"W7:fonts/text", kerningadjust=-1, fit=width-iconsize-10-10)
     if buttons:
         CONTENT = put(CONTENT, Image.new("RGBA", (width, 40),
                       (240, 240, 240, 255)), 0, height, "02")
@@ -1254,29 +1262,20 @@ def Create7TaskDialog(icon="", textbig="", textsmall="", title="", buttons=[], c
         buttonpos += w(ButtonImg)+8
 
     if active:
-        Window = Image.open("7//Window.png")
-        CloseButton = Image.open("7//Close Button Single.png")
-        SideGlowLeft = Image.open("7//Sideglow 1 Left.png")
-        SideShine = Image.open("7//Side Shine.png")
-        SideGlowRight = Image.open("7//Sideglow 1 Right.png")
-        ShadowTop = Image.open("7//Shadow Top.png")
-        ShadowRight = Image.open("7//Shadow Right.png")
-        ShadowBottom = Image.open("7//Shadow Bottom.png")
-        ShadowLeft = Image.open("7//Shadow Left.png")
+        _paths = ["W7:Window.png", "W7:Close Button Single.png", "W7:Sideglow 1 Left.png",
+                  "W7:Side Shine.png", "W7:Sideglow 1 Right.png", "W7:Shadow Top.png",
+                  "W7:Shadow Right.png", "W7:Shadow Bottom.png", "W7:Shadow Left.png"]
     else:
-        Window = Image.open("7//Window Inactive.png")
-        CloseButton = Image.open("7//Close Button Single Inactive.png")
-        SideGlowLeft = Image.open("7//Sideglow 2 Left.png")
-        SideShine = Image.open("7//Side Shine Inactive.png")
-        SideGlowRight = Image.open("7//Sideglow 2 Right.png")
-        ShadowTop = Image.open("7//Shadow Top Inactive.png")
-        ShadowRight = Image.open("7//Shadow Right Inactive.png")
-        ShadowBottom = Image.open("7//Shadow Bottom Inactive.png")
-        ShadowLeft = Image.open("7//Shadow Left Inactive.png")
-    CloseSymbol = Image.open("7//Close Symbol.png").convert("RGBA")
-    GlassImg = Image.open("7//Glass.png").convert("RGBA")
-    GlassMask = Image.open("7//Glass Mask.png").convert("RGBA")
-    TextGlow = Image.open("7//Text Glow.png").convert("RGBA")
+        _paths = ["W7:Window Inactive.png", "W7:Close Button Single Inactive.png", "W7:Sideglow 2 Left.png",
+                  "W7:Side Shine Inactive.png", "W7:Sideglow 2 Right.png", "W7:Shadow Top Inactive.png",
+                  "W7:Shadow Right Inactive.png", "W7:Shadow Bottom Inactive.png", "W7:Shadow Left Inactive.png"]
+    Window, CloseButton, SideGlowLeft, SideShine, SideGlowRight, \
+        ShadowTop, ShadowRight, ShadowBottom, ShadowLeft = [Image.open(
+            QFileInfo(path).canonicalFilePath()).convert("RGBA") for path in _paths]
+    _paths = ["W7:Close Symbol.png", "W7:Glass.png",
+              "W7:Glass Mask.png", "W7:Text Glow.png"]
+    CloseSymbol, GlassImg, GlassMask, TextGlow = [Image.open(
+        QFileInfo(path).canonicalFilePath()).convert("RGBA") for path in _paths]
 
     width = width+8+8
     height = height+8+30
@@ -1296,7 +1295,7 @@ def Create7TaskDialog(icon="", textbig="", textsmall="", title="", buttons=[], c
         WithBorder = put(WithBorder, resize(
             TextGlow, TitleDim[0]+7+14+10, h(TextGlow), 23, 23, 1, 1), -7, 0)
         WithBorder = createtext7(
-            WithBorder, 8, 7, title, "7//fonts//text//", kerningadjust=-1)
+            WithBorder, 8, 7, title, r"W7:fonts/text", kerningadjust=-1)
 
     WithBorder = put(WithBorder, resize(
         Window, width, height, 8, 8, 30, 8), 0, 0)
@@ -1314,7 +1313,8 @@ def Create7TaskDialog(icon="", textbig="", textsmall="", title="", buttons=[], c
                 13+17, 18, 28, 27, 1, 1), 0, height+12)
     IMAGE = put(IMAGE, WithBorder, 13, 12)
     if (wallpaper != ""):
-        WallpaperImg = Image.open(wallpaper).convert("RGBA")
+        WallpaperImg = Image.open(
+            QFileInfo(wallpaper).canonicalFilePath()).convert("RGBA")
         IMAGE = put(WallpaperImg, IMAGE, pos[0]-13, pos[1]-12)
     return IMAGE
 
@@ -1359,11 +1359,12 @@ def Create3_1Window(icon="", text="", title="", buttons=[], active=True):
     textposy = 16
     iconposy = 17
     if (text != ""):
-        TextImg = createtextmac(text, "3.1//fonts//text//")
+        TextImg = createtextmac(text, r"W3.1:fonts/text")
         contentwidth += w(TextImg)+18+17
         contentheight += h(TextImg)+16+16
     if (icon != ""):
-        IconImg = Image.open(icon).convert("RGBA")
+        IconImg = Image.open(
+            QFileInfo(icon).canonicalFilePath()).convert("RGBA")
         textpos += w(IconImg)+19
         contentwidth += w(IconImg)+18
         contentwidth = max(contentwidth, w(IconImg)+19+19)
@@ -1371,7 +1372,7 @@ def Create3_1Window(icon="", text="", title="", buttons=[], active=True):
         if (text != ""):
             textposy = max(16, h(IconImg)//2-h(TextImg)//2+17)
     if (title != ""):
-        TitleImg = createtextmac(text, "3.1//fonts//text//")
+        TitleImg = createtextmac(text, r"W3.1:fonts/text")
         contentwidth = max(contentwidth, w(TitleImg)+20+1)
     if buttons:
         contentheight += 44
@@ -1383,10 +1384,13 @@ def Create3_1Window(icon="", text="", title="", buttons=[], active=True):
     contentwidth = max(contentwidth, buttonswidth+17)
     contentwidth = even(contentwidth)
     if active:
-        Window = Image.open("3.1//Window.png").convert("RGBA")
+        Window = Image.open(
+            QFileInfo("W3.1:Window.png").canonicalFilePath()).convert("RGBA")
     else:
-        Window = Image.open("3.1//Window Inactive.png").convert("RGBA")
-    CloseButton = Image.open("3.1//Close Button.png").convert("RGBA")
+        Window = Image.open(
+            QFileInfo("W3.1:Window Inactive.png").canonicalFilePath()).convert("RGBA")
+    CloseButton = Image.open(
+        QFileInfo("W3.1:Close Button.png").canonicalFilePath()).convert("RGBA")
     CONTENT = Image.new(
         "RGBA", (contentwidth, contentheight), (255, 255, 255, 255))
     if (text != ""):
@@ -1414,9 +1418,9 @@ def Create3_1Window(icon="", text="", title="", buttons=[], active=True):
     if (title != ""):
         if active:
             TitleImg = createtextmac(
-                title, "3.1//fonts//text//", (255, 255, 255, 255))
+                title, r"W3.1:fonts/text", (255, 255, 255, 255))
         else:
-            TitleImg = createtextmac(title, "3.1//fonts//text//")
+            TitleImg = createtextmac(title, r"W3.1:fonts/text")
         IMAGE = put(IMAGE, TitleImg, floor(
             (contentwidth-20-1)/2-w(TitleImg)/2)+19+6, 6)
     return IMAGE
@@ -1429,11 +1433,11 @@ def CreateUbuntuWindow(icon="", bigtext="", text="", title="", buttons=[], activ
     textwidth = 0
     textheight = 0
     if (bigtext != ""):
-        bigtextsize = measuretext7(bigtext, "ubuntu/fonts/bigtext/")
+        bigtextsize = measuretext7(bigtext, r"ubuntu:fonts/bigtext")
         textwidth += bigtextsize[0]
         textheight += bigtextsize[1]+12
     if (text != ""):
-        textsize = measuretext7(text, "ubuntu/fonts/text/")
+        textsize = measuretext7(text, r"ubuntu:fonts/text")
         textwidth = max(textwidth, textsize[0])
         textheight += textsize[1]
     else:
@@ -1441,7 +1445,8 @@ def CreateUbuntuWindow(icon="", bigtext="", text="", title="", buttons=[], activ
     contentwidth += textwidth
     contentheight = max(contentheight, textheight+12+24+16)
     if (icon != ""):
-        IconImg = Image.open(icon).convert("RGBA")
+        IconImg = Image.open(
+            QFileInfo(icon).canonicalFilePath()).convert("RGBA")
         contentwidth += w(IconImg)
         contentheight = max(contentheight, h(IconImg)+12+24+16)
     maxbuttonwidth = 0
@@ -1460,25 +1465,27 @@ def CreateUbuntuWindow(icon="", bigtext="", text="", title="", buttons=[], activ
     if (bigtext == ""):
         if (text != ""):
             CONTENT = createtextubuntu(
-                CONTENT, iconsize+24, 12, text, "ubuntu/fonts/text/", (60, 59, 55, 255))
+                CONTENT, iconsize+24, 12, text, r"ubuntu:fonts/text", (60, 59, 55, 255))
     else:
         CONTENT = createtextubuntu(
-            CONTENT, iconsize+24, 12, bigtext, "ubuntu/fonts/bigtext/", (60, 59, 55, 255))
+            CONTENT, iconsize+24, 12, bigtext, r"ubuntu:fonts/bigtext", (60, 59, 55, 255))
         if (text != ""):
             CONTENT = createtextubuntu(
-                CONTENT, iconsize+24, bigtextsize[1]+12+12, text, "ubuntu/fonts/text/", (60, 59, 55, 255))
+                CONTENT, iconsize+24, bigtextsize[1]+12+12, text, r"ubuntu:fonts/text", (60, 59, 55, 255))
     buttonpos = contentwidth-12
     for button in buttons:
         CONTENT = put(CONTENT, CreateUbuntuButton(button[0], active and button[1] or 0, [
                       maxbuttonwidth, maxbuttonheight]), buttonpos, contentheight-16, "22")
         buttonpos -= maxbuttonwidth+8
 
-    Frame = Image.open(active and "ubuntu/Window.png" or (
-        not active and "ubuntu/Window Inactive.png")).convert("RGBA")
-    CloseButton = Image.open(active and "ubuntu/Close Button.png" or (
-        not active and "ubuntu/Close Button Inactive.png")).convert("RGBA")
-    Mask = Image.open("ubuntu/Mask.png").convert("RGBA")
-    Highlight = Image.open("ubuntu/Highlight.png").convert("RGBA")
+    if active:
+        _paths = ["ubuntu:Window.png", "ubuntu:Close Button.png"]
+    else:
+        _paths = ["ubuntu:Window Inactive.png",
+                  "ubuntu:Close Button Inactive.png"]
+    _paths += ["ubuntu:Mask.png", "ubuntu:Highlight.png", "ubuntu:Shadow.png"]
+    Frame, CloseButton, Mask, Highlight, Shadow = [Image.open(
+        QFileInfo(path).canonicalFilePath()).convert("RGBA") for path in _paths]
     Mask = resize(Mask, contentwidth, contentheight, 5, 5, 1, 4)
     WINDOW = resize(Frame, contentwidth+1+1, contentheight+27+1, 5, 5, 27, 5)
     WINDOW = put(WINDOW, ImageChops.multiply(Mask, CONTENT), 1, 27)
@@ -1487,16 +1494,15 @@ def CreateUbuntuWindow(icon="", bigtext="", text="", title="", buttons=[], activ
     WINDOW = put(WINDOW, Highlight, contentwidth+1, 27)
     if (title != ""):
         WINDOW = createtextubuntu(
-            WINDOW, 42, 6, title, "ubuntu/fonts/caption/", (51, 51, 51, 255))
+            WINDOW, 42, 6, title, r"ubuntu:fonts/caption", (51, 51, 51, 255))
         WINDOW = createtextubuntu(
-            WINDOW, 42, 4, title, "ubuntu/fonts/caption/", (51, 51, 51, 255))
+            WINDOW, 42, 4, title, r"ubuntu:fonts/caption", (51, 51, 51, 255))
         WINDOW = createtextubuntu(
-            WINDOW, 41, 5, title, "ubuntu/fonts/caption/", (51, 51, 51, 255))
+            WINDOW, 41, 5, title, r"ubuntu:fonts/caption", (51, 51, 51, 255))
         WINDOW = createtextubuntu(
-            WINDOW, 43, 5, title, "ubuntu/fonts/caption/", (51, 51, 51, 255))
+            WINDOW, 43, 5, title, r"ubuntu:fonts/caption", (51, 51, 51, 255))
         WINDOW = createtextubuntu(
-            WINDOW, 42, 5, title, "ubuntu/fonts/caption/", (223, 216, 200, 255))
-    Shadow = Image.open("ubuntu/Shadow.png").convert("RGBA")
+            WINDOW, 42, 5, title, r"ubuntu:fonts/caption", (223, 216, 200, 255))
     IMAGE = resize(Shadow, contentwidth+1+1+8+10,
                    contentheight+27+1+8+10, 20, 20, 21, 21)
     IMAGE = put(IMAGE, WINDOW, 8, 8)
@@ -1516,13 +1522,14 @@ def Create95Window(icon="", text="", title="", buttons=[], active=True, closebut
     textshift = 0
     iconheight = 32
     if (icon):
-        IconImg = Image.open(icon).convert("RGBA")
+        IconImg = Image.open(
+            QFileInfo(icon).canonicalFilePath()).convert("RGBA")
         width += w(IconImg)+12+12
         height = max(height, h(IconImg)+12+6)
         textshift += w(IconImg)+10
         iconheight = h(IconImg)
     if (text):
-        TextImg = createtextmac(text, "95/fonts/text/")
+        TextImg = createtextmac(text, r"W95:fonts/text")
         width = max(width, w(TextImg)+textshift+18+11)
         height = max(height, h(TextImg)+12+6)
     # print(buttons)
@@ -1558,19 +1565,22 @@ def Create95Window(icon="", text="", title="", buttons=[], active=True, closebut
         IMAGE = put(IMAGE, ButtonsImg, floor(
             width/2-w(ButtonsImg)/2)+1, height-12, "02")
     if active:
-        Window = Image.open("95/Window.png").convert("RGBA")
+        Window = Image.open(
+            QFileInfo(r"W95:Window.png").canonicalFilePath()).convert("RGBA")
     else:
-        Window = Image.open("95/Window Inactive.png").convert("RGBA")
+        Window = Image.open(
+            QFileInfo(r"W95:Window Inactive.png").canonicalFilePath()).convert("RGBA")
     if closebutton:
-        CloseButton = Image.open("95/Close Button.png").convert("RGBA")
-    else:
         CloseButton = Image.open(
-            "95/Close Button Disabled.png").convert("RGBA")
+            QFileInfo(r"W95:Close Button.png").canonicalFilePath()).convert("RGBA")
+    else:
+        CloseButton = Image.open(QFileInfo(
+            r"W95:Close Button Disabled.png").canonicalFilePath()).convert("RGBA")
     IMAGE = put(resize(Window, width+2+2, height +
                 21+2, 3, 3, 21, 2), IMAGE, 2, 21)
     if (title):
         TitleImg = createtextmac(
-            title, "95/fonts/caption/", (255, 255, 255) if active else (192, 192, 192))
+            title, r"W95:fonts/caption", (255, 255, 255) if active else (192, 192, 192))
         IMAGE = put(IMAGE, TitleImg, 5, 5)
     print(IMAGE.size)
     IMAGE = put(IMAGE, CloseButton, width-1, 5, "20")
@@ -1583,13 +1593,14 @@ def Create98Window(icon="", text="", title="", buttons=[], active=True, closebut
     textshift = 0
     iconheight = 32
     if (icon):
-        IconImg = Image.open(icon).convert("RGBA")
+        IconImg = Image.open(
+            QFileInfo(icon).canonicalFilePath()).convert("RGBA")
         width += w(IconImg)+12+12
         height = max(height, h(IconImg)+12+6)
         textshift += w(IconImg)+10
         iconheight = h(IconImg)
     if (text):
-        TextImg = createtextmac(text, "95/fonts/text/")
+        TextImg = createtextmac(text, r"W95:fonts/text")
         width = max(width, w(TextImg)+textshift+18+11)
         height = max(height, h(TextImg)+12+6)
     if (buttons):
@@ -1625,14 +1636,17 @@ def Create98Window(icon="", text="", title="", buttons=[], active=True, closebut
         IMAGE = put(IMAGE, ButtonsImg, floor(
             width/2-w(ButtonsImg)/2)+1, height-12, "02")
     if active:
-        Window = Image.open("95/Window.png").convert("RGBA")
+        Window = Image.open(
+            QFileInfo(r"W95:Window.png").canonicalFilePath()).convert("RGBA")
     else:
-        Window = Image.open("95/Window Inactive.png").convert("RGBA")
+        Window = Image.open(
+            QFileInfo(r"W95:Window Inactive.png").canonicalFilePath()).convert("RGBA")
     if closebutton:
-        CloseButton = Image.open("95/Close Button.png").convert("RGBA")
-    else:
         CloseButton = Image.open(
-            "95/Close Button Disabled.png").convert("RGBA")
+            QFileInfo(r"W95:Close Button.png").canonicalFilePath()).convert("RGBA")
+    else:
+        CloseButton = Image.open(QFileInfo(
+            r"W95:Close Button Disabled.png").canonicalFilePath()).convert("RGBA")
     IMAGE = put(resize(Window, width+2+2, height +
                 21+2, 3, 3, 21, 2), IMAGE, 2, 21)
     if active:
@@ -1647,7 +1661,7 @@ def Create98Window(icon="", text="", title="", buttons=[], active=True, closebut
                     gradient1inactive, gradient2inactive), 3, 3)
     if (title):
         TitleImg = createtextmac(
-            title, "95/fonts/caption/", (255, 255, 255) if active else (192, 192, 192))
+            title, r"W95:fonts/caption", (255, 255, 255) if active else (192, 192, 192))
         IMAGE = put(IMAGE, TitleImg, 5, 5)
     # print(IMAGE.size)
     IMAGE = put(IMAGE, CloseButton, width-1, 5, "20")
@@ -1660,13 +1674,14 @@ def Create2000Window(icon="", text="", title="", buttons=[], active=True, closeb
     textshift = 0
     iconheight = 32
     if (icon):
-        IconImg = Image.open(icon).convert("RGBA")
+        IconImg = Image.open(
+            QFileInfo(icon).canonicalFilePath()).convert("RGBA")
         width += w(IconImg)+12+12
         height = max(height, h(IconImg)+12+6)
         textshift += w(IconImg)+10
         iconheight = h(IconImg)
     if (text):
-        TextImg = createtext(text, "xp/fonts/text/", (0, 0, 0, 255))
+        TextImg = createtext(text, r"Wxp:fonts/text", (0, 0, 0, 255))
         width = max(width, w(TextImg)+textshift+18+11)
         height = max(height, h(TextImg)+12+6)
     if (buttons):
@@ -1702,14 +1717,17 @@ def Create2000Window(icon="", text="", title="", buttons=[], active=True, closeb
         IMAGE = put(IMAGE, ButtonsImg, floor(
             width/2-w(ButtonsImg)/2)+1, height-12, "02")
     if active:
-        Window = Image.open("2000/Window.png").convert("RGBA")
+        Window = Image.open(
+            QFileInfo(r"W2000:Window.png").canonicalFilePath()).convert("RGBA")
     else:
-        Window = Image.open("2000/Window Inactive.png").convert("RGBA")
+        Window = Image.open(
+            QFileInfo(r"W2000:Window Inactive.png").canonicalFilePath()).convert("RGBA")
     if closebutton:
-        CloseButton = Image.open("2000/Close Button.png").convert("RGBA")
+        CloseButton = Image.open(
+            QFileInfo(r"W2000:Close Button.png").canonicalFilePath()).convert("RGBA")
     else:
         CloseButton = Image.open(
-            "2000/Close Button Disabled.png").convert("RGBA")
+            QFileInfo(r"W2000:Close Button Disabled.png").canonicalFilePath()).convert("RGBA")
     IMAGE = put(resize(Window, width+2+2, height +
                 21+2, 3, 3, 21, 2), IMAGE, 2, 21)
     if active:
@@ -1723,7 +1741,7 @@ def Create2000Window(icon="", text="", title="", buttons=[], active=True, closeb
         IMAGE = put(IMAGE, gradient(width-2-19, 18,
                     (128, 128, 128), (192, 192, 192)), 3, 3)
     if (title):
-        TitleImg = createtext(title, "xp/fonts/text/", (255, 255, 255, 255)
+        TitleImg = createtext(title, r"Wxp:fonts/text", (255, 255, 255, 255)
                               if active else (212, 208, 200, 255), kerningadjust=1)
         IMAGE = put(IMAGE, TitleImg, 5, 5)
         IMAGE = put(IMAGE, TitleImg, 6, 5)
@@ -1735,38 +1753,21 @@ def Create2000Window(icon="", text="", title="", buttons=[], active=True, closeb
 def FrameXPWindow(image, title, active=True, close=1, maximize=1, minimize=1, question=0):
     if (maximize-1) & 3 == 3:
         if active:
-            TopFrame = Image.open("xp/Frame Up Active.png").convert("RGBA")
-            LeftFrame = Image.open(
-                "xp/Frame Left Active Unresizable.png").convert("RGBA")
-            RightFrame = Image.open(
-                "xp/Frame Right Active Unresizable.png").convert("RGBA")
-            BottomFrame = Image.open(
-                "xp/Frame Bottom Active Unresizable.png").convert("RGBA")
+            _paths = ["Wxp:Frame Up Active.png", "Wxp:Frame Left Active Unresizable.png",
+                      "Wxp:Frame Right Active Unresizable.png", "Wxp:Frame Bottom Active Unresizable.png"]
         else:
-            TopFrame = Image.open("xp/Frame Up Inactive.png").convert("RGBA")
-            LeftFrame = Image.open(
-                "xp/Frame Left Inactive Unresizable.png").convert("RGBA")
-            RightFrame = Image.open(
-                "xp/Frame Right Inactive Unresizable.png").convert("RGBA")
-            BottomFrame = Image.open(
-                "xp/Frame Bottom Inactive Unresizable.png").convert("RGBA")
+            _paths = ["Wxp:Frame Up Inactive.png", "Wxp:Frame Left Inactive Unresizable.png",
+                      "Wxp:Frame Right Inactive Unresizable.png", "Wxp:Frame Bottom Inactive Unresizable.png"]
     else:
         if active:
-            TopFrame = Image.open("xp/Frame Up Active.png").convert("RGBA")
-            LeftFrame = Image.open("xp/Frame Left Active.png").convert("RGBA")
-            RightFrame = Image.open(
-                "xp/Frame Right Active.png").convert("RGBA")
-            BottomFrame = Image.open(
-                "xp/Frame Bottom Active.png").convert("RGBA")
+            _paths = ["Wxp:Frame Up Active.png", "Wxp:Frame Left Active.png",
+                      "Wxp:Frame Right Active.png", "Wxp:Frame Bottom Active.png"]
         else:
-            TopFrame = Image.open("xp/Frame Up Inactive.png").convert("RGBA")
-            LeftFrame = Image.open(
-                "xp/Frame Left Inactive.png").convert("RGBA")
-            RightFrame = Image.open(
-                "xp/Frame Right Inactive.png").convert("RGBA")
-            BottomFrame = Image.open(
-                "xp/Frame Bottom Inactive.png").convert("RGBA")
-    CONTENT = Image.open(image).convert("RGBA")
+            _paths = ["Wxp:Frame Up Inactive.png", "Wxp:Frame Left Inactive.png",
+                      "Wxp:Frame Right Inactive.png", "Wxp:Frame Bottom Inactive.png"]
+    TopFrame, LeftFrame, RightFrame, BottomFrame = [Image.open(
+        QFileInfo(path).canonicalFilePath()).convert("RGBA") for path in _paths]
+    CONTENT = Image.open(QFileInfo(image).canonicalFilePath()).convert("RGBA")
     width = w(CONTENT)+w(RightFrame)+w(LeftFrame)
     height = h(CONTENT)+h(TopFrame)+h(BottomFrame)
     IMAGE = Image.new("RGBA", (width, height), (0, 0, 0, 0))
@@ -1784,34 +1785,38 @@ def FrameXPWindow(image, title, active=True, close=1, maximize=1, minimize=1, qu
     IMAGE = put(IMAGE, CONTENT, w(LeftFrame), h(TopFrame), "00")
     buttonsoffset = 0
     if (close != 0):
-        Buttons = Image.open("xp/Close Buttons.png").convert("RGBA")
+        Buttons = Image.open(
+            QFileInfo(r"Wxp:Close Buttons.png").canonicalFilePath()).convert("RGBA")
         IMAGE = put(IMAGE, take(Buttons, 8, close-1+4*(not active)),
                     width-5-buttonsoffset, 5, "20")
         buttonsoffset += w(Buttons)+2
     if (maximize != 0):
-        Buttons = Image.open("xp/Maximize Buttons.png").convert("RGBA")
+        Buttons = Image.open(
+            QFileInfo(r"Wxp:Maximize Buttons.png").canonicalFilePath()).convert("RGBA")
         IMAGE = put(IMAGE, take(Buttons, 8, maximize-1+4 *
                     (not active)), width-5-buttonsoffset, 5, "20")
         buttonsoffset += w(Buttons)+2
     if (minimize != 0):
-        Buttons = Image.open("xp/Minimize Buttons.png").convert("RGBA")
+        Buttons = Image.open(
+            QFileInfo(r"Wxp:Minimize Buttons.png").canonicalFilePath()).convert("RGBA")
         IMAGE = put(IMAGE, take(Buttons, 8, minimize-1+4 *
                     (not active)), width-5-buttonsoffset, 5, "20")
         buttonsoffset += w(Buttons)+2
     if (question != 0):
-        Buttons = Image.open("xp/Help Buttons.png").convert("RGBA")
+        Buttons = Image.open(
+            QFileInfo(r"Wxp:Help Buttons.png").canonicalFilePath()).convert("RGBA")
         IMAGE = put(IMAGE, take(Buttons, 8, question-1+4 *
                     (not active)), width-5-buttonsoffset, 5, "20")
         buttonsoffset += w(Buttons)+2
     if title:
         if active:
             IMAGE = put(IMAGE, createtext(
-                title, "./xp/fonts/captionshadow/", (10, 24, 131, 255)), 8, 8, "00")
+                title, r"Wxp:fonts/captionshadow", (10, 24, 131, 255)), 8, 8, "00")
             IMAGE = put(IMAGE, createtext(
-                title, "./xp/fonts/caption/"), 7, 7, "00")
+                title, r"Wxp:fonts/caption"), 7, 7, "00")
         else:
             IMAGE = put(IMAGE, createtext(
-                title, "./xp/fonts/caption/", (216, 228, 248, 255)), 7, 7, "00")
+                title, r"Wxp:fonts/caption", (216, 228, 248, 255)), 7, 7, "00")
     return IMAGE
 # Example XP windows:
 # o = CreateXPWindow(0,0,"Notepad",errortext="The text in the Untitled file has changed.\n\nDo you want to save the changes?",button1="Yes",button2="No",button3="Cancel",button1style=4)

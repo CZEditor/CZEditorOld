@@ -1,13 +1,16 @@
 from PIL import Image
+from PySide6.QtCore import QFileInfo
 
 openedimages = {}
 newimages = {}
 emptyimage = Image.new("RGBA", (1, 1), (0, 0, 0, 0))
 
 
+# TODO: find out why is this referenced a total of one time
+# even though it's supposed to be a global cache
 def openimage(s):
     if s not in openedimages:
-        openedimages[s] = Image.open(s).convert("RGBA")
+        openedimages[s] = Image.open(QFileInfo(s).canonicalFilePath()).convert("RGBA")
     return openedimages[s].copy()
 
 

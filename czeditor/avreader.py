@@ -2,13 +2,15 @@ import av
 import av.container
 import numpy as np
 
+from PySide6.QtCore import QFileInfo
+
 
 # PyAV video reader with intelligent seeking.
 class PyAVSeekableVideoReader:
 
     def __init__(self, filename):
         self._filename = filename
-        self._container: av.container.InputContainer = av.open(self._filename)
+        self._container: av.container.InputContainer = av.open(QFileInfo(self._filename).canonicalFilePath())
         self._stream = self._container.streams.video[0]
         self._currentFrame = 0
         self.frame_rate = float(self._stream.average_rate)
