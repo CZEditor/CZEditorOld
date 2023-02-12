@@ -1,13 +1,14 @@
 poetry.lock:
 	poetry install --without=dev
-dev: poetry.lock
+dev:
 	poetry install
 run: | poetry.lock
-	poetry run python czeditor.py
+	poetry run python -m czeditor
 
-install:
+build: | poetry.lock
 	poetry build
-	pip install dist/*.whl
+install: build
+	python -m pip install dist/*.whl
 
 clean:
 	rm -rf build dist *.build *.dist
@@ -15,4 +16,4 @@ dist-clean: | clean
 	rm -rf .venv poetry.lock
 	git clean -ixd
 
-.PHONY: run clean dist-clean
+.PHONY: run build clean dist-clean
