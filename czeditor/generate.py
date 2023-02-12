@@ -548,7 +548,8 @@ def Create3_1Button(text, style=0, underline=False):
     if style == 1:
         Button = resize(Button, max(58, w(textgraphic)+5+5),
                         h(textgraphic)+6+6, 4, 4, 4, 4)
-        Border = Image.open(r"W3.1:Button Text Outline.png").convert("RGBA")
+        Border = Image.open(
+            QFileInfo("W3.1:Button Text Outline.png").canonicalFilePath()).convert("RGBA")
         BorderImg = tile(Border, max(58, w(textgraphic)+5+5),
                          h(textgraphic)+6+6)
         textx = floor(w(Button)/2-w(textgraphic)/2-1)
