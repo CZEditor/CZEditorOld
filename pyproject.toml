@@ -20,12 +20,13 @@ scipy = "^1.10"
 sounddevice = "~0.4"
 av = "^10.0.0"
 
-[tool.poetry.dev-dependencies]
+[tool.poetry.group.dev.dependencies]
+ordered-set = "^4.1.0"
 nuitka = "^1.3"
 autopep8 = "~2.0"
 pylint = "^2.14"
-orderedset = "^2.0"
 
 [build-system]
-requires = ["poetry-core", "nuitka"]
-build-backend = "nuitka.distutils.Build"
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
