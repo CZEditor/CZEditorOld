@@ -17,10 +17,10 @@ from PySide6.QtWidgets import (QGraphicsScene, QGraphicsView, QLabel,
                                QMainWindow, QSizePolicy, QSplitter, QWidget)
 
 from czeditor.base_ui import *
-from czeditor.compositingfunctions import *
-from czeditor.imagefunctions import *
+from czeditor.effectfunctions import *
+from czeditor.sourcefunctions import *
 from czeditor.keyframes import *
-from czeditor.statefunctions import *
+from czeditor.actionfunctions import *
 from czeditor.ui import *
 from czeditor.util import *
 
@@ -38,7 +38,7 @@ def stateprocessor(frame, keyframes, windowClass):
     for keyframe in keyframes:
         if keyframe.frame > frame:
             break
-        state = keyframe.state(state, windowClass)
+        state = keyframe.actOnKeyframes(state, windowClass)
     state = sorted(state, key=lambda k: k.layer)
     return state
 
@@ -78,7 +78,7 @@ def getsound(state, sample):
     first = True
     buffer = np.zeros((512, 2))
     for keyframe in state:
-        gotten = keyframe.sound(sample)[0]
+        gotten = keyframe.getSound(sample)[0]
         if (len(gotten.shape) != 0):
             gotten = np.pad(
                 gotten, ((0, 512-gotten.shape[0]), (0, 0)), "constant", constant_values=(0, 0))
@@ -224,12 +224,12 @@ class CzeViewport(QWidget):
             self.scene.removeItem(handle)
         self.handles = []
         if (self.parentclass.selectedframe):
-            self.createhandle(self.parentclass.selectedframe, self.parentclass.selectedframe.params.image.function(
+            self.createhandle(self.parentclass.selectedframe, self.parentclass.selectedframe.params.source.function(
             ), self.parentclass.selectedframe.params)
-            for param in self.parentclass.selectedframe.params.compositing:
+            for param in self.parentclass.selectedframe.params.effects:
                 self.createhandle(
                     self.parentclass.selectedframe, param.function(), param)
-            for param in self.parentclass.selectedframe.params.states:
+            for param in self.parentclass.selectedframe.params.actions:
                 self.createhandle(
                     self.parentclass.selectedframe, param.function(), param)
 
@@ -306,9 +306,9 @@ class Window(QMainWindow):
     def __init__(self):
         super().__init__()
         self.playbackframe = 100
-        self.imagefunctionsdropdown = imagefunctionsdropdown
-        self.actionfunctionsdropdown = statefunctionsdropdown
-        self.effectfunctionsdropdown = compositingfunctionsdropdown
+        self.sourcefunctionsdropdown = sourcefunctionsdropdown
+        self.actionfunctionsdropdown = actionfunctionsdropdown
+        self.effectfunctionsdropdown = effectfunctionsdropdown
         self.keyframes = Keyframelist(self)
         self.setWindowTitle("CZEditor")
         self.setGeometry(100, 100, 1280, 720)
@@ -412,15 +412,14 @@ class Window(QMainWindow):
         self.seeking = True
 
         try:
-
             for keyframe in self.currentframestate:
-                if hasattr(keyframe.params.image.function(), "seek"):
-                    keyframe.params.image.function().seek(
-                        keyframe.params.image.params, frame-keyframe.frame)
-                for action in keyframe.params.states:
+                if hasattr(keyframe.params.source.function(), "seek"):
+                    keyframe.params.source.function().seek(
+                        keyframe.params.source.params, frame-keyframe.frame)
+                for action in keyframe.params.actions:
                     if hasattr(action.function(), "seek"):
                         action.function().seek(action.params, frame-keyframe.frame)
-                for effect in keyframe.params.compositing:
+                for effect in keyframe.params.effects:
                     if hasattr(effect.function(), "seek"):
                         effect.function().seek(effect.params, frame-keyframe.frame)
         except Exception:

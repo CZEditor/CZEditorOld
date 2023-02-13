@@ -34,7 +34,7 @@ class ImageComposite():
         "relativeheight": 100
     })
 
-    def composite(canvas, imageparam, params, parentclass, keyframe):
+    def imageEffect(canvas, imageparam, params, parentclass, keyframe):
         img = imageparam.function().image(imageparam.params, parentclass)
         # put this in the onupdate function! make sure that it gets called only after the image has been updated
         params.params.width = int(img.size[0]*params.params.relativewidth/100)
@@ -57,183 +57,6 @@ class ImageComposite():
         return self.name
 
 
-class SoundFile():
-    name = "Sound"
-    params = Params({
-        "volume": IntProperty(50),
-        "secrets": TransientProperty(Params({
-            "lastplaying": False
-        }))
-    })
-
-    def soundeffect(source, params, sample):
-        return source
-
-    def __str__(self):
-        return self.name
-
-
-class Unholy():
-    name = "Unholy"
-    params = Params({
-        "x": IntProperty(0),
-        "y": IntProperty(0),
-        "z": IntProperty(0),
-        "size": SizeProperty(1280, 720, 1280, 720),
-        "Xrotation": IntProperty(0),
-        "Yrotation": IntProperty(0),
-        "Zrotation": IntProperty(0),
-        "relativewidth": IntProperty(100),
-        "relativeheight": IntProperty(100),
-        "shader": StringProperty("color = texture(image,pos);"),
-        "secrets": TransientProperty(Params({
-            "textureid": 0,
-            "vbo": 0,
-            "vao": 0,
-            "pbo": 0,
-            "lastsize": (32, 32),
-            "lastshader": "",
-            "shader": None
-        }))
-
-    })
-
-    def composite(imageparam, params, parentclass, keyframe, frame):
-       # composite(image,vertices,shader,windowObject,keyframe,frame) - > (image,vertices,shader)
-        width, height = params.params.size()
-        img, size = imageparam.function().image(imageparam.params, parentclass, frame)
-        imgdata = img.flatten()
-
-        positions = np.array([[-width/2, -height/2, 0.0],
-                              [width/2,  -height/2, 0.0],
-                              [width/2,  height/2, 0.0],
-                              [-width/2,  -height/2, 0.0],
-                              [-width/2,  height/2, 0.0],
-                              [width/2,  height/2, 0.0]])
-        positions = Rotation.from_euler("xyz", (params.params.Xrotation(
-        ), params.params.Yrotation(), params.params.Zrotation()), True).apply(positions)
-        secrets = params.params.secrets()
-        # print(positions)
-        vertexes = np.array([
-            positions[0][0]-1280/2+params.params.x(),  positions[0][1]-720 /
-            2+params.params.y(), positions[0][2]+params.params.z(), 0.0, 0.0,
-            positions[1][0]-1280/2+params.params.x(),  positions[1][1]-720 /
-            2+params.params.y(), positions[1][2]+params.params.z(), 1.0, 0.0,
-            positions[2][0]-1280/2+params.params.x(),  positions[2][1]-720 /
-            2+params.params.y(), positions[2][2]+params.params.z(), 1.0, 1.0,
-            positions[3][0]-1280/2+params.params.x(),  positions[3][1]-720 /
-            2+params.params.y(), positions[3][2]+params.params.z(), 0.0, 0.0,
-            positions[4][0]-1280/2+params.params.x(),  positions[4][1]-720 /
-            2+params.params.y(), positions[4][2]+params.params.z(), 0.0, 1.0,
-            positions[5][0]-1280/2+params.params.x(),  positions[5][1]-720/2+params.params.y(), positions[5][2]+params.params.z(), 1.0, 1.0], dtype=np.float32)
-        if (secrets.lastshader != params.params.shader()):
-            secrets.shader = compileProgram(compileShader("""#version 450 core
-layout (location=0) in vec3 vertexPos;
-layout (location=1) in vec2 vertexColor;
-uniform highp mat4 matrix;
-out vec2 pos;
-void main()
-{
-    //gl_Position = round(matrix*vec4(vertexPos, 1.0)*256)/256;
-    gl_Position = matrix*vec4(vertexPos, 1.0);
-    pos = vertexColor;
-}""", GL_VERTEX_SHADER),
-                                            compileShader("""#version 450 core
-in vec2 pos;
-uniform sampler2D image;
-uniform float t;
-out vec4 color;
-void main()
-{
-    """+params.params.shader()+"""
-}""", GL_FRAGMENT_SHADER))
-            secrets.lastshader = params.params.shader()
-        if (not secrets.vao):
-            # Create a pbo
-            params.params.size.setbase(size)
-            secrets.pbo = glGenBuffers(1)
-            glBindBuffer(GL_PIXEL_UNPACK_BUFFER, secrets.pbo)
-            CopyToBuffer(imgdata.ctypes.data, size[0]*size[1]*4)
-            # Generate a texture
-            secrets.textureid = glGenTextures(1)
-            glBindTexture(GL_TEXTURE_2D, secrets.textureid)
-            CreateTexture(0, size)
-            glBindTexture(GL_TEXTURE_2D, 0)
-            glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0)
-            # Generate a vertex array
-            secrets.vao = glGenVertexArrays(1)
-            glBindVertexArray(secrets.vao)
-            # Generate a vertex buffer
-            secrets.vbo = glGenBuffers(1)
-            glBindBuffer(GL_ARRAY_BUFFER, secrets.vbo)
-            # Set geometry of the quad
-            glBufferData(GL_ARRAY_BUFFER, vertexes, GL_DYNAMIC_DRAW)
-            glEnableVertexAttribArray(0)
-            glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 20, c_void_p(0))
-            glEnableVertexAttribArray(1)
-            glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 20, c_void_p(12))
-            glBindBuffer(GL_ARRAY_BUFFER, 0)
-            glBindVertexArray(0)
-            secrets.lastsize = size
-        elif secrets.lastsize[0] != size[0] or secrets.lastsize[1] != size[1]:
-            params.params.size.setbase(size)
-            glBindTexture(GL_TEXTURE_2D, 0)
-            # Delete the buffer
-            glDeleteBuffers(1, [secrets.pbo])
-
-            # Make a new buffer
-            secrets.pbo = glGenBuffers(1)
-
-            glBindTexture(GL_TEXTURE_2D, secrets.textureid)
-            CreateTexture(0, size)
-            glBindTexture(GL_TEXTURE_2D, 0)
-
-            glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0)
-            secrets.lastsize = size
-        else:
-            # print(glIsTexture(params.params.textureid))
-            glBindBuffer(GL_ARRAY_BUFFER, secrets.vbo)
-            # Set geometry of the quad
-            glBufferData(GL_ARRAY_BUFFER, np.array(
-                vertexes, dtype=np.float32), GL_DYNAMIC_DRAW)
-            glBindBuffer(GL_ARRAY_BUFFER, 0)
-            glBindBuffer(GL_PIXEL_UNPACK_BUFFER, secrets.pbo)
-            glBindTexture(GL_TEXTURE_2D, secrets.textureid)
-            UpdateTextureWithBuffer(
-                imgdata.ctypes.data, size[0]*size[1]*4, size)
-            # glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,size[0],size[1],0,GL_RGBA,GL_UNSIGNED_BYTE,c_void_p(0))
-
-            glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0)
-            # Draw the quad
-            glUseProgram(secrets.shader)
-            glEnable(GL_DEPTH_TEST)
-            glEnable(GL_BLEND)
-            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-            projection = QMatrix4x4()
-            projection.frustum(-1280/32, 1280/32, 720/32, -720/32, 64, 4096)
-            projection.translate(0, 0, -1024)
-            glUniformMatrix4fv(glGetUniformLocation(
-                secrets.shader, "matrix"), 1, GL_FALSE, np.array(projection.data(), dtype=np.float32))
-            glUniform1i(glGetUniformLocation(secrets.shader, "image"), 0)
-            glUniform1f(glGetUniformLocation(secrets.shader, "t"), frame)
-            glActiveTexture(GL_TEXTURE0)
-            glBindVertexArray(secrets.vao)
-            glDrawArrays(GL_TRIANGLES, 0, 6)
-            glBindVertexArray(0)
-            glBindTexture(GL_TEXTURE_2D, 0)
-
-    def onupdate(self, imageparam, params, parentclass, keyframe):
-        img = imageparam.function().image(imageparam.params, parentclass)
-        params.params.width.set(
-            int(img.size[0]*params.params.relativewidth/100))
-        params.params.height.set(
-            int(img.size[1]*params.params.relativeheight/100))
-
-    def handle(keyframe, parentclass, params):
-        return [CzeViewportDraggableHandle(None, parentclass, params.params.x, params.params.y)]
-
-    def __str__(self):
-        return self.name
 
 
 class Media2D:
@@ -248,7 +71,7 @@ class Media2D:
         }))
     })
 
-    def composite(image, vertices, shader, params, windowObject, keyframe, frame):
+    def imageEffect(image, vertices, shader, params, windowObject, keyframe, frame):
 
         transient = params.transient()
 
@@ -305,7 +128,7 @@ class Media3D:
         }))
     })
 
-    def composite(image, vertices, shader, params, windowObject, keyframe, frame):
+    def imageEffect(image, vertices, shader, params, windowObject, keyframe, frame):
 
         transient = params.transient()
 
@@ -359,7 +182,7 @@ class BasicShader:
         }))
     })
 
-    def composite(image, vertices, shader, params, windowObject, keyframe, frame):
+    def imageEffect(image, vertices, shader, params, windowObject, keyframe, frame):
         transient = params.transient()
         if (transient.shader is None):
 
@@ -385,7 +208,7 @@ class ScrollingShader:
         }))
     })
 
-    def composite(image, vertices, shader, params, windowObject, keyframe, frame):
+    def imageEffect(image, vertices, shader, params, windowObject, keyframe, frame):
         transient = params.transient()
         if (transient.shader is None):
 
@@ -412,7 +235,7 @@ class TilingShader:
         }))
     })
 
-    def composite(image, vertices, shader, params, windowObject, keyframe, frame):
+    def imageEffect(image, vertices, shader, params, windowObject, keyframe, frame):
         transient = params.transient()
         if (transient.shader is None):
 
@@ -440,7 +263,7 @@ class CustomShader:
         }))
     })
 
-    def composite(image, vertices, shader, params, windowObject, keyframe, frame):
+    def imageEffect(image, vertices, shader, params, windowObject, keyframe, frame):
         transient = params.transient()
         # There may be a better way to avoid function name collisions, but this works, it's just not really efficient.
         index = len(shader)
@@ -474,7 +297,7 @@ class CustomColorShader:
         }))
     })
 
-    def composite(image, vertices, shader, params, windowObject, keyframe, frame):
+    def imageEffect(image, vertices, shader, params, windowObject, keyframe, frame):
         transient = params.transient()
         # There may be a better way to avoid function name collisions, but this works, it's just not really efficient.
         index = len(shader)
@@ -504,7 +327,7 @@ class CustomCode:
         "code": StringProperty("")
     })
 
-    def composite(image, vertices, shader, params, windowObject, keyframe, frame):
+    def imageEffect(image, vertices, shader, params, windowObject, keyframe, frame):
         try:
             localdict = {"image": image, "vertices": vertices, "shader": shader,
                          "frame": frame, "keyframe": keyframe, "windowObject": windowObject}
@@ -527,7 +350,7 @@ class Shader():
             "lastshader":""
         }))
     })
-    def composite(imageparam,params)"""
+    def imageEffect(imageparam,params)"""
 
 
 class BlurShader:
@@ -538,7 +361,7 @@ class BlurShader:
         }))
     })
 
-    def composite(image, vertices, shader, params, windowObject, keyframe, frame):
+    def imageEffect(image, vertices, shader, params, windowObject, keyframe, frame):
         transient = params.transient()
         if (transient.shader is None):
 
@@ -570,7 +393,7 @@ class GlitchShader:
         }))
     })
 
-    def composite(image, vertices, shader, params, windowObject, keyframe, frame):
+    def imageEffect(image, vertices, shader, params, windowObject, keyframe, frame):
         transient = params.transient()
         if (transient.shader is None):
 
@@ -603,7 +426,7 @@ class CustomVertexShader:
         }))
     })
 
-    def composite(image, vertices, shader, params, windowObject, keyframe, frame):
+    def imageEffect(image, vertices, shader, params, windowObject, keyframe, frame):
         transient = params.transient()
         # There may be a better way to avoid function name collisions, but this works, it's just not really efficient.
         index = len(shader)
@@ -624,7 +447,7 @@ class CustomVertexShader:
         return image, vertices, shader
 
 
-compositingfunctionsdropdown = [["Media 2D", Media2D], ["Media 3D", Media3D], ["Basic Shader", BasicShader], ["Scrolling Shader", ScrollingShader], ["Tiling Shader", TilingShader], [
+effectfunctionsdropdown = [["Media 2D", Media2D], ["Media 3D", Media3D], ["Basic Shader", BasicShader], ["Scrolling Shader", ScrollingShader], ["Tiling Shader", TilingShader], [
     "Custom Shader", CustomShader], ["Custom Code", CustomCode], ["Blur Shader", BlurShader], ["Glitch Shader", GlitchShader], ["Custom Vertex Shader", CustomVertexShader], ["Custom Color Shader", CustomColorShader]]
 # ["Normal Media",ImageComposite],
 

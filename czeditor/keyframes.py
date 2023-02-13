@@ -19,10 +19,6 @@ class Keyframe():
         self.layer = layer
         self.params = param
 
-        self.imageparams = param.image
-        self.stateparams = param.states
-        self.compositingparams = param.compositing
-
         self.shared = Params({})
 
         self.lastShaderList = None
@@ -37,29 +33,29 @@ class Keyframe():
     def copy(self):
         return Keyframe(self.frame, self.layer, self.params.copy())
 
-    def image(self, parentclass):  # TODO : Rename this to source
-        return self.params.image.function().image(self.imageparams.params, parentclass, parentclass.playbackframe-self.frame)
+    def getImage(self, parentclass):  # TODO : Rename this to source
+        return self.params.source.function().image(self.params.source.params, parentclass, parentclass.playbackframe-self.frame)
 
-    def state(self, statetomodify, windowClass):  # action
-        for stateparam in self.stateparams:
-            statetomodify = stateparam.function().state(statetomodify, self, stateparam,
+    def actOnKeyframes(self, keyframeToModify, windowClass):  # action
+        for action in self.params.actions:
+            keyframeToModify = action.function().action(keyframeToModify, self, action,
                                                         windowClass.playbackframe-self.frame)
-        return statetomodify
+        return keyframeToModify
 
     def composite(self, windowObject, spectrum):
 
-        if (not hasattr(self.params.image.function(), "image")):
+        if (not hasattr(self.params.source.function(), "image")):
             return
-        image = self.image(windowObject)
+        image = self.getImage(windowObject)
         imageDataPointer = image.ctypes.data
-        spectrumDataPointer = spectrum.ctypes.data
+
         vertices = np.empty((0, 5), dtype=np.float32)
         shader = []
 
-        for compositingparam in self.compositingparams:
-            if hasattr(compositingparam.function(), "composite"):
-                image, vertices, shader = compositingparam.function().composite(image, vertices, shader,
-                                                                                compositingparam.params, windowObject, self, windowObject.playbackframe-self.frame)
+        for effect in self.params.effects:
+            if hasattr(effect.function(), "imageEffect"):
+                image, vertices, shader = effect.function().imageEffect(image, vertices, shader,
+                                                                                effect.params, windowObject, self, windowObject.playbackframe-self.frame)
         if (not shader):
             return
         vertices = vertices.flatten()
@@ -221,36 +217,36 @@ class Keyframe():
 
         glBindTexture(GL_TEXTURE_2D, 0)
 
-    def sound(self, sample):
-        if hasattr(self.imageparams.function(), "sound"):
-            source = self.imageparams.function().sound(
-                self.imageparams.params, sample-int(self.frame/60*48000))
-            for soundeffectparam in self.compositingparams:
-                if hasattr(soundeffectparam.function(), "soundeffect"):
-                    source = soundeffectparam.function().soundeffect(
-                        source, soundeffectparam, sample-int(self.frame/60*48000))
+    def getSound(self, sample):
+        if hasattr(self.params.source.function(), "sound"):
+            source = self.params.source.function().sound(
+                self.params.source.params, sample-int(self.frame/60*48000))
+            for soundeffect in self.params.effects:
+                if hasattr(soundeffect.function(), "soundeffect"):
+                    source = soundeffect.function().soundeffect(
+                        source, soundeffect, sample-int(self.frame/60*48000))
             return source
         return np.zeros((512, 2)), 48000
 
     def timelineitems(self):
         items = []
-        for action in self.params.states:
+        for action in self.params.actions:
             if hasattr(action.function(), "timelineitem"):
                 items.append(action.function().timelineitem(
                     action.params, self))
-        for effect in self.params.compositing:
+        for effect in self.params.effects:
             if hasattr(effect.function(), "timelineitem"):
                 items.append(effect.function().timelineitem(
                     effect.params, self))
         return items
 
     def initialize(self):
-        if hasattr(self.params.image.function(), "initialize"):
-            self.params.image.function().initialize(self.params.image.params)
-        for action in self.params.states:
+        if hasattr(self.params.source.function(), "initialize"):
+            self.params.source.function().initialize(self.params.source.params)
+        for action in self.params.actions:
             if hasattr(action.function(), "initialize"):
                 action.function().initialize(action.params)
-        for effect in self.params.compositing:
+        for effect in self.params.effects:
             if hasattr(effect.function(), "initialize"):
                 effect.function().initialize(effect.params)
 
@@ -381,13 +377,13 @@ class Keyframelist():
                         "name": LineStringProperty(""),
                     }
                 },
-                "image":
+                "source":
                 {
-                    "function": Selectable(0, self.windowClass.imagefunctionsdropdown),
-                    "params": Selectable(0, self.windowClass.imagefunctionsdropdown)().params.copy()
+                    "function": Selectable(0, self.windowClass.sourcefunctionsdropdown),
+                    "params": Selectable(0, self.windowClass.sourcefunctionsdropdown)().params.copy()
                 },
-                "states": [],
-                "compositing": []
+                "actions": [],
+                "effects": []
             }
         ))
         self.append(addedkeyframe)
