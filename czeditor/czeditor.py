@@ -8,6 +8,7 @@ from typing import *
 import numpy as np
 import sounddevice
 from moviepy.video.VideoClip import VideoClip
+from moviepy.audio.AudioClip import AudioClip
 from PIL import Image
 from PySide6.QtCore import QPoint, QSize, Qt, QTimerEvent
 from PySide6.QtGui import (QImage, QKeyEvent, QMouseEvent, QPixmap,
@@ -23,6 +24,7 @@ from czeditor.keyframes import *
 from czeditor.actionfunctions import *
 from czeditor.ui import *
 from czeditor.util import *
+from czeditor.avreader import PyAVAudioWriter
 
 UIDropdownLists = [
     [NormalImage, XPError],
@@ -57,13 +59,7 @@ def frameprocessor(frame, keyframes):
             return returnkeyframes
 
 
-def getframeimage(i):
-    global keyframes
-    i = i * 60
-    processedkeyframes = frameprocessor(i, keyframes)
-    state = stateprocessor(processedkeyframes)
-    image: Image = composite(state)
-    return np.asarray(image.convert("RGB"))
+
 
 
 def getstate(i, windowClass):
@@ -88,12 +84,7 @@ def getsound(state, sample):
 # mpyconfig.FFMPEG_BINARY = "ffmpeg"
 
 
-def render(filename, length, keyframes):
 
-    clip = VideoClip(getframeimage, duration=length / 60)
-    # clip.write_videofile(filename=filename, fps=60, codec="libx264rgb", ffmpeg_params=["-strict","-2"]) perfection, doesnt embed | don't delete this
-    clip.write_videofile(filename=filename, fps=60, codec="libvpx-vp9", ffmpeg_params=[
-                         "-pix_fmt", "yuv444p"], write_logfile=True)  # perfection, embeds only on pc
 
 
 rendered = None
@@ -197,6 +188,8 @@ class CzeViewport(QWidget):
 
     def sizeHint(self):
         return QSize(1280, 720)
+
+    
 
     def updateviewportimage(self, state, spectrum):
         global rendered
@@ -350,6 +343,7 @@ class Window(QMainWindow):
         self.skipfuturesobject = None
         self.rendering = False
         self.currentspectrum = np.zeros(512)
+        self.renderaudiobuffer = np.zeros(0)
 
     def updateviewport(self):
         self.needtoupdate = True
@@ -361,12 +355,52 @@ class Window(QMainWindow):
     def regeneratekeyframeoptions(self):
         self.keyframeoptions.regenerate()
 
+    def getframeimage(self,i):
+        i = i * 60
+        self.playbackframe = i
+        self.currentframestate = getstate(i,self)
+        sound = getsound(self.currentframestate, int(i/60*48000))
+        if (sound[32, 0] != self.currentaudio[512+32]):
+            self.currentaudio[:512] = self.currentaudio[512:]
+            self.currentaudio[512:] = sound[:, 0]
+        self.currentspectrum = np.fft.rfft(self.currentaudio)
+        self.currentspectrum = self.currentspectrum[:512]
+        self.currentspectrum = np.abs(self.currentspectrum)
+        self.viewport.updateviewportimage(self.currentframestate,self.currentspectrum)
+        self.viewport.videorenderer.repaint()
+        if rendered:
+            resultimage = np.frombuffer(rendered,dtype=np.uint8)
+            resultimage = np.reshape(resultimage,(720,1280,4))
+            resultimage = resultimage[:,:,:3]
+            resultimage = np.flip(resultimage,0)
+            return resultimage
+        return np.zeros((1280,720,3))
+
+    def getframesound(self):
+        self.playbackframe = int(self.playbacksample/48000*60)
+        self.currentframestate = getstate(self.playbackframe,self)
+        returned = np.reshape(getsound(self.currentframestate, self.playbacksample)[:,0],(1,512))
+        self.playbacksample += 512
+        return returned
+
+    def render(self,filename, length):
+        self.playbacksample = 0
+        self.renderaudiobuffer = np.zeros(0)
+        clip = VideoClip(self.getframeimage, duration=length / 60)
+        audiowriter = PyAVAudioWriter(self.getframesound,"_tempaudio.mp3")
+        audiowriter.writeaudio(int(length/60*48000))
+        # clip.write_videofile(filename=filename, fps=60, codec="libx264rgb", ffmpeg_params=["-strict","-2"]) perfection, doesnt embed | don't delete this
+        clip.write_videofile(filename=filename, fps=60, codec="libvpx-vp9", ffmpeg_params=[
+                            "-pix_fmt", "yuv444p", "-crf", "25", "-b:v", "0"], write_logfile=True,audio="_tempaudio.mp3")  # perfection, embeds only on pc
+        os.remove("_tempaudio.mp3")
     def keyPressEvent(self, event: QKeyEvent) -> None:
         # print(event.text())
         if event.text() == " ":
             self.isplaying = not self.isplaying
             self.starttime = perf_counter()
             self.startframe = self.playbackframe
+        #elif event.text() == "r":
+        #    self.render("renderedvideo.mp4",600)
         return super().keyPressEvent(event)
 
     def getnextsoundchunk(self, outdata, frames, time, status):

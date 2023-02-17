@@ -1,5 +1,6 @@
 import av
 import av.container
+
 import numpy as np
 
 from PySide6.QtCore import QFileInfo
@@ -68,3 +69,24 @@ class PyAVSeekableVideoReader:
 
     def close(self):
         self._container.close()
+
+class PyAVAudioWriter:
+
+    def __init__(self,nextsamples,filename):
+        self._filename = filename
+        self._samplefunction = nextsamples
+    
+    def writeaudio(self,samples):
+        self._container = av.open(self._filename,"w")
+        self._stream = self._container.add_stream("mp3",48000)
+        self._stream.channels = 1
+        self._stream.sample_rate = 48000
+        self._currentsample = 0
+        while self._currentsample < samples:
+            frame = av.AudioFrame.from_ndarray(np.ndarray.astype(self._samplefunction(),"<f8"),format="dbl",layout="mono")
+            frame.sample_rate = 48000
+            for packet in self._stream.encode(frame):
+                self._container.mux(packet)
+            self._currentsample += 512
+        self._container.close()
+    
