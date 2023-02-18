@@ -132,3 +132,6 @@ dmypy.json
 
 # Poetry lock file
 poetry.lock
+
+# Nuitka temporary directory
+*.onefile-build/

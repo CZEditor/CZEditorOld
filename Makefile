@@ -1,19 +1,21 @@
 poetry.lock:
 	poetry install --without=dev
-dev:
+dev: poetry.lock
 	poetry install
-run: | poetry.lock
+run: poetry.lock
 	poetry run python -m czeditor
 
-build: | poetry.lock
-	poetry build
+build: dev
+	poetry build --format wheel
 install: build
 	python -m pip install dist/*.whl
+bundle: dev
+	poetry run python -m nuitka --onefile --enable-plugin=pyside6 czeditor
 
 clean:
-	rm -rf build dist *.build *.dist
+	rm -rf build dist *.build *.dist *.onefile-build
 dist-clean: | clean
 	rm -rf .venv poetry.lock
 	git clean -ixd
 
-.PHONY: run build clean dist-clean
+.PHONY: run build install bundle clean dist-clean
