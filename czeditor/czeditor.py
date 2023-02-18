@@ -91,12 +91,12 @@ rendered = None
 
 
 class CzeVideoView(QOpenGLWidget):
-    def __init__(self, parentclass, parent=None):
+    def __init__(self, windowObject, parent=None):
         # print(parentclass,parent)
         super().__init__(parent)
         self.state = []
         self.spectrum = np.zeros(512)
-        self.parentclass = parentclass
+        self.windowObject = windowObject
 
     def initializeGL(self):
 
@@ -133,15 +133,21 @@ class CzeVideoView(QOpenGLWidget):
         glBindVertexArray(self.vao)
         # for keyframeId in range(len(self.state)):
         #    self.state[-keyframeId-1].composite(self.parentclass) # It is required to composite from end to beginning because OpenGL renders front-to-back rather than back-to-front
-        self.parentclass.rendering = True
+        projection = QMatrix4x4()
+        #projection.frustum(-1280/32, 1280/32, 720/32, -720/32, 64, 131072)
+        projection.perspective(self.windowObject.cameraParams.fov, 1280/720,1,32768)
+        projection.rotate(QQuaternion.fromEulerAngles(self.windowObject.cameraParams.pitch, self.windowObject.cameraParams.yaw, self.windowObject.cameraParams.roll))
+        projection.translate(self.windowObject.cameraParams.x,self.windowObject.cameraParams.y,self.windowObject.cameraParams.z)
+        #print(projection)
+        self.windowObject.rendering = True
         for keyframe in self.state:
-            keyframe.composite(self.parentclass, self.spectrum)
+            keyframe.composite(self.windowObject, self.spectrum,projection)
         glBindBuffer(GL_ARRAY_BUFFER, 0)
         glBindVertexArray(0)
 
         rendered = glReadPixels(
             0, 0, 1280, 720, GL_RGBA, GL_UNSIGNED_BYTE, None)
-        self.parentclass.rendering = False
+        self.windowObject.rendering = False
 
 
 class CzeViewport(QWidget):
@@ -198,7 +204,6 @@ class CzeViewport(QWidget):
         self.videorenderer.update()
         if (rendered):
             img = QImage(rendered, 1280, 720, QImage.Format_RGBA8888)
-            img.mirror(False, True)
             self.picture = QPixmap.fromImage(img)
             # self.picture = self.picture.scaled(QSize(min(self.size().width(),1280),min(self.size().height(),720)),Qt.AspectRatioMode.KeepAspectRatio)
             self.viewportimage.setPixmap(self.picture)
@@ -308,6 +313,8 @@ class Window(QMainWindow):
         # button = QRedButton(self,"yeah",4,4,lambda: print("pressed"))
         self.setStyleSheet(
             "background-color: qradialgradient(spread:pad, cx:4.5, cy:4.5, radius:7, fx:4.5, fy:4.5, stop:0 rgba(255, 0, 0, 255), stop:1 rgba(0, 0, 0, 255));  color: rgb(255,192,192);")
+
+        self.cameraParams = Params({"x": -1280/2, "y": -720/2, "z": -360, "pitch": 0, "yaw": 0, "roll": 0, "fov": 90})
         hozsplitter = QSplitter(Qt.Orientation.Vertical, self)
         # rightsplitter = QSplitter(hozsplitter)
         topsplitter = QSplitter(hozsplitter)
@@ -344,6 +351,7 @@ class Window(QMainWindow):
         self.rendering = False
         self.currentspectrum = np.zeros(512)
         self.renderaudiobuffer = np.zeros(0)
+        
 
     def updateviewport(self):
         self.needtoupdate = True
