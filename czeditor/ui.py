@@ -7,11 +7,11 @@ from PySide6.QtWidgets import (QFormLayout, QGraphicsItem, QGraphicsScene,
                                QWidget)
 
 from czeditor.base_ui import *
-from czeditor.compositingfunctions import *
+from czeditor.effectfunctions import *
 from czeditor.generate import *
-from czeditor.imagefunctions import *
+from czeditor.sourcefunctions import *
 from czeditor.keyframes import *
-from czeditor.statefunctions import *
+from czeditor.actionfunctions import *
 from czeditor.util import *
 
 playbackframe = 100
@@ -392,17 +392,17 @@ class CzeKeyframeOptionCategoryList(QRedFrame):
 
 class CzeKeyframeOptions(QRedScrollArea):
     baseparams = Params({  # BAD!!! TODO : While we wont support anything else than sources, effects and actions, but we can still generalize this.
-        "image": {
-            "function": Selectable(0, imagefunctionsdropdown),
-            "params": Selectable(0, imagefunctionsdropdown)().params.copy()
+        "source": {
+            "function": Selectable(0, sourcefunctionsdropdown),
+            "params": Selectable(0, sourcefunctionsdropdown)().params.copy()
         },
-        "states": {
-            "function": Selectable(0, statefunctionsdropdown),
-            "params": Selectable(0, statefunctionsdropdown)().params.copy()
+        "actions": {
+            "function": Selectable(0, actionfunctionsdropdown),
+            "params": Selectable(0, actionfunctionsdropdown)().params.copy()
         },
-        "compositing": {
-            "function": Selectable(0, compositingfunctionsdropdown),
-            "params": Selectable(0, compositingfunctionsdropdown)().params.copy()
+        "effects": {
+            "function": Selectable(0, effectfunctionsdropdown),
+            "params": Selectable(0, effectfunctionsdropdown)().params.copy()
         }
     })
 
@@ -867,10 +867,10 @@ class CzeTimeline(QWidget):
         self.keyframes[keyframe] = CzeTimelineKeyframeItem(keyframe)
         self.scene.addItem(self.keyframes[keyframe])
         self.keyframes[keyframe].setPos(keyframe.frame, -keyframe.layer*25)
-        self.createKeyframeItem(keyframe, keyframe.params.image)
-        for action in keyframe.params.states:
+        self.createKeyframeItem(keyframe, keyframe.params.source)
+        for action in keyframe.params.actions:
             self.createKeyframeItem(keyframe, action)
-        for effect in keyframe.params.compositing:
+        for effect in keyframe.params.effects:
             self.createKeyframeItem(keyframe, effect)
 
     def createKeyframeItem(self, keyframe: Keyframe, param: Params):
@@ -1028,18 +1028,18 @@ class CzePresets(QWidget):
                     "name": LineStringProperty("Image"),
                 }
             },
-            "image":
+            "source":
             {
-                "function": Selectable(0, self.parentclass.imagefunctionsdropdown),
-                "params": Selectable(0, self.parentclass.imagefunctionsdropdown)().params.copy()
+                "function": Selectable(0, self.parentclass.sourcefunctionsdropdown),
+                "params": Selectable(0, self.parentclass.sourcefunctionsdropdown)().params.copy()
             },
-            "states": [
+            "actions": [
                 {
                     "function": Selectable(0, self.parentclass.actionfunctionsdropdown),
                     "params": Selectable(0, self.parentclass.actionfunctionsdropdown)().params.copy()
                 }
             ],
-            "compositing": [
+            "effects": [
                 {
                     "function": Selectable(0, self.parentclass.effectfunctionsdropdown),
                     "params": Selectable(0, self.parentclass.effectfunctionsdropdown)().params.copy().set("x", IntProperty(640)).set("y", IntProperty(360))
@@ -1056,18 +1056,18 @@ class CzePresets(QWidget):
                         "name": LineStringProperty("Video"),
                     }
                 },
-                "image":
+                "source":
                 {
-                    "function": Selectable(5, self.parentclass.imagefunctionsdropdown),
-                    "params": Selectable(5, self.parentclass.imagefunctionsdropdown)().params.copy()
+                    "function": Selectable(4, self.parentclass.sourcefunctionsdropdown),
+                    "params": Selectable(4, self.parentclass.sourcefunctionsdropdown)().params.copy()
                 },
-                "states": [
+                "actions": [
                     {
                         "function": Selectable(0, self.parentclass.actionfunctionsdropdown),
                         "params": Selectable(0, self.parentclass.actionfunctionsdropdown)().params.copy()
                     }
                 ],
-                "compositing": [
+                "effects": [
                     {
                         "function": Selectable(0, self.parentclass.effectfunctionsdropdown),
                         "params": Selectable(0, self.parentclass.effectfunctionsdropdown)().params.copy().set("x", IntProperty(640)).set("y", IntProperty(360))

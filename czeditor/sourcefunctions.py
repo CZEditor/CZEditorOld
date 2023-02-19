@@ -104,7 +104,7 @@ class XPError():
         return self.name
 
 
-class SoundFile():
+"""class SoundFile():
     name = "Sound"
     params = Params(
         {
@@ -112,11 +112,8 @@ class SoundFile():
         }
     )
 
-    def image(param: Params, parentclass, frame):
-        return np.array(emptyimage)
-
     def __str__(self):
-        return self.name
+        return self.name"""
 
 
 class ImageSequence():
@@ -282,5 +279,4 @@ class Record():
         return self.name
 
 
-imagefunctionsdropdown = [["Image", NormalImage], ["Windows XP Error", XPError], ["Filled Rectangle", FilledRectangle], [
-    "Sound", SoundFile], ["Image Sequence", ImageSequence], ["Video", Video], ["Record", Record]]
+sourcefunctionsdropdown = [["Image", NormalImage], ["Windows XP Error", XPError], ["Filled Rectangle", FilledRectangle], ["Image Sequence", ImageSequence], ["Video", Video], ["Record", Record]]

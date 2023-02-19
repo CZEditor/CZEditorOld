@@ -8,6 +8,7 @@ from typing import *
 import numpy as np
 import sounddevice
 from moviepy.video.VideoClip import VideoClip
+from moviepy.audio.AudioClip import AudioClip
 from PIL import Image
 from PySide6.QtCore import QPoint, QSize, Qt, QTimerEvent
 from PySide6.QtGui import (QImage, QKeyEvent, QMouseEvent, QPixmap,
@@ -17,12 +18,13 @@ from PySide6.QtWidgets import (QGraphicsScene, QGraphicsView, QLabel,
                                QMainWindow, QSizePolicy, QSplitter, QWidget)
 
 from czeditor.base_ui import *
-from czeditor.compositingfunctions import *
-from czeditor.imagefunctions import *
+from czeditor.effectfunctions import *
+from czeditor.sourcefunctions import *
 from czeditor.keyframes import *
-from czeditor.statefunctions import *
+from czeditor.actionfunctions import *
 from czeditor.ui import *
 from czeditor.util import *
+from czeditor.avreader import PyAVAudioWriter
 
 UIDropdownLists = [
     [NormalImage, XPError],
@@ -38,7 +40,7 @@ def stateprocessor(frame, keyframes, windowClass):
     for keyframe in keyframes:
         if keyframe.frame > frame:
             break
-        state = keyframe.state(state, windowClass)
+        state = keyframe.actOnKeyframes(state, windowClass)
     state = sorted(state, key=lambda k: k.layer)
     return state
 
@@ -57,13 +59,7 @@ def frameprocessor(frame, keyframes):
             return returnkeyframes
 
 
-def getframeimage(i):
-    global keyframes
-    i = i * 60
-    processedkeyframes = frameprocessor(i, keyframes)
-    state = stateprocessor(processedkeyframes)
-    image: Image = composite(state)
-    return np.asarray(image.convert("RGB"))
+
 
 
 def getstate(i, windowClass):
@@ -78,7 +74,7 @@ def getsound(state, sample):
     first = True
     buffer = np.zeros((512, 2))
     for keyframe in state:
-        gotten = keyframe.sound(sample)[0]
+        gotten = keyframe.getSound(sample)[0]
         if (len(gotten.shape) != 0):
             gotten = np.pad(
                 gotten, ((0, 512-gotten.shape[0]), (0, 0)), "constant", constant_values=(0, 0))
@@ -88,24 +84,19 @@ def getsound(state, sample):
 # mpyconfig.FFMPEG_BINARY = "ffmpeg"
 
 
-def render(filename, length, keyframes):
 
-    clip = VideoClip(getframeimage, duration=length / 60)
-    # clip.write_videofile(filename=filename, fps=60, codec="libx264rgb", ffmpeg_params=["-strict","-2"]) perfection, doesnt embed | don't delete this
-    clip.write_videofile(filename=filename, fps=60, codec="libvpx-vp9", ffmpeg_params=[
-                         "-pix_fmt", "yuv444p"], write_logfile=True)  # perfection, embeds only on pc
 
 
 rendered = None
 
 
 class CzeVideoView(QOpenGLWidget):
-    def __init__(self, parentclass, parent=None):
+    def __init__(self, windowObject, parent=None):
         # print(parentclass,parent)
         super().__init__(parent)
         self.state = []
         self.spectrum = np.zeros(512)
-        self.parentclass = parentclass
+        self.windowObject = windowObject
 
     def initializeGL(self):
 
@@ -142,15 +133,21 @@ class CzeVideoView(QOpenGLWidget):
         glBindVertexArray(self.vao)
         # for keyframeId in range(len(self.state)):
         #    self.state[-keyframeId-1].composite(self.parentclass) # It is required to composite from end to beginning because OpenGL renders front-to-back rather than back-to-front
-        self.parentclass.rendering = True
+        projection = QMatrix4x4()
+        #projection.frustum(-1280/32, 1280/32, 720/32, -720/32, 64, 131072)
+        projection.perspective(self.windowObject.cameraParams.fov, 1280/720,1,32768)
+        projection.rotate(QQuaternion.fromEulerAngles(self.windowObject.cameraParams.pitch, self.windowObject.cameraParams.yaw, self.windowObject.cameraParams.roll))
+        projection.translate(self.windowObject.cameraParams.x,self.windowObject.cameraParams.y,self.windowObject.cameraParams.z)
+        #print(projection)
+        self.windowObject.rendering = True
         for keyframe in self.state:
-            keyframe.composite(self.parentclass, self.spectrum)
+            keyframe.composite(self.windowObject, self.spectrum,projection)
         glBindBuffer(GL_ARRAY_BUFFER, 0)
         glBindVertexArray(0)
 
         rendered = glReadPixels(
             0, 0, 1280, 720, GL_RGBA, GL_UNSIGNED_BYTE, None)
-        self.parentclass.rendering = False
+        self.windowObject.rendering = False
 
 
 class CzeViewport(QWidget):
@@ -198,6 +195,8 @@ class CzeViewport(QWidget):
     def sizeHint(self):
         return QSize(1280, 720)
 
+    
+
     def updateviewportimage(self, state, spectrum):
         global rendered
         self.videorenderer.state = state
@@ -205,7 +204,6 @@ class CzeViewport(QWidget):
         self.videorenderer.update()
         if (rendered):
             img = QImage(rendered, 1280, 720, QImage.Format_RGBA8888)
-            img.mirror(False, True)
             self.picture = QPixmap.fromImage(img)
             # self.picture = self.picture.scaled(QSize(min(self.size().width(),1280),min(self.size().height(),720)),Qt.AspectRatioMode.KeepAspectRatio)
             self.viewportimage.setPixmap(self.picture)
@@ -224,12 +222,12 @@ class CzeViewport(QWidget):
             self.scene.removeItem(handle)
         self.handles = []
         if (self.parentclass.selectedframe):
-            self.createhandle(self.parentclass.selectedframe, self.parentclass.selectedframe.params.image.function(
+            self.createhandle(self.parentclass.selectedframe, self.parentclass.selectedframe.params.source.function(
             ), self.parentclass.selectedframe.params)
-            for param in self.parentclass.selectedframe.params.compositing:
+            for param in self.parentclass.selectedframe.params.effects:
                 self.createhandle(
                     self.parentclass.selectedframe, param.function(), param)
-            for param in self.parentclass.selectedframe.params.states:
+            for param in self.parentclass.selectedframe.params.actions:
                 self.createhandle(
                     self.parentclass.selectedframe, param.function(), param)
 
@@ -306,15 +304,17 @@ class Window(QMainWindow):
     def __init__(self):
         super().__init__()
         self.playbackframe = 100
-        self.imagefunctionsdropdown = imagefunctionsdropdown
-        self.actionfunctionsdropdown = statefunctionsdropdown
-        self.effectfunctionsdropdown = compositingfunctionsdropdown
+        self.sourcefunctionsdropdown = sourcefunctionsdropdown
+        self.actionfunctionsdropdown = actionfunctionsdropdown
+        self.effectfunctionsdropdown = effectfunctionsdropdown
         self.keyframes = Keyframelist(self)
         self.setWindowTitle("CZEditor")
         self.setGeometry(100, 100, 1280, 720)
         # button = QRedButton(self,"yeah",4,4,lambda: print("pressed"))
         self.setStyleSheet(
             "background-color: qradialgradient(spread:pad, cx:4.5, cy:4.5, radius:7, fx:4.5, fy:4.5, stop:0 rgba(255, 0, 0, 255), stop:1 rgba(0, 0, 0, 255));  color: rgb(255,192,192);")
+
+        self.cameraParams = Params({"x": -1280/2, "y": -720/2, "z": -360, "pitch": 0, "yaw": 0, "roll": 0, "fov": 90})
         hozsplitter = QSplitter(Qt.Orientation.Vertical, self)
         # rightsplitter = QSplitter(hozsplitter)
         topsplitter = QSplitter(hozsplitter)
@@ -350,6 +350,8 @@ class Window(QMainWindow):
         self.skipfuturesobject = None
         self.rendering = False
         self.currentspectrum = np.zeros(512)
+        self.renderaudiobuffer = np.zeros(0)
+        
 
     def updateviewport(self):
         self.needtoupdate = True
@@ -361,12 +363,52 @@ class Window(QMainWindow):
     def regeneratekeyframeoptions(self):
         self.keyframeoptions.regenerate()
 
+    def getframeimage(self,i):
+        i = i * 60
+        self.playbackframe = i
+        self.currentframestate = getstate(i,self)
+        sound = getsound(self.currentframestate, int(i/60*48000))
+        if (sound[32, 0] != self.currentaudio[512+32]):
+            self.currentaudio[:512] = self.currentaudio[512:]
+            self.currentaudio[512:] = sound[:, 0]
+        self.currentspectrum = np.fft.rfft(self.currentaudio)
+        self.currentspectrum = self.currentspectrum[:512]
+        self.currentspectrum = np.abs(self.currentspectrum)
+        self.viewport.updateviewportimage(self.currentframestate,self.currentspectrum)
+        self.viewport.videorenderer.repaint()
+        if rendered:
+            resultimage = np.frombuffer(rendered,dtype=np.uint8)
+            resultimage = np.reshape(resultimage,(720,1280,4))
+            resultimage = resultimage[:,:,:3]
+            resultimage = np.flip(resultimage,0)
+            return resultimage
+        return np.zeros((1280,720,3))
+
+    def getframesound(self):
+        self.playbackframe = int(self.playbacksample/48000*60)
+        self.currentframestate = getstate(self.playbackframe,self)
+        returned = np.reshape(getsound(self.currentframestate, self.playbacksample)[:,0],(1,512))
+        self.playbacksample += 512
+        return returned
+
+    def render(self,filename, length):
+        self.playbacksample = 0
+        self.renderaudiobuffer = np.zeros(0)
+        clip = VideoClip(self.getframeimage, duration=length / 60)
+        audiowriter = PyAVAudioWriter(self.getframesound,"_tempaudio.mp3")
+        audiowriter.writeaudio(int(length/60*48000))
+        # clip.write_videofile(filename=filename, fps=60, codec="libx264rgb", ffmpeg_params=["-strict","-2"]) perfection, doesnt embed | don't delete this
+        clip.write_videofile(filename=filename, fps=60, codec="libvpx-vp9", ffmpeg_params=[
+                            "-pix_fmt", "yuv444p", "-crf", "25", "-b:v", "0"], write_logfile=True,audio="_tempaudio.mp3")  # perfection, embeds only on pc
+        os.remove("_tempaudio.mp3")
     def keyPressEvent(self, event: QKeyEvent) -> None:
         # print(event.text())
         if event.text() == " ":
             self.isplaying = not self.isplaying
             self.starttime = perf_counter()
             self.startframe = self.playbackframe
+        #elif event.text() == "r":
+        #    self.render("renderedvideo.mp4",600)
         return super().keyPressEvent(event)
 
     def getnextsoundchunk(self, outdata, frames, time, status):
@@ -412,15 +454,14 @@ class Window(QMainWindow):
         self.seeking = True
 
         try:
-
             for keyframe in self.currentframestate:
-                if hasattr(keyframe.params.image.function(), "seek"):
-                    keyframe.params.image.function().seek(
-                        keyframe.params.image.params, frame-keyframe.frame)
-                for action in keyframe.params.states:
+                if hasattr(keyframe.params.source.function(), "seek"):
+                    keyframe.params.source.function().seek(
+                        keyframe.params.source.params, frame-keyframe.frame)
+                for action in keyframe.params.actions:
                     if hasattr(action.function(), "seek"):
                         action.function().seek(action.params, frame-keyframe.frame)
-                for effect in keyframe.params.compositing:
+                for effect in keyframe.params.effects:
                     if hasattr(effect.function(), "seek"):
                         effect.function().seek(effect.params, frame-keyframe.frame)
         except Exception:

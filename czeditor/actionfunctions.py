@@ -8,9 +8,9 @@ class NormalKeyframe():
     name = "Media"
     params = Params({})
 
-    def state(statetomodify, keyframe, stateparam, frame):
-        if (keyframe.params.image.params.duration and keyframe.params.image.params.duration() != 0):
-            if (keyframe.params.image.params.duration() < frame):
+    def action(statetomodify, keyframe, stateparam, frame,windowObject):
+        if (keyframe.params.source.params.duration and keyframe.params.source.params.duration() != 0):
+            if (keyframe.params.source.params.duration() < frame):
                 return statetomodify
         statetomodify.append(keyframe)
         return statetomodify
@@ -23,7 +23,7 @@ class ErrorKeyframe():
     name = "Windows Error"
     params = Params({})
 
-    def state(statetomodify, keyframe, stateparam, frame):
+    def action(statetomodify, keyframe, stateparam, frame,windowObject):
         if statetomodify:
             statetomodify[-1].imageparams.params.active = False
         keyframe.imageparams.params.active = True
@@ -42,13 +42,13 @@ class CascadeKeyframe():
             "y": IntProperty(16)
         })
 
-    def state(statetomodify, keyframe, stateparam, frame):
+    def action(statetomodify, keyframe, stateparam, frame,windowObject):
         if statetomodify:
             # get previous keyframe normal media params
-            for lastkeyframe in statetomodify[-1].compositingparams:
+            for lastkeyframe in statetomodify[-1].params.effects:
                 if lastkeyframe.function().params.x != None:
                     # get current keyframe normal media params
-                    for currentkeyframe in keyframe.compositingparams:
+                    for currentkeyframe in keyframe.params.effects:
                         if currentkeyframe.function().params.x != None:
                             # set current keyframe normal media params to previous keyframe normal media params and add x and y
                             currentkeyframe.params.x.set(
@@ -60,7 +60,7 @@ class CascadeKeyframe():
         return statetomodify
 
     def handle(keyframe, parentclass, params):
-        for currentkeyframe in keyframe.compositingparams:
+        for currentkeyframe in keyframe.params.effects:
             if currentkeyframe.function().params.x != None:
                 return [CzeViewportDraggableOffset(None, parentclass, currentkeyframe.params.x, currentkeyframe.params.y, params.params.x, params.params.y), CzeViewportDraggableOffsetLine(None, parentclass, currentkeyframe.params.x, currentkeyframe.params.y, params.params.x, params.params.y)]
         return []
@@ -68,6 +68,26 @@ class CascadeKeyframe():
     def __str__(self):
         return self.name
 
+class CameraMotionKeyframe():
+    name = "Camera Motion"
+    params = Params({
+        "x": IntProperty(-640),
+        "y": IntProperty(-360),
+        "z": IntProperty(-360),
+        "pitch": IntProperty(0),
+        "yaw": IntProperty(0),
+        "roll": IntProperty(0),
+        "fov": IntProperty(90)
+    })
+    def action(statetomodify,keyframe,params,frame,windowObject):
+        windowObject.cameraParams.x = params.params.x()
+        windowObject.cameraParams.y = params.params.y()
+        windowObject.cameraParams.z = params.params.z()
+        windowObject.cameraParams.pitch = params.params.pitch()
+        windowObject.cameraParams.yaw = params.params.yaw()
+        windowObject.cameraParams.roll = params.params.roll()
+        windowObject.cameraParams.fov = params.params.fov()
+        return statetomodify
 
-statefunctionsdropdown = [["Media", NormalKeyframe], [
-    "Windows Error", ErrorKeyframe], ["Cascade", CascadeKeyframe]]
+actionfunctionsdropdown = [["Media", NormalKeyframe], [
+    "Windows Error", ErrorKeyframe], ["Cascade", CascadeKeyframe], ["Camera Motion", CameraMotionKeyframe]]
