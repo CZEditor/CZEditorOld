@@ -10,7 +10,9 @@ build: dev
 install: build
 	python -m pip install dist/*.whl
 bundle: dev
-	poetry run python -m nuitka --standalone --enable-plugin=pyside6 czeditor
+	poetry run python -m nuitka \
+	--standalone --enable-plugin=pyside6 --include-data-dir=./czeditor/res=res \
+	czeditor
 
 clean:
 	rm -rf build dist *.build *.dist *.onefile-build

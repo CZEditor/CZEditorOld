@@ -1,5 +1,6 @@
 import av
 import av.container
+import czeditor.util.avhelper
 
 import numpy as np
 
