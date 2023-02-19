@@ -158,13 +158,13 @@ def checkAndInstall():
     # check if we are missing the required DLLs for sounddevice
     try:
         import sounddevice
-    except ImportError:
+    except OSError:
         getPortAudioDLL(platform, compiled)
         restart()
 
     # check if we have ffmpeg installed
     try:
         import moviepy
-    except ImportError:
+    except RuntimeError:
         installFFmpeg(platform, compiled)
         restart()
