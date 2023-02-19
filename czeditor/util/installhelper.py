@@ -55,9 +55,12 @@ def getPortAudioDLL(platform: str, compiled: bool):
         # We assume that a linux user runs the program via shell anyway
         if hasApt:
             print("Running: sudo apt install libportaudio2...")
-            subprocess.run(["sudo", "apt", "install", "libportaudio2"],
-                           check=True, shell=True)
-        else:
+            try:
+                res = subprocess.run(["sudo", "apt", "install", "libportaudio2"])
+                failed = res.returncode != 0
+            except:
+                failed = True
+        if not hasApt or failed:
             print("Missing PortAudio, consider getting it via your package manager")
             exit(1)
     else:
@@ -96,8 +99,7 @@ def installFFmpeg(platform: str, compiled: bool):
             hasBrew = shutil.which("brew") is not None
             if hasBrew:
                 try:
-                    res = subprocess.run(["brew", "install", "ffmpeg"],
-                                         check=True, shell=True)
+                    res = subprocess.run(["brew", "install", "ffmpeg"])
                     failed = res.returncode != 0
                 except:
                     failed = True
@@ -126,9 +128,12 @@ def installFFmpeg(platform: str, compiled: bool):
         hasApt = shutil.which("apt") is not None
         if hasApt:
             print("Running: sudo apt install ffmpeg")
-            subprocess.run(["sudo", "apt", "install", "ffmpeg"],
-                           check=True, shell=True)
-        else:
+            try:
+                res = subprocess.run(["sudo", "apt", "install", "ffmpeg"])
+                failed = res.returncode != 0
+            except:
+                failed = True
+        if not hasApt or failed:
             print("Missing ffmpeg, consider getting it via your package manager")
             exit(1)
     else:
