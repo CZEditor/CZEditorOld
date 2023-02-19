@@ -4,6 +4,9 @@ import subprocess
 import sys
 import zipfile
 
+# Explicit import due to Nuitka's way of handling imports
+from sys import exit
+
 TIMEOUT = 15
 
 
@@ -25,7 +28,7 @@ def getPortAudioDLL(platform: str, compiled: bool):
             # so we will just suggest the user to download it
             print("Missing PortAudio, consider getting it here:")
             print("https://github.com/spatialaudio/portaudio-binaries")
-            exit(1)  # Prevents infinite loop
+            exit(1)
     elif platform == "mac":
         hasBrew = shutil.which("brew") is not None
         if compiled:
@@ -56,7 +59,8 @@ def getPortAudioDLL(platform: str, compiled: bool):
         if hasApt:
             print("Running: sudo apt install libportaudio2...")
             try:
-                res = subprocess.run(["sudo", "apt", "install", "libportaudio2"])
+                res = subprocess.run(
+                    ["sudo", "apt", "install", "libportaudio2"])
                 failed = res.returncode != 0
             except:
                 failed = True
@@ -142,10 +146,6 @@ def installFFmpeg(platform: str, compiled: bool):
         exit(1)
 
 
-def restart():
-    os.execl(f'"{sys.executable}"', f'"{sys.executable}"', *sys.argv)
-
-
 def checkAndInstall():
     # detect if we're running from a frozen executable
     compiled = "__compiled__" in globals() or getattr(sys, "frozen", False)
@@ -165,11 +165,11 @@ def checkAndInstall():
         import sounddevice
     except OSError:
         getPortAudioDLL(platform, compiled)
-        restart()
+        exit(1)
 
     # check if we have ffmpeg installed
     try:
-        import moviepy
+        import moviepy.video.VideoClip
     except RuntimeError:
         installFFmpeg(platform, compiled)
-        restart()
+        exit(1)
