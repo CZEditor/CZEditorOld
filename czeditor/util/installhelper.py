@@ -25,7 +25,7 @@ def getPortAudioDLL(platform: str, compiled: bool):
             # so we will just suggest the user to download it
             print("Missing PortAudio, consider getting it here:")
             print("https://github.com/spatialaudio/portaudio-binaries")
-            exit(1) # Prevents infinite loop
+            exit(1)  # Prevents infinite loop
     elif platform == "mac":
         hasBrew = shutil.which("brew") is not None
         if compiled:
@@ -164,7 +164,7 @@ def checkAndInstall():
 
     # check if we have ffmpeg installed
     try:
-        import moviepy.editor
+        import moviepy
     except ImportError:
         installFFmpeg(platform, compiled)
         restart()
