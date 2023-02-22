@@ -1,8 +1,10 @@
+from sys import exit  # Just in case Nuitka throws another tantrum
 import czeditor.util.installhelper
 if __name__ == "__main__":
     # Checks for missing runtime dependencies and installs them
     # if possible or prompts the user to install them manually
-    czeditor.util.installhelper.checkAndInstall()
+    if czeditor.util.installhelper.checkAndInstall():
+        exit(0)    
 
 import os
 import sys
