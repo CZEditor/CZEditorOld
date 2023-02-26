@@ -1,5 +1,6 @@
 import av
 import av.container
+import czeditor.util.avhelper
 
 import numpy as np
 
@@ -11,7 +12,8 @@ class PyAVSeekableVideoReader:
 
     def __init__(self, filename):
         self._filename = filename
-        self._container: av.container.InputContainer = av.open(QFileInfo(self._filename).canonicalFilePath())
+        self._container: av.container.InputContainer = av.open(
+            QFileInfo(self._filename).canonicalFilePath())
         self._stream = self._container.streams.video[0]
         self._currentFrame = 0
         self.frame_rate = float(self._stream.average_rate)

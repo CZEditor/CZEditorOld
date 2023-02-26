@@ -1,7 +1,9 @@
+# pyright: reportUndefinedVariable=false
 from math import pi
 
 import numpy as np
 from PIL import Image, ImageChops, ImageFilter
+from PySide6.QtCore import QFileInfo
 from scipy.spatial.transform import Rotation as R
 
 from czeditor.generate import put
@@ -43,6 +45,8 @@ def translaterotateproject(width, height, position, rotation, origin, corner, pe
 
 # coefficients for animation
 def CreateCustomWindowAnimation(image, time=1, startpos=(0, 0, 0), startrotation=(0, 0, 0), origin=(0.5, 0.5, 0)):
+    # pylint: disable=undefined-variable
+    
     # print("theimage,",image)
     t = min(1, max(0, time))
     startrotation = np.array(startrotation)
@@ -75,8 +79,10 @@ def ExecuteCustomWindowAnimation(image, coeffs, time, wallpaper=None, pos=None, 
 
 # warp image by coefficients and composite with Windows 7 method
 def Composite7(img, GlassMask, time, startpos, startrotation, origin, wallpaper, pos, align):
+    # pylint: disable=undefined-variable
+
     wallpaper = wallpaper.copy()
-    GlassImg = openimage("W7:Glass.png")
+    GlassImg = Image.open(QFileInfo(r"W7:Glass.png").canonicalFilePath())
     WithBorder = put(Image.new("RGBA", (800, 602), (0, 0, 0, 0)), GlassImg.resize(
         wallpaper.size, 0), int(-pos[0]+w(img)/16-wallpaper.size[0]/16+pos[0]/8), -pos[1])
     GlassMask = put(Image.new("RGBA", img.size,

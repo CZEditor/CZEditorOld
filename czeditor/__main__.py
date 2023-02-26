@@ -1,3 +1,11 @@
+from sys import exit  # Just in case Nuitka throws another tantrum
+import czeditor.util.installhelper
+if __name__ == "__main__":
+    # Checks for missing runtime dependencies and installs them
+    # if possible or prompts the user to install them manually
+    if czeditor.util.installhelper.checkAndInstall():
+        exit(0)    
+
 import os
 import sys
 
@@ -6,7 +14,7 @@ from PySide6.QtWidgets import QApplication
 
 from czeditor.czeditor import *
 
-# Set up resource paths for Qt internals like stylesheets 
+# Set up resource paths for Qt internals like stylesheets
 # Use importlib.resources when it's possible to do so
 root = os.path.dirname(os.path.abspath(__file__))
 QDir.addSearchPath("res", os.path.join(root, "res"))
