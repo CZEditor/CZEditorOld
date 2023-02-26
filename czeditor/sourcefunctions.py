@@ -15,6 +15,7 @@ from czeditor.timelineitems import *
 from czeditor.util import *
 
 loadedimages = {}
+emptyimage = Image.new("RGBA", (1, 1), (0, 0, 0, 0))
 
 
 class NormalImage():

@@ -3,6 +3,7 @@ from math import pi
 
 import numpy as np
 from PIL import Image, ImageChops, ImageFilter
+from PySide6.QtCore import QFileInfo
 from scipy.spatial.transform import Rotation as R
 
 from czeditor.generate import put
@@ -81,7 +82,7 @@ def Composite7(img, GlassMask, time, startpos, startrotation, origin, wallpaper,
     # pylint: disable=undefined-variable
 
     wallpaper = wallpaper.copy()
-    GlassImg = openimage("W7:Glass.png")
+    GlassImg = Image.open(QFileInfo(r"W7:Glass.png").canonicalFilePath())
     WithBorder = put(Image.new("RGBA", (800, 602), (0, 0, 0, 0)), GlassImg.resize(
         wallpaper.size, 0), int(-pos[0]+w(img)/16-wallpaper.size[0]/16+pos[0]/8), -pos[1])
     GlassMask = put(Image.new("RGBA", img.size,
