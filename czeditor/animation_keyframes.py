@@ -6,8 +6,8 @@ class AnimationKeyframe():
         self.frame = frame
     def getValue(self,frame):
         return self.params.provider.function(self.params.provider.params,frame)
-    def mix(self,frame,a,b):
-        return self.params.mixer.function(self.params.mixer.params,frame,a,b)
+    def mix(self,frame,length,a,b):
+        return self.params.mixer.function(self.params.mixer.params,frame,length,a,b)
 
 
 class AnimationKeyframeList():
@@ -110,3 +110,15 @@ class AnimationKeyframeList():
 
     def isin(self, keyframe: AnimationKeyframe) -> bool:
         return keyframe in self.keyframes
+    
+    def getValueAt(self, frame: int):
+        if len(self.keyframes) == 0:
+            return None
+        for keyframe in range(len(self.keyframes)-1):
+            if self.keyframes[keyframe].frame < frame:
+                return self.keyframes[keyframe].mix(
+                    frame-self.keyframes[keyframe].frame,
+                    self.keyframes[keyframe+1].frame-self.keyframes[keyframe].frame,
+                    self.keyframes[keyframe].getValue(frame-self.keyframes[keyframe].frame),
+                    self.keyframes[keyframe+1].getValue(frame-self.keyframes[keyframe+1].frame))
+        return self.keyframes[keyframe].getValue(frame-self.keyframes[keyframe].frame)

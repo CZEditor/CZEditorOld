@@ -1,5 +1,5 @@
 from czeditor.property_widgets import *
-
+from czeditor.animation_keyframes import *
 
 class IntProperty:
     def __init__(self, value):
@@ -175,14 +175,21 @@ class SizeProperty():
 
 
 class FloatProperty:
-    def __init__(self, value):
+    def __init__(self, value,timeline=None):
         self._val = value
+        self.timeline = timeline
 
     def copy(self):
-        return FloatProperty(self._val)
+        return FloatProperty(self._val,self.timeline)
 
-    def __call__(self):
-        return self._val
+    def __call__(self,frame):
+        if self.timeline is None:
+            return self._val
+        else:
+            gotten = self.timeline.getValueAt(frame)
+            if gotten is not None:
+                return gotten
+            return self._val
 
     def widget(self):
         return FloatPropertyWidget(self)
