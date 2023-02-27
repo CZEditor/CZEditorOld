@@ -351,7 +351,7 @@ class Window(QMainWindow):
         self.rendering = False
         self.currentspectrum = np.zeros(512)
         self.renderaudiobuffer = np.zeros(0)
-        
+        self.selectedAnimationFrame = None
 
     def updateviewport(self):
         self.needtoupdate = True
@@ -506,3 +506,6 @@ class Window(QMainWindow):
         self.keyframes.add(keyframe)
         self.timeline.addKeyframe(keyframe)
         keyframe.initialize()
+
+    def enterAnimationMode(self, property):
+        self.timeline.enterAnimationMode(property)

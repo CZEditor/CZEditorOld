@@ -1,11 +1,11 @@
 from PySide6.QtWidgets import QFileDialog, QHBoxLayout, QLabel, QVBoxLayout
 
 from czeditor.base_ui import (QRedButton, QRedDecimalSpinBox, QRedFrame,
-                              QRedSpinBox, QRedTextBox, QRedTextEntry)
+                              QRedSpinBox, QRedTextBox, QRedTextEntry, QRedExpandableButton)
 
 
 class IntPropertyWidget(QRedFrame):
-    def __init__(self, property):
+    def __init__(self, property,windowObject):
         super().__init__(None)
         self.theproperty = property
         self.widgets = QHBoxLayout()
@@ -23,7 +23,7 @@ class IntPropertyWidget(QRedFrame):
 
 
 class StringPropertyWidget(QRedFrame):
-    def __init__(self, property):
+    def __init__(self, property,windowObject):
         super().__init__(None)
         self.theproperty = property
         self.widgets = QHBoxLayout()
@@ -45,7 +45,7 @@ class StringPropertyWidget(QRedFrame):
 
 
 class LineStringPropertyWidget(QRedFrame):
-    def __init__(self, property):
+    def __init__(self, property,windowObject):
         super().__init__(None)
         self.theproperty = property
         self.widgets = QHBoxLayout()
@@ -67,7 +67,7 @@ class LineStringPropertyWidget(QRedFrame):
 
 
 class FilePropertyWidget(QRedFrame):
-    def __init__(self, property, filetypes):
+    def __init__(self, property, filetypes,windowObject):
         super().__init__(None)
         self.theproperty = property
         self.filetypes = filetypes
@@ -98,7 +98,7 @@ class FilePropertyWidget(QRedFrame):
 
 
 class SizePropertyWidget(QRedFrame):
-    def __init__(self, property):
+    def __init__(self, property,windowObject):
         super().__init__(None)
         self.theproperty = property
         self.widgets = QVBoxLayout()
@@ -166,13 +166,16 @@ class SizePropertyWidget(QRedFrame):
 
 class FloatPropertyWidget(QRedFrame):
 
-    def __init__(self, property):
+    def __init__(self, property,windowObject):
         super().__init__(None)
+        self.windowObject = windowObject
         self.theproperty = property
         self.widgets = QHBoxLayout()
         self.spinbox = QRedDecimalSpinBox(self, self.updateproperty)
         self.spinbox.setValue(self.theproperty._val)
+        self.animationModeButton = QRedExpandableButton(self, "A", self.enterAnimationMode)
         self.widgets.addWidget(self.spinbox)
+        self.widgets.addWidget(self.animationModeButton)
         self.setLayout(self.widgets)
         self.setStyleSheet("border-width:0px;")
 
@@ -181,3 +184,6 @@ class FloatPropertyWidget(QRedFrame):
 
     def updateself(self):
         self.spinbox.setValue(self.theproperty._val)
+
+    def enterAnimationMode(self):
+        self.windowObject.enterAnimationMode(self.theproperty)

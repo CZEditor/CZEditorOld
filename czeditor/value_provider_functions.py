@@ -1,5 +1,5 @@
 from czeditor.util import Params
-from properties import *
+from czeditor.properties import *
 
 class StaticDecimalNumber:
     name = "Static Decimal Number"
@@ -10,3 +10,5 @@ class StaticDecimalNumber:
         )
     def __call__(params, frame):
         return params.value
+
+valueProviderFunctions = [["Static Decimal Number",StaticDecimalNumber]]

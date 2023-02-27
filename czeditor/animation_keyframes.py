@@ -5,9 +5,9 @@ class AnimationKeyframe():
         self.params = params
         self.frame = frame
     def getValue(self,frame):
-        return self.params.provider.function(self.params.provider.params,frame)
+        return self.params.provider.function()(self.params.provider.params,frame)
     def mix(self,frame,length,a,b):
-        return self.params.mixer.function(self.params.mixer.params,frame,length,a,b)
+        return self.params.mixer.function()(self.params.mixer.params,frame,length,a,b)
 
 
 class AnimationKeyframeList():

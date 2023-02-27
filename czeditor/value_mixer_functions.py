@@ -1,5 +1,5 @@
 from czeditor.util import Params
-from properties import *
+from czeditor.properties import *
 
 class Constant:
     name = "Constant"
@@ -14,3 +14,5 @@ class FloatLerp:
 
     def __call__(self, frame, length, a, b):
         return frame/length*b+(1-frame/length)*a
+
+valueMixerFunctions = [["Constant",Constant],["Linear",FloatLerp]]
