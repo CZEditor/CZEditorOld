@@ -46,7 +46,7 @@ def translaterotateproject(width, height, position, rotation, origin, corner, pe
 # coefficients for animation
 def CreateCustomWindowAnimation(image, time=1, startpos=(0, 0, 0), startrotation=(0, 0, 0), origin=(0.5, 0.5, 0)):
     # pylint: disable=undefined-variable
-    
+
     # print("theimage,",image)
     t = min(1, max(0, time))
     startrotation = np.array(startrotation)

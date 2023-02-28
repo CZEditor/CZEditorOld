@@ -57,8 +57,6 @@ class ImageComposite():
         return self.name
 
 
-
-
 class Media2D:
     name = "2D Media",
     params = Params({
@@ -220,7 +218,7 @@ class ScrollingShader:
         # TODO : Add more complex stuff, like custom equations or scaling the tile effect
         shader.append({"fragmentshader": transient.shader,
                        # TODO : Do not pass in parameters like this (You would have to recompile every time if the properties were animated). Use a uniform.
-                       "fragmentlinetoadd": "shaderscrolling($inpos,frame,"+str(params.speedX())+","+str(params.speedY())+",$outpos);",
+                       "fragmentlinetoadd": "shaderscrolling($inpos,frame,"+str(params.speedX(frame))+","+str(params.speedY(frame))+",$outpos);",
                        "fragmentdeclaration": "void shaderscrolling(in vec2 inpos, float frame, float speedx, float speedy, out vec2 outpos);"})
         return image, vertices, shader
 
@@ -245,7 +243,7 @@ class TilingShader:
                 }
             """, GL_FRAGMENT_SHADER)
         shader.append({"fragmentshader": transient.shader,
-                       "fragmentlinetoadd": "shadertiling($inpos,"+str(params.amountX())+","+str(params.amountY())+",$outpos);",
+                       "fragmentlinetoadd": "shadertiling($inpos,"+str(params.amountX(frame))+","+str(params.amountY(frame))+",$outpos);",
                        "fragmentdeclaration": "void shadertiling(in vec2 inpos, float amountx, float amounty, out vec2 outpos);"})
         return image, vertices, shader
 
@@ -279,7 +277,7 @@ class CustomShader:
             transient.previousIndex = index
 
         shader.append({"fragmentshader": transient.shader,
-                       "fragmentlinetoadd": "shadercustom"+str(index)+"($inpos,frame,worldPos,spectrum"+str(params.variableA())+","+str(params.variableB())+",$outpos);",
+                       "fragmentlinetoadd": "shadercustom"+str(index)+"($inpos,frame,worldPos,spectrum"+str(params.variableA(frame))+","+str(params.variableB(frame))+",$outpos);",
                        "fragmentdeclaration": "void shadercustom"+str(index)+"(in vec2 inpos, float frame, vec3 worldpos, in float spectrum[512], float variableA, float variableB, out vec2 outpos);"})
         return image, vertices, shader
 
@@ -315,7 +313,7 @@ class CustomColorShader:
             transient.previousIndex = index
 
         shader.append({"fragmentshader": transient.shader,
-                       "fragmentlinetoadd": "shadercustom"+str(index)+"($inpos,frame,width,height,worldPos,spectrum,image,"+str(params.variableA())+","+str(params.variableB())+");",
+                       "fragmentlinetoadd": "shadercustom"+str(index)+"($inpos,frame,width,height,worldPos,spectrum,image,"+str(params.variableA(frame))+","+str(params.variableB(frame))+");",
                        "fragmentdeclaration": "vec4 shadercustom"+str(index)+"(in vec2 inpos, float frame, int width, int height, vec3 worldpos, in float spectrum[512], in sampler2D image,float variableA, float variableB);",
                        "ismultisample": True})
         return image, vertices, shader
@@ -442,7 +440,7 @@ class CustomVertexShader:
             transient.previousIndex = index
 
         shader.append({"vertexshader": transient.shader,
-                       "vertexlinetoadd": "shadercustom"+str(index)+"($inpos,vertexColor,spectrum,"+str(params.variableA())+","+str(params.variableB())+",frame,$outpos);",
+                       "vertexlinetoadd": "shadercustom"+str(index)+"($inpos,vertexColor,spectrum,"+str(params.variableA(frame))+","+str(params.variableB(frame))+",frame,$outpos);",
                        "vertexdeclaration": "void shadercustom"+str(index)+"(in vec3 inpos, in vec2 vertexColor, in float spectrum[512], float variableA, float variableB, float frame, out vec3 outpos);"})
         return image, vertices, shader
 

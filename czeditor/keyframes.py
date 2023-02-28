@@ -3,7 +3,7 @@ from typing import overload
 
 import numpy as np
 from OpenGL.GL import *
-from PySide6.QtGui import QMatrix4x4,QQuaternion
+from PySide6.QtGui import QMatrix4x4, QQuaternion
 
 from czeditor.customShaderCompilation import compileProgram
 from czeditor.openglfunctions import *
@@ -39,10 +39,10 @@ class Keyframe():
     def actOnKeyframes(self, keyframeToModify, windowClass):  # action
         for action in self.params.actions:
             keyframeToModify = action.function().action(keyframeToModify, self, action,
-                                                        windowClass.playbackframe-self.frame,windowClass)
+                                                        windowClass.playbackframe-self.frame, windowClass)
         return keyframeToModify
 
-    def composite(self, windowObject, spectrum,projection):
+    def composite(self, windowObject, spectrum, projection):
 
         if (not hasattr(self.params.source.function(), "image")):
             return
@@ -55,7 +55,7 @@ class Keyframe():
         for effect in self.params.effects:
             if hasattr(effect.function(), "imageEffect"):
                 image, vertices, shader = effect.function().imageEffect(image, vertices, shader,
-                                                                                effect.params, windowObject, self, windowObject.playbackframe-self.frame)
+                                                                        effect.params, windowObject, self, windowObject.playbackframe-self.frame)
         if (not shader):
             return
         vertices = vertices.flatten()
@@ -193,8 +193,6 @@ class Keyframe():
         # print(self.compiledPrograms)
         glUseProgram(self.compiledPrograms[-1])
 
-        
-        
         glUniformMatrix4fv(glGetUniformLocation(
             self.compiledPrograms[-1], "matrix"), 1, GL_FALSE, np.array(projection.data(), dtype=np.float32))
 

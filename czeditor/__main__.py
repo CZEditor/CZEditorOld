@@ -4,7 +4,7 @@ if __name__ == "__main__":
     # Checks for missing runtime dependencies and installs them
     # if possible or prompts the user to install them manually
     if czeditor.util.installhelper.checkAndInstall():
-        exit(0)    
+        exit(0)
 
 import os
 import sys
