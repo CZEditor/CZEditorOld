@@ -238,7 +238,7 @@ def checkAndInstall() -> bool:
         try:
             res = subprocess.run(
                 ["pip", "list"], capture_output=True, check=True, text=True)
-        except: # Don't crash if pip is not installed or something
+        except:  # Don't crash if pip is not installed or something
             pass
         else:
             if "czeditor" in res.stdout:

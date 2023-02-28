@@ -1,13 +1,16 @@
 from typing import overload
 
+
 class AnimationKeyframe():
     def __init__(self, frame, params):
         self.params = params
         self.frame = frame
-    def getValue(self,frame):
-        return self.params.provider.function().getValue(self.params.provider.params,frame)
-    def mix(self,frame,length,a,b):
-        return self.params.mixer.function().getValue(self.params.mixer.params,frame,length,a,b)
+
+    def getValue(self, frame):
+        return self.params.provider.function().getValue(self.params.provider.params, frame)
+
+    def mix(self, frame, length, a, b):
+        return self.params.mixer.function().getValue(self.params.mixer.params, frame, length, a, b)
 
 
 class AnimationKeyframeList():
@@ -101,7 +104,6 @@ class AnimationKeyframeList():
         self.keyframes[i].frame = frame
         self.needssorting = True
 
-
     def getsafe(self, i):
         if len(self.keyframes) > i and i > 0:
             return self.keyframes[i]
@@ -110,7 +112,7 @@ class AnimationKeyframeList():
 
     def isin(self, keyframe: AnimationKeyframe) -> bool:
         return keyframe in self.keyframes
-    
+
     def getValueAt(self, frame: int):
         if len(self.keyframes) == 0:
             return None
@@ -118,7 +120,9 @@ class AnimationKeyframeList():
             if self.keyframes[keyframe].frame < frame:
                 return self.keyframes[keyframe].mix(
                     frame-self.keyframes[keyframe].frame,
-                    self.keyframes[keyframe+1].frame-self.keyframes[keyframe].frame,
-                    self.keyframes[keyframe].getValue(frame-self.keyframes[keyframe].frame),
+                    self.keyframes[keyframe+1].frame -
+                    self.keyframes[keyframe].frame,
+                    self.keyframes[keyframe].getValue(
+                        frame-self.keyframes[keyframe].frame),
                     self.keyframes[keyframe+1].getValue(frame-self.keyframes[keyframe+1].frame))
         return self.keyframes[keyframe].getValue(frame-self.keyframes[keyframe].frame)

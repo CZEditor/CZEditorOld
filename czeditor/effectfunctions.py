@@ -57,8 +57,6 @@ class ImageComposite():
         return self.name
 
 
-
-
 class Media2D:
     name = "2D Media",
     params = Params({

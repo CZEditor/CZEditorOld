@@ -36,7 +36,8 @@ class NormalImage():
                 with open(path, "rb") as file:
                     img = pyspng.load(file.read())
             else:
-                img = np.array(Image.open(QFileInfo(path).canonicalFilePath()).convert("RGBA"))
+                img = np.array(Image.open(
+                    QFileInfo(path).canonicalFilePath()).convert("RGBA"))
             loadedimages[path] = img
             if (len(loadedimages.keys()) > 300):
                 del loadedimages[loadedimages.keys()[0]]
@@ -280,4 +281,5 @@ class Record():
         return self.name
 
 
-sourcefunctionsdropdown = [["Image", NormalImage], ["Windows XP Error", XPError], ["Filled Rectangle", FilledRectangle], ["Image Sequence", ImageSequence], ["Video", Video], ["Record", Record]]
+sourcefunctionsdropdown = [["Image", NormalImage], ["Windows XP Error", XPError], [
+    "Filled Rectangle", FilledRectangle], ["Image Sequence", ImageSequence], ["Video", Video], ["Record", Record]]

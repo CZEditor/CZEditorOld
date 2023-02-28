@@ -5,7 +5,7 @@ from czeditor.base_ui import (QRedButton, QRedDecimalSpinBox, QRedFrame,
 
 
 class IntPropertyWidget(QRedFrame):
-    def __init__(self, property,windowObject):
+    def __init__(self, property, windowObject):
         super().__init__(None)
         self.windowObject = windowObject
         self.theproperty = property
@@ -25,7 +25,7 @@ class IntPropertyWidget(QRedFrame):
 
 
 class StringPropertyWidget(QRedFrame):
-    def __init__(self, property,windowObject):
+    def __init__(self, property, windowObject):
         super().__init__(None)
         self.windowObject = windowObject
         self.theproperty = property
@@ -49,7 +49,7 @@ class StringPropertyWidget(QRedFrame):
 
 
 class LineStringPropertyWidget(QRedFrame):
-    def __init__(self, property,windowObject):
+    def __init__(self, property, windowObject):
         super().__init__(None)
         self.windowObject = windowObject
         self.theproperty = property
@@ -73,7 +73,7 @@ class LineStringPropertyWidget(QRedFrame):
 
 
 class FilePropertyWidget(QRedFrame):
-    def __init__(self, property, filetypes,windowObject):
+    def __init__(self, property, filetypes, windowObject):
         super().__init__(None)
         self.windowObject = windowObject
         self.theproperty = property
@@ -106,7 +106,7 @@ class FilePropertyWidget(QRedFrame):
 
 
 class SizePropertyWidget(QRedFrame):
-    def __init__(self, property,windowObject):
+    def __init__(self, property, windowObject):
         super().__init__(None)
         self.windowObject = windowObject
         self.theproperty = property
@@ -177,14 +177,16 @@ class SizePropertyWidget(QRedFrame):
 
 class FloatPropertyWidget(QRedFrame):
 
-    def __init__(self, property,windowObject):
+    def __init__(self, property, windowObject):
         super().__init__(None)
         self.windowObject = windowObject
         self.theproperty = property
         self.widgets = QHBoxLayout()
         self.spinbox = QRedDecimalSpinBox(self, self.updateproperty)
-        self.spinbox.setValue(self.theproperty(self.windowObject.playbackframe))
-        self.animationModeButton = QRedExpandableButton(self, "A", self.enterAnimationMode)
+        self.spinbox.setValue(self.theproperty(
+            self.windowObject.playbackframe))
+        self.animationModeButton = QRedExpandableButton(
+            self, "A", self.enterAnimationMode)
         self.widgets.addWidget(self.spinbox)
         self.widgets.addWidget(self.animationModeButton)
         self.setLayout(self.widgets)
@@ -195,7 +197,8 @@ class FloatPropertyWidget(QRedFrame):
         self.windowObject.updateviewport()
 
     def updateself(self):
-        self.spinbox.setValue(self.theproperty(self.windowObject.playbackframe))
+        self.spinbox.setValue(self.theproperty(
+            self.windowObject.playbackframe))
 
     def enterAnimationMode(self):
         self.windowObject.enterAnimationMode(self.theproperty)

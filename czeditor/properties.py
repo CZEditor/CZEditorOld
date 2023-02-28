@@ -1,6 +1,7 @@
 from czeditor.property_widgets import *
 from czeditor.animation_keyframes import *
-from czeditor.util import Selectable,Params
+from czeditor.util import Selectable, Params
+
 
 class IntProperty:
     def __init__(self, value):
@@ -12,8 +13,8 @@ class IntProperty:
     def __call__(self):
         return self._val
 
-    def widget(self,windowObject):
-        return IntPropertyWidget(self,windowObject)
+    def widget(self, windowObject):
+        return IntPropertyWidget(self, windowObject)
 
     @property
     def val(self):
@@ -37,8 +38,8 @@ class StringProperty:
     def __call__(self):
         return self._val
 
-    def widget(self,windowObject):
-        return StringPropertyWidget(self,windowObject)
+    def widget(self, windowObject):
+        return StringPropertyWidget(self, windowObject)
 
     @property
     def val(self):
@@ -65,8 +66,8 @@ class LineStringProperty:
     def __call__(self):
         return self._val
 
-    def widget(self,windowObject):
-        return LineStringPropertyWidget(self,windowObject)
+    def widget(self, windowObject):
+        return LineStringPropertyWidget(self, windowObject)
 
     @property
     def val(self):
@@ -94,8 +95,8 @@ class FileProperty:
     def __call__(self):
         return self._val
 
-    def widget(self,windowObject):
-        return FilePropertyWidget(self, self._filetypes,windowObject)
+    def widget(self, windowObject):
+        return FilePropertyWidget(self, self._filetypes, windowObject)
 
     @property
     def val(self):
@@ -171,19 +172,19 @@ class SizeProperty():
     def height(self):
         return self._height
 
-    def widget(self,windowObject):
-        return SizePropertyWidget(self,windowObject)
+    def widget(self, windowObject):
+        return SizePropertyWidget(self, windowObject)
 
 
 class FloatProperty:
-    def __init__(self, value,timeline=None):
+    def __init__(self, value, timeline=None):
         self._val = value
         self.timeline = timeline
 
     def copy(self):
-        return FloatProperty(self._val,self.timeline)
+        return FloatProperty(self._val, self.timeline)
 
-    def __call__(self,frame):
+    def __call__(self, frame):
         if self.timeline is None:
             return self._val
         else:
@@ -192,23 +193,23 @@ class FloatProperty:
                 return gotten
             return self._val
 
-    def widget(self,windowObject):
-        return FloatPropertyWidget(self,windowObject)
+    def widget(self, windowObject):
+        return FloatPropertyWidget(self, windowObject)
 
-    def defaultKeyframe(self,frame):
+    def defaultKeyframe(self, frame):
         from czeditor.value_mixer_functions import valueMixerFunctions
         from czeditor.value_provider_functions import valueProviderFunctions
-        return AnimationKeyframe(frame,Params(
+        return AnimationKeyframe(frame, Params(
             {
                 "provider":
                 {
-                    "function": Selectable(0,valueProviderFunctions),
-                    "params": Selectable(0,valueProviderFunctions)().params.copy()
+                    "function": Selectable(0, valueProviderFunctions),
+                    "params": Selectable(0, valueProviderFunctions)().params.copy()
                 },
                 "mixer":
                 {
-                    "function": Selectable(0,valueMixerFunctions),
-                    "params": Selectable(0,valueMixerFunctions)().params.copy()
+                    "function": Selectable(0, valueMixerFunctions),
+                    "params": Selectable(0, valueMixerFunctions)().params.copy()
                 }
             }
         ))

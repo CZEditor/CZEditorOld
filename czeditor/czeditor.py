@@ -59,9 +59,6 @@ def frameprocessor(frame, keyframes):
             return returnkeyframes
 
 
-
-
-
 def getstate(i, windowClass):
     return stateprocessor(i, windowClass.keyframes, windowClass)
 
@@ -82,9 +79,6 @@ def getsound(state, sample):
     return buffer
 
 # mpyconfig.FFMPEG_BINARY = "ffmpeg"
-
-
-
 
 
 rendered = None
@@ -134,14 +128,17 @@ class CzeVideoView(QOpenGLWidget):
         # for keyframeId in range(len(self.state)):
         #    self.state[-keyframeId-1].composite(self.parentclass) # It is required to composite from end to beginning because OpenGL renders front-to-back rather than back-to-front
         projection = QMatrix4x4()
-        #projection.frustum(-1280/32, 1280/32, 720/32, -720/32, 64, 131072)
-        projection.perspective(self.windowObject.cameraParams.fov, 1280/720,1,32768)
-        projection.rotate(QQuaternion.fromEulerAngles(self.windowObject.cameraParams.pitch, self.windowObject.cameraParams.yaw, self.windowObject.cameraParams.roll))
-        projection.translate(self.windowObject.cameraParams.x,self.windowObject.cameraParams.y,self.windowObject.cameraParams.z)
-        #print(projection)
+        # projection.frustum(-1280/32, 1280/32, 720/32, -720/32, 64, 131072)
+        projection.perspective(
+            self.windowObject.cameraParams.fov, 1280/720, 1, 32768)
+        projection.rotate(QQuaternion.fromEulerAngles(self.windowObject.cameraParams.pitch,
+                          self.windowObject.cameraParams.yaw, self.windowObject.cameraParams.roll))
+        projection.translate(self.windowObject.cameraParams.x,
+                             self.windowObject.cameraParams.y, self.windowObject.cameraParams.z)
+        # print(projection)
         self.windowObject.rendering = True
         for keyframe in self.state:
-            keyframe.composite(self.windowObject, self.spectrum,projection)
+            keyframe.composite(self.windowObject, self.spectrum, projection)
         glBindBuffer(GL_ARRAY_BUFFER, 0)
         glBindVertexArray(0)
 
@@ -194,8 +191,6 @@ class CzeViewport(QWidget):
 
     def sizeHint(self):
         return QSize(1280, 720)
-
-    
 
     def updateviewportimage(self, state, spectrum):
         global rendered
@@ -314,7 +309,8 @@ class Window(QMainWindow):
         self.setStyleSheet(
             "background-color: qradialgradient(spread:pad, cx:4.5, cy:4.5, radius:7, fx:4.5, fy:4.5, stop:0 rgba(255, 0, 0, 255), stop:1 rgba(0, 0, 0, 255));  color: rgb(255,192,192);")
 
-        self.cameraParams = Params({"x": -1280/2, "y": -720/2, "z": -360, "pitch": 0, "yaw": 0, "roll": 0, "fov": 90})
+        self.cameraParams = Params(
+            {"x": -1280/2, "y": -720/2, "z": -360, "pitch": 0, "yaw": 0, "roll": 0, "fov": 90})
         hozsplitter = QSplitter(Qt.Orientation.Vertical, self)
         # rightsplitter = QSplitter(hozsplitter)
         topsplitter = QSplitter(hozsplitter)
@@ -363,10 +359,10 @@ class Window(QMainWindow):
     def regeneratekeyframeoptions(self):
         self.keyframeoptions.regenerate()
 
-    def getframeimage(self,i):
+    def getframeimage(self, i):
         i = i * 60
         self.playbackframe = i
-        self.currentframestate = getstate(i,self)
+        self.currentframestate = getstate(i, self)
         sound = getsound(self.currentframestate, int(i/60*48000))
         if (sound[32, 0] != self.currentaudio[512+32]):
             self.currentaudio[:512] = self.currentaudio[512:]
@@ -374,40 +370,43 @@ class Window(QMainWindow):
         self.currentspectrum = np.fft.rfft(self.currentaudio)
         self.currentspectrum = self.currentspectrum[:512]
         self.currentspectrum = np.abs(self.currentspectrum)
-        self.viewport.updateviewportimage(self.currentframestate,self.currentspectrum)
+        self.viewport.updateviewportimage(
+            self.currentframestate, self.currentspectrum)
         self.viewport.videorenderer.repaint()
         if rendered:
-            resultimage = np.frombuffer(rendered,dtype=np.uint8)
-            resultimage = np.reshape(resultimage,(720,1280,4))
-            resultimage = resultimage[:,:,:3]
-            resultimage = np.flip(resultimage,0)
+            resultimage = np.frombuffer(rendered, dtype=np.uint8)
+            resultimage = np.reshape(resultimage, (720, 1280, 4))
+            resultimage = resultimage[:, :, :3]
+            resultimage = np.flip(resultimage, 0)
             return resultimage
-        return np.zeros((1280,720,3))
+        return np.zeros((1280, 720, 3))
 
     def getframesound(self):
         self.playbackframe = int(self.playbacksample/48000*60)
-        self.currentframestate = getstate(self.playbackframe,self)
-        returned = np.reshape(getsound(self.currentframestate, self.playbacksample)[:,0],(1,512))
+        self.currentframestate = getstate(self.playbackframe, self)
+        returned = np.reshape(
+            getsound(self.currentframestate, self.playbacksample)[:, 0], (1, 512))
         self.playbacksample += 512
         return returned
 
-    def render(self,filename, length):
+    def render(self, filename, length):
         self.playbacksample = 0
         self.renderaudiobuffer = np.zeros(0)
         clip = VideoClip(self.getframeimage, duration=length / 60)
-        audiowriter = PyAVAudioWriter(self.getframesound,"_tempaudio.mp3")
+        audiowriter = PyAVAudioWriter(self.getframesound, "_tempaudio.mp3")
         audiowriter.writeaudio(int(length/60*48000))
         # clip.write_videofile(filename=filename, fps=60, codec="libx264rgb", ffmpeg_params=["-strict","-2"]) perfection, doesnt embed | don't delete this
         clip.write_videofile(filename=filename, fps=60, codec="libvpx-vp9", ffmpeg_params=[
-                            "-pix_fmt", "yuv444p", "-crf", "25", "-b:v", "0"], write_logfile=True,audio="_tempaudio.mp3")  # perfection, embeds only on pc
+            "-pix_fmt", "yuv444p", "-crf", "25", "-b:v", "0"], write_logfile=True, audio="_tempaudio.mp3")  # perfection, embeds only on pc
         os.remove("_tempaudio.mp3")
+
     def keyPressEvent(self, event: QKeyEvent) -> None:
         # print(event.text())
         if event.text() == " ":
             self.isplaying = not self.isplaying
             self.starttime = perf_counter()
             self.startframe = self.playbackframe
-        #elif event.text() == "r":
+        # elif event.text() == "r":
         #    self.render("renderedvideo.mp4",600)
         return super().keyPressEvent(event)
 
