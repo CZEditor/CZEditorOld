@@ -7,6 +7,7 @@ from czeditor.base_ui import (QRedButton, QRedDecimalSpinBox, QRedFrame,
 class IntPropertyWidget(QRedFrame):
     def __init__(self, property,windowObject):
         super().__init__(None)
+        self.windowObject = windowObject
         self.theproperty = property
         self.widgets = QHBoxLayout()
         self.spinbox = QRedSpinBox(self, self.updateproperty)
@@ -17,6 +18,7 @@ class IntPropertyWidget(QRedFrame):
 
     def updateproperty(self, value):
         self.theproperty._val = value
+        self.windowObject.updateviewport()
 
     def updateself(self):
         self.spinbox.setValue(self.theproperty._val)
@@ -25,6 +27,7 @@ class IntPropertyWidget(QRedFrame):
 class StringPropertyWidget(QRedFrame):
     def __init__(self, property,windowObject):
         super().__init__(None)
+        self.windowObject = windowObject
         self.theproperty = property
         self.widgets = QHBoxLayout()
         self.textbox = QRedTextBox(self)
@@ -39,6 +42,7 @@ class StringPropertyWidget(QRedFrame):
 
     def updateproperty(self):
         self.theproperty._val = self.textbox.toPlainText()
+        self.windowObject.updateviewport()
 
     def updateself(self):
         self.textbox.setPlainText(self.theproperty._val)
@@ -47,6 +51,7 @@ class StringPropertyWidget(QRedFrame):
 class LineStringPropertyWidget(QRedFrame):
     def __init__(self, property,windowObject):
         super().__init__(None)
+        self.windowObject = windowObject
         self.theproperty = property
         self.widgets = QHBoxLayout()
         self.textbox = QRedTextEntry(self)
@@ -61,6 +66,7 @@ class LineStringPropertyWidget(QRedFrame):
 
     def updateproperty(self):
         self.theproperty._val = self.textbox.text()
+        self.windowObject.updateviewport()
 
     def updateself(self):
         self.textbox.setText(self.theproperty._val)
@@ -69,6 +75,7 @@ class LineStringPropertyWidget(QRedFrame):
 class FilePropertyWidget(QRedFrame):
     def __init__(self, property, filetypes,windowObject):
         super().__init__(None)
+        self.windowObject = windowObject
         self.theproperty = property
         self.filetypes = filetypes
         self.widgets = QVBoxLayout()
@@ -87,6 +94,7 @@ class FilePropertyWidget(QRedFrame):
 
     def updateproperty(self):
         self.theproperty._val = self.textbox.toPlainText()
+        self.windowObject.updateviewport()
 
     def updateself(self):
         self.textbox.setPlainText(self.theproperty._val)
@@ -100,6 +108,7 @@ class FilePropertyWidget(QRedFrame):
 class SizePropertyWidget(QRedFrame):
     def __init__(self, property,windowObject):
         super().__init__(None)
+        self.windowObject = windowObject
         self.theproperty = property
         self.widgets = QVBoxLayout()
 
@@ -146,12 +155,14 @@ class SizePropertyWidget(QRedFrame):
             self.theproperty._relativewidth*100)
         self.relativeHeightSpinBox.setValueBypass(
             self.theproperty._relativeheight*100)
+        self.windowObject.updateviewport()
 
     def updaterelativeproperty(self, value):
         self.theproperty.setrelative(
             (self.relativeWidthSpinBox.value()/100, self.relativeHeightSpinBox.value()/100))
         self.widthSpinBox.setValueBypass(self.theproperty._width)
         self.heightSpinBox.setValueBypass(self.theproperty._height)
+        self.windowObject.updateviewport()
 
     def updateself(self):
         self.baseWidthLabel.setText("Width\n"+str(self.theproperty._basewidth))
@@ -172,7 +183,7 @@ class FloatPropertyWidget(QRedFrame):
         self.theproperty = property
         self.widgets = QHBoxLayout()
         self.spinbox = QRedDecimalSpinBox(self, self.updateproperty)
-        self.spinbox.setValue(self.theproperty._val)
+        self.spinbox.setValue(self.theproperty(self.windowObject.playbackframe))
         self.animationModeButton = QRedExpandableButton(self, "A", self.enterAnimationMode)
         self.widgets.addWidget(self.spinbox)
         self.widgets.addWidget(self.animationModeButton)
@@ -181,9 +192,10 @@ class FloatPropertyWidget(QRedFrame):
 
     def updateproperty(self, value):
         self.theproperty._val = value
+        self.windowObject.updateviewport()
 
     def updateself(self):
-        self.spinbox.setValue(self.theproperty._val)
+        self.spinbox.setValue(self.theproperty(self.windowObject.playbackframe))
 
     def enterAnimationMode(self):
         self.windowObject.enterAnimationMode(self.theproperty)

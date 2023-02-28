@@ -707,6 +707,8 @@ class CzeTimeline(QWidget):
         self.animationProperty = None
         self.animationKeyframes = {}
         self.draggedAnimationFrame = None
+        self.backButton = QRedButton(self,"Back",self.exitAnimationMode)
+        self.backButton.hide()
 
     def timerEvent(self, event) -> None:
         self.updateSeekingState()
@@ -866,15 +868,15 @@ class CzeTimeline(QWidget):
             if event.button() == Qt.MouseButton.LeftButton:
                 founditem: QGraphicsItem = self.graphicsview.itemAt(
                     event.pos().x(), event.pos().y())
-                if isinstance(founditem, CzeTimelineAnimationKeyframeItem) or founditem is None:
-                    if founditem is not None:
+                if isinstance(founditem, CzeTimelineAnimationKeyframeItem) or isinstance(founditem, CzeTimelineAnimationModeBackground):
+                    if not isinstance(founditem, CzeTimelineAnimationModeBackground):
                         self.draggedAnimationFrame = founditem.keyframe
                         if self.parentclass.selectedAnimationFrame is not None:
                             self.animationKeyframes[self.parentclass.selectedAnimationFrame].setBrush(
                                 self.coolgradient)
                         founditem.setBrush(self.selectedcoolgradient)
                         self.parentclass.selectedAnimationFrame = founditem.keyframe
-                        self.parentclass.regeneratekeyframeoptions()
+                        self.parentclass.keyframeoptions.rebuild(self.draggedAnimationFrame.params)
                         self.parentclass.viewport.updatehandles()
                         self.graphicsview.update()
                     else:
@@ -1066,13 +1068,21 @@ class CzeTimeline(QWidget):
         if self.animationProperty.timeline is None:
             self.animationProperty.timeline = AnimationKeyframeList(self.parentclass)
         for keyframe in self.animationKeyframes:
-            self.scene.removeItem(keyframe)
+            self.scene.removeItem(self.animationKeyframes[keyframe])
         self.animationKeyframes = {}
         self.animationKeyframes["background"] = CzeTimelineAnimationModeBackground(lambda:(self.graphicsview.mapToScene(self.graphicsview.viewport().geometry()).boundingRect()))
         self.scene.addItem(self.animationKeyframes["background"])
         for keyframe in self.animationProperty.timeline:
-            print(keyframe)
             self.addAnimationKeyframe(keyframe)
+        self.backButton.show()
+        
+    def exitAnimationMode(self):
+        for keyframe in self.animationKeyframes:
+            self.scene.removeItem(self.animationKeyframes[keyframe])
+        self.animationKeyframes = {}
+        self.animationProperty = None
+        self.parentclass.keyframeoptions.rebuild(self.parentclass.selectedframe.params)
+        self.backButton.hide()
             
         
 class CzePresetKeyframeItem(QGraphicsItem):

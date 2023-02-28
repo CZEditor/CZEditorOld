@@ -8,7 +8,7 @@ class StaticDecimalNumber:
                 "value":FloatProperty(0)
             }
         )
-    def __call__(params, frame):
-        return params.value
+    def getValue(params, frame):
+        return params.value(frame)
 
 valueProviderFunctions = [["Static Decimal Number",StaticDecimalNumber]]
