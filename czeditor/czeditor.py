@@ -506,6 +506,7 @@ class Window(QMainWindow):
             self.viewport.updateviewportimage(
                 self.currentframestate, self.currentspectrum)
             self.timeline.updateplaybackcursor(self.playbackframe)
+            self.triggerEvent("FrameUpdate")
             self.needtoupdate = False
         if self.needtoupdate and not self.seeking:
             self.viewport.updateviewportimage(

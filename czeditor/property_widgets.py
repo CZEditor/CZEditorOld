@@ -199,15 +199,15 @@ class FloatPropertyWidget(QRedFrame):
         self.windowObject.updateviewport()
 
     def updateself(self):
+        self.spinbox.onchange = lambda a: None
         self.spinbox.setValue(self.theproperty(
             self.windowObject.playbackframe))
+        self.spinbox.onchange = self.updateproperty
+        self.update()
 
     def enterAnimationMode(self):
         self.windowObject.enterAnimationMode(self.theproperty)
-<<<<<<< Updated upstream
-=======
     
     def disconnectNotify(self, signal) -> None:
         self.windowObject.disconnectFromEvent("FrameUpdate",self.updateself)
         return super().disconnectNotify(signal)
->>>>>>> Stashed changes
