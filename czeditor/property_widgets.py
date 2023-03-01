@@ -1,4 +1,5 @@
 from PySide6.QtWidgets import QFileDialog, QHBoxLayout, QLabel, QVBoxLayout
+from PySide6.QtGui import QPainter
 
 from czeditor.base_ui import (QRedButton, QRedDecimalSpinBox, QRedFrame,
                               QRedSpinBox, QRedTextBox, QRedTextEntry, QRedExpandableButton)
@@ -191,6 +192,7 @@ class FloatPropertyWidget(QRedFrame):
         self.widgets.addWidget(self.animationModeButton)
         self.setLayout(self.widgets)
         self.setStyleSheet("border-width:0px;")
+        self.windowObject.connectToEvent("FrameUpdate",self.updateself)
 
     def updateproperty(self, value):
         self.theproperty._val = value
@@ -202,3 +204,10 @@ class FloatPropertyWidget(QRedFrame):
 
     def enterAnimationMode(self):
         self.windowObject.enterAnimationMode(self.theproperty)
+<<<<<<< Updated upstream
+=======
+    
+    def disconnectNotify(self, signal) -> None:
+        self.windowObject.disconnectFromEvent("FrameUpdate",self.updateself)
+        return super().disconnectNotify(signal)
+>>>>>>> Stashed changes

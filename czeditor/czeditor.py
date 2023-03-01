@@ -348,6 +348,21 @@ class Window(QMainWindow):
         self.currentspectrum = np.zeros(512)
         self.renderaudiobuffer = np.zeros(0)
         self.selectedAnimationFrame = None
+        self.events = {}
+        self.registerEvent("FrameUpdate")
+
+    def registerEvent(self, event):
+        self.events[event] = []
+    
+    def connectToEvent(self, event, function):
+        self.events[event].append(function)
+    
+    def disconnectFromEvent(self, event, function):
+        self.events[event].remove(function)
+    
+    def triggerEvent(self, event):
+        for function in self.events[event]:
+            function()
 
     def updateviewport(self):
         self.needtoupdate = True
@@ -495,6 +510,7 @@ class Window(QMainWindow):
         if self.needtoupdate and not self.seeking:
             self.viewport.updateviewportimage(
                 getstate(self.playbackframe, self), self.currentspectrum)
+            self.triggerEvent("FrameUpdate")
             self.needtoupdate = False
         return super().timerEvent(event)
 
