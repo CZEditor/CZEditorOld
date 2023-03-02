@@ -17,8 +17,14 @@ from czeditor.util import *
 loadedimages = {}
 emptyimage = Image.new("RGBA", (1, 1), (0, 0, 0, 0))
 
+sourcefunctionsdropdown = []
 
-class NormalImage():
+class Source:
+    def __init_subclass__(cls) -> None:
+        sourcefunctionsdropdown.append([cls.name, cls])
+
+
+class NormalImage(Source):
     name = "Image"
     params = Params(
         {
@@ -53,7 +59,7 @@ class NormalImage():
         return self.name+str(param)
 
 
-class FilledRectangle():
+class FilledRectangle(Source):
     name = "Filled Rectangle"
     params = Params(
         {
@@ -73,7 +79,7 @@ class FilledRectangle():
         return self.name
 
 
-class XPError():
+class XPError(Source):
     name = "Windows XP Error"
     params = Params(
         {
@@ -118,7 +124,7 @@ class XPError():
         return self.name"""
 
 
-class ImageSequence():
+class ImageSequence(Source):
     name = "Image Sequence"
     params = Params({
         "imagespath": FileProperty("")
@@ -134,7 +140,7 @@ class ImageSequence():
         return self.name
 
 
-class Video():
+class Video(Source):
     name = "Video"
     params = Params({
         "videopath": FileProperty("", "Video Files (*.mp4 *.mov *.mkv *.avi *.webm)"),
@@ -259,7 +265,7 @@ class Video():
         return self.name
 
 
-class Record():
+class Record(Source):
     name = "Record"
     params = Params({
         "transient": TransientProperty(Params({
@@ -281,5 +287,4 @@ class Record():
         return self.name
 
 
-sourcefunctionsdropdown = [["Image", NormalImage], ["Windows XP Error", XPError], [
-    "Filled Rectangle", FilledRectangle], ["Image Sequence", ImageSequence], ["Video", Video], ["Record", Record]]
+

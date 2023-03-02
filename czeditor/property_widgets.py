@@ -2,7 +2,8 @@ from PySide6.QtWidgets import QFileDialog, QHBoxLayout, QLabel, QVBoxLayout
 from PySide6.QtGui import QPainter
 
 from czeditor.base_ui import (QRedButton, QRedDecimalSpinBox, QRedFrame,
-                              QRedSpinBox, QRedTextBox, QRedTextEntry, QRedExpandableButton)
+                              QRedSpinBox, QRedTextBox, QRedTextEntry,
+                              QRedExpandableButton, QRedComboBox)
 
 
 class IntPropertyWidget(QRedFrame):
@@ -192,22 +193,47 @@ class FloatPropertyWidget(QRedFrame):
         self.widgets.addWidget(self.animationModeButton)
         self.setLayout(self.widgets)
         self.setStyleSheet("border-width:0px;")
-        self.windowObject.connectToEvent("FrameUpdate",self.updateself)
+        self.windowObject.connectToEvent("FrameUpdate", self.updateself)
 
     def updateproperty(self, value):
         self.theproperty._val = value
         self.windowObject.updateviewport()
 
     def updateself(self):
-        self.spinbox.onchange = lambda a: None
+        self.spinbox.onchange = self.lock  # Smart!
         self.spinbox.setValue(self.theproperty(
             self.windowObject.playbackframe))
-        self.spinbox.onchange = self.updateproperty
         self.update()
 
     def enterAnimationMode(self):
         self.windowObject.enterAnimationMode(self.theproperty)
-    
+
+    def lock(self, value):
+        self.spinbox.onchange = self.updateproperty
+
     def disconnectNotify(self, signal) -> None:
-        self.windowObject.disconnectFromEvent("FrameUpdate",self.updateself)
+        self.windowObject.disconnectFromEvent("FrameUpdate", self.updateself)
         return super().disconnectNotify(signal)
+
+
+class SelectablePropertyWidget(QRedFrame):
+    def __init__(self, property, windowObject):
+        super().__init__(None)
+        self.windowObject = windowObject
+        self.theproperty = property
+        self.widgets = QHBoxLayout()
+        self.combobox = QRedComboBox(
+            self.widgets, self.theproperty._selectable.names)
+        self.combobox.setCurrentIndex(self.theproperty._selectable.index)
+        self.combobox.onchange = self.updateproperty
+
+    def updateProperty(self, name, index):
+        self.theproperty._selectable.index = index
+        self.windowObject.updateviewport()
+
+    def updateself(self):
+        self.combobox.onchange = self.lock
+        self.combobox.setCurrentIndex(self.theproperty._selectable.index)
+
+    def lock(self, name, index):
+        self.combobox.onchange = self.updateProperty
