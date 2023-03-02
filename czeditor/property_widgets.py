@@ -50,6 +50,18 @@ class StringPropertyWidget(QRedFrame):
         self.textbox.setPlainText(self.theproperty._val)
 
 
+class ButtonPropertyWidget(QRedFrame):
+    def __init__(self, property):
+        super().__init__(None)
+        self.the_property = property
+        self.button = QRedButton(self, self.the_property._name, self.open_edit_window)
+
+        self.setStyleSheet("border-bottom-width:0px;")
+
+    def open_edit_window(self):
+        print("WHAT! OMG")
+
+
 class LineStringPropertyWidget(QRedFrame):
     def __init__(self, property, windowObject):
         super().__init__(None)

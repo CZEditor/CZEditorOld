@@ -1,3 +1,5 @@
+from typing import Callable
+
 from czeditor.property_widgets import *
 from czeditor.animation_keyframes import *
 from czeditor.util import Selectable, Params
@@ -54,6 +56,32 @@ class StringProperty:
 
     def __str__(self):
         return self._val
+    
+
+class ButtonProperty:
+    def __init__(self, name, invoke_on_click:Callable):
+        self._name = name
+        self._func = invoke_on_click
+
+    @property
+    def name(self) -> str:
+        return self._name
+
+    @property
+    def func(self) -> Callable:
+        return self._func
+    
+    def copy(self):
+        return ButtonProperty(self._name, self._func)
+
+    def widget(self, windowObject):
+        return ButtonPropertyWidget(self)
+    
+    def __call__(self):
+        return self._name
+
+    def __str__(self):
+        return self._name
 
 
 class LineStringProperty:
