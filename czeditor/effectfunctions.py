@@ -21,9 +21,13 @@ imagecache = {}
     if strparam not in imagecache:
         imagecache[strparam] = func.function().image(func.params,parentclass).resize((width,height))
     return imagecache[strparam]"""
+effectfunctionsdropdown = []
 
+class Effect:
+    def __init_subclass__(cls):
+        effectfunctionsdropdown.append([cls.name,cls])
 
-class ImageComposite():
+class ImageComposite(Effect):
     name = "Normal Media"
     params = Params({
         "x": 0,
@@ -57,7 +61,7 @@ class ImageComposite():
         return self.name
 
 
-class Media2D:
+class Media2D(Effect):
     name = "2D Media",
     params = Params({
         "x": IntProperty(0),
@@ -111,7 +115,7 @@ class Media2D:
         return [CzeViewportDraggableHandle(None, parentclass, params.params.x, params.params.y)]
 
 
-class Media3D:
+class Media3D(Effect):
     name = "3D Media",
     params = Params({
         "x": IntProperty(0),
@@ -172,7 +176,7 @@ class Media3D:
         return [CzeViewportDraggableHandle(None, parentclass, params.params.x, params.params.y)]
 
 
-class BasicShader:
+class BasicShader(Effect):
     name = "Basic Shader"
     params = Params({
         "transient": TransientProperty(Params({
@@ -196,7 +200,7 @@ class BasicShader:
         return image, vertices, shader
 
 
-class ScrollingShader:
+class ScrollingShader(Effect):
     name = "Scrolling Shader"
     params = Params({
         "speedX": FloatProperty(1.0),
@@ -223,7 +227,7 @@ class ScrollingShader:
         return image, vertices, shader
 
 
-class TilingShader:
+class TilingShader(Effect):
     name = "Tiling Shader"
     params = Params({
         "amountX": FloatProperty(1.0),
@@ -248,7 +252,7 @@ class TilingShader:
         return image, vertices, shader
 
 
-class CustomShader:
+class CustomShader(Effect):
     name = "Custom Shader"
     params = Params({
         "variableA": FloatProperty(0.0),
@@ -282,7 +286,7 @@ class CustomShader:
         return image, vertices, shader
 
 
-class CustomColorShader:
+class CustomColorShader(Effect):
     name = "Custom Color Shader"
     params = Params({
         "variableA": FloatProperty(0.0),
@@ -319,7 +323,7 @@ class CustomColorShader:
         return image, vertices, shader
 
 
-class CustomCode:
+class CustomCode(Effect):
     name = "Custom Code"
     params = Params({
         "code": StringProperty("")
@@ -351,7 +355,7 @@ class Shader():
     def imageEffect(imageparam,params)"""
 
 
-class BlurShader:
+class BlurShader(Effect):
     name = "Blur Shader"
     params = Params({
         "transient": TransientProperty(Params({
@@ -382,7 +386,7 @@ class BlurShader:
         return image, vertices, shader
 
 
-class GlitchShader:
+class GlitchShader(Effect):
     name = "Glitch Shader"
     params = Params({
         "amount": IntProperty(1),
@@ -411,7 +415,7 @@ class GlitchShader:
         return image, vertices, shader
 
 
-class CustomVertexShader:
+class CustomVertexShader(Effect):
     name = "Custom Vertex Shader"
     params = Params({
         "variableA": FloatProperty(0.0),
@@ -443,10 +447,6 @@ class CustomVertexShader:
                        "vertexlinetoadd": "shadercustom"+str(index)+"($inpos,vertexColor,spectrum,"+str(params.variableA(frame))+","+str(params.variableB(frame))+",frame,$outpos);",
                        "vertexdeclaration": "void shadercustom"+str(index)+"(in vec3 inpos, in vec2 vertexColor, in float spectrum[512], float variableA, float variableB, float frame, out vec3 outpos);"})
         return image, vertices, shader
-
-
-effectfunctionsdropdown = [["Media 2D", Media2D], ["Media 3D", Media3D], ["Basic Shader", BasicShader], ["Scrolling Shader", ScrollingShader], ["Tiling Shader", TilingShader], [
-    "Custom Shader", CustomShader], ["Custom Code", CustomCode], ["Blur Shader", BlurShader], ["Glitch Shader", GlitchShader], ["Custom Vertex Shader", CustomVertexShader], ["Custom Color Shader", CustomColorShader]]
 # ["Normal Media",ImageComposite],
 
 """vertexes = np.array([

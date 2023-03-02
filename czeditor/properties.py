@@ -214,13 +214,20 @@ class FloatProperty:
             }
         ))
 
-    @property
-    def val(self):
-        return self._val
-
-    @val.setter
-    def val(self, value):
-        self._val = value
-
     def set(self, value):
         self._val = value
+
+
+class SelectableProperty:
+
+    def __init__(self, options=[["None", None]], index=0):
+        self._selectable = Selectable(index, options)
+
+    def __call__(self):
+        return self._selectable()
+
+    def widget(self, windowObject):
+        return SelectablePropertyWidget(self, windowObject)
+
+    def set(self, value):
+        self._selectable.index = value

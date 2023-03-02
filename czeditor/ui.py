@@ -493,16 +493,19 @@ class CzeKeyframeOptions(QRedScrollArea):
         if params:
             self.params = params
             for i in range(self.widgets.count()):
-                self.widgets.itemAt(0).widget().setParent(None)
+                self.widgets.itemAt(0).widget().deleteLater()
+                self.widgets.takeAt(0)
             self.iterate(self.params)
         elif self.parentclass.selectedframe:
             self.params = self.parentclass.selectedframe.params
             for i in range(self.widgets.count()):
-                self.widgets.itemAt(0).widget().setParent(None)
+                self.widgets.itemAt(0).widget().deleteLater()
+                self.widgets.takeAt(0)
             self.iterate(self.params)
         else:
             for i in range(self.widgets.count()):
-                self.widgets.itemAt(0).widget().setParent(None)
+                self.widgets.itemAt(0).widget().deleteLater()
+                self.widgets.takeAt(0)
         self.setMaximumWidth(self.viewframe.contentsRect(
         ).width()+self.verticalScrollBar().width())
 
@@ -512,7 +515,8 @@ class CzeKeyframeOptions(QRedScrollArea):
             self.iterateUpdate(self.params)
         else:
             for i in range(self.widgets.count()):
-                self.widgets.itemAt(0).widget().setParent(None)
+                self.widgets.itemAt(0).widget().deleteLater()
+                self.widgets.takeAt(0)
 
     def regenerate(self, keyframe=None):
         if keyframe:
@@ -523,7 +527,8 @@ class CzeKeyframeOptions(QRedScrollArea):
             self.iterateRegenerate(self.params)
         else:
             for i in range(self.widgets.count()):
-                self.widgets.itemAt(0).widget().setParent(None)
+                self.widgets.itemAt(0).widget().deleteLater()
+                self.widgets.takeAt(0)
         self.setMaximumWidth(self.viewframe.contentsRect(
         ).width()+self.verticalScrollBar().width())
 

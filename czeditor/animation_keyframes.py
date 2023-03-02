@@ -116,8 +116,10 @@ class AnimationKeyframeList():
     def getValueAt(self, frame: int):
         if len(self.keyframes) == 0:
             return None
+        if self.keyframes[0].frame > frame:
+            return self.keyframes[0].getValue(frame-self.keyframes[0].frame)
         for keyframe in range(len(self.keyframes)-1):
-            if self.keyframes[keyframe].frame < frame:
+            if self.keyframes[keyframe+1].frame > frame:
                 return self.keyframes[keyframe].mix(
                     frame-self.keyframes[keyframe].frame,
                     self.keyframes[keyframe+1].frame -
@@ -125,4 +127,4 @@ class AnimationKeyframeList():
                     self.keyframes[keyframe].getValue(
                         frame-self.keyframes[keyframe].frame),
                     self.keyframes[keyframe+1].getValue(frame-self.keyframes[keyframe+1].frame))
-        return self.keyframes[keyframe].getValue(frame-self.keyframes[keyframe].frame)
+        return self.keyframes[-1].getValue(frame-self.keyframes[-1].frame)

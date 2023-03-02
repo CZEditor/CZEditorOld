@@ -4,7 +4,13 @@ from czeditor.properties import *
 from czeditor.util import Params
 
 
-class NormalKeyframe():
+actionfunctionsdropdown = []
+
+class Action:
+    def __init_subclass__(cls):
+        actionfunctionsdropdown.append([cls.name,cls])
+
+class NormalKeyframe(Action):
     name = "Media"
     params = Params({})
 
@@ -19,7 +25,7 @@ class NormalKeyframe():
         return self.name
 
 
-class ErrorKeyframe():
+class ErrorKeyframe(Action):
     name = "Windows Error"
     params = Params({})
 
@@ -34,7 +40,7 @@ class ErrorKeyframe():
         return self.name
 
 
-class CascadeKeyframe():
+class CascadeKeyframe(Action):
     name = "Cascade"
     params = Params(
         {
@@ -69,7 +75,7 @@ class CascadeKeyframe():
         return self.name
 
 
-class CameraMotionKeyframe():
+class CameraMotionKeyframe(Action):
     name = "Camera Motion"
     params = Params({
         "x": IntProperty(-640),
@@ -92,5 +98,4 @@ class CameraMotionKeyframe():
         return statetomodify
 
 
-actionfunctionsdropdown = [["Media", NormalKeyframe], [
-    "Windows Error", ErrorKeyframe], ["Cascade", CascadeKeyframe], ["Camera Motion", CameraMotionKeyframe]]
+
