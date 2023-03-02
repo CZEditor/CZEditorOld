@@ -1,4 +1,5 @@
-from typing import Callable
+from typing import Any
+from PySide6.QtWidgets import QMainWindow
 
 from czeditor.property_widgets import *
 from czeditor.animation_keyframes import *
@@ -58,30 +59,32 @@ class StringProperty:
         return self._val
     
 
-class ButtonProperty:
-    def __init__(self, name, invoke_on_click:Callable):
-        self._name = name
-        self._func = invoke_on_click
+class OpenWindowButtonProperty:
+    def __init__(self, button_name:str, window:QMainWindow, value:Any):
+        """A property that's capable of opening a secondary window with a button."""
+        self._val = value
+        self.__button_name = button_name
+        self.__window = window
 
     @property
-    def name(self) -> str:
-        return self._name
+    def btn_name(self) -> str:
+        return self.__button_name
 
     @property
-    def func(self) -> Callable:
-        return self._func
+    def window(self) -> QMainWindow:
+        return self.__window
     
     def copy(self):
-        return ButtonProperty(self._name, self._func)
+        return OpenWindowButtonProperty(self.__button_name, self.__window, self._val)
 
-    def widget(self, windowObject):
-        return ButtonPropertyWidget(self)
+    def widget(self, windowObject) -> OpenWindowButtonPropertyWidget:
+        return OpenWindowButtonPropertyWidget(self, windowObject)
     
     def __call__(self):
-        return self._name
+        return self._val
 
     def __str__(self):
-        return self._name
+        return self._val
 
 
 class LineStringProperty:
