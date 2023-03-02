@@ -1,13 +1,13 @@
+import os
+import sys
 from sys import exit  # Just in case Nuitka throws another tantrum
+
 import czeditor.util.installhelper
 if __name__ == "__main__":
     # Checks for missing runtime dependencies and installs them
     # if possible or prompts the user to install them manually
-    if czeditor.util.installhelper.checkAndInstall():
-        exit(0)
+    czeditor.util.installhelper.checkAndInstall()
 
-import os
-import sys
 
 from PySide6.QtCore import QDir
 from PySide6.QtWidgets import QApplication

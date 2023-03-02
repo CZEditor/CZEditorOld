@@ -32,7 +32,7 @@ class ErrorKeyframe(Action):
     def action(statetomodify, keyframe, stateparam, frame, windowObject):
         if statetomodify:
             statetomodify[-1].imageparams.params.active = False
-        keyframe.source.params.active = True
+        keyframe.params.source.params.active = True
         # statetomodify.append(keyframe)
         return statetomodify
 
