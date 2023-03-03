@@ -26,12 +26,6 @@ from czeditor.ui import *
 from czeditor.util import *
 from czeditor.avreader import PyAVAudioWriter
 
-UIDropdownLists = [
-    [NormalImage, XPError],
-    [NormalKeyframe],
-    [ImageComposite]
-]
-
 
 # TODO : Move these into the Window class
 
@@ -353,13 +347,13 @@ class Window(QMainWindow):
 
     def registerEvent(self, event):
         self.events[event] = []
-    
+
     def connectToEvent(self, event, function):
         self.events[event].append(function)
-    
+
     def disconnectFromEvent(self, event, function):
         self.events[event].remove(function)
-    
+
     def triggerEvent(self, event):
         for function in self.events[event]:
             function()

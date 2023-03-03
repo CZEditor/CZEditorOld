@@ -2,9 +2,10 @@ from typing import overload
 
 
 class AnimationKeyframe():
-    def __init__(self, frame, params):
+    def __init__(self, frame, track, params):
         self.params = params
         self.frame = frame
+        self.track = track
 
     def getValue(self, frame):
         return self.params.provider.function().getValue(self.params.provider.params, frame)
@@ -14,10 +15,11 @@ class AnimationKeyframe():
 
 
 class AnimationKeyframeList():
-    def __init__(self, windowClass):
+    def __init__(self, tracks, windowClass):
         self.windowClass = windowClass
         self.keyframes = []
         self.needssorting = False
+        self.tracks = tracks
 
     def add(self, keyframe: AnimationKeyframe) -> None:
         self.keyframes.append(keyframe)
@@ -103,6 +105,23 @@ class AnimationKeyframeList():
             i = o
         self.keyframes[i].frame = frame
         self.needssorting = True
+    
+    @overload
+    def moveToTrack(self, keyframe: AnimationKeyframe, frame: int):
+        ...
+
+    @overload
+    def moveToTrack(self, i: int, frame: int):
+        ...
+
+    def moveToTrack(self, o, track: int):
+        if track < 0 or track >= len(self.tracks):
+            raise ValueError (f"track must be in range 0 - {len(self.tracks)-1}")
+        if isinstance(o, AnimationKeyframe):
+            i = self.keyframes.index(o)
+        else:
+            i = o
+        self.keyframes[i].track = track
 
     def getsafe(self, i):
         if len(self.keyframes) > i and i > 0:

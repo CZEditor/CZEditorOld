@@ -115,7 +115,8 @@ class SizePropertyWidget(QRedFrame):
         self.widgets = QVBoxLayout()
 
         self.baseWidthLabel = QLabel(self)
-        self.baseWidthLabel.setText("Width\n"+str(self.theproperty._basewidth))
+        self.baseWidthLabel.setText(
+            "Base Width\n"+str(self.theproperty._basewidth))
         self.widgets.addWidget(self.baseWidthLabel)
 
         self.widthSpinBox = QRedSpinBox(self, self.updateproperty)
@@ -128,7 +129,7 @@ class SizePropertyWidget(QRedFrame):
 
         self.baseHeightLabel = QLabel(self)
         self.baseHeightLabel.setText(
-            "Height\n"+str(self.theproperty._baseheight))
+            "Base Height\n"+str(self.theproperty._baseheight))
         self.widgets.addWidget(self.baseHeightLabel)
 
         self.heightSpinBox = QRedSpinBox(self, self.updateproperty)
@@ -167,9 +168,10 @@ class SizePropertyWidget(QRedFrame):
         self.windowObject.updateviewport()
 
     def updateself(self):
-        self.baseWidthLabel.setText("Width\n"+str(self.theproperty._basewidth))
+        self.baseWidthLabel.setText(
+            "Base Width\n"+str(self.theproperty._basewidth))
         self.baseHeightLabel.setText(
-            "Height\n"+str(self.theproperty._baseheight))
+            "Base Height\n"+str(self.theproperty._baseheight))
         self.widthSpinBox.setValue(self.theproperty._width)
         self.heightSpinBox.setValue(self.theproperty._height)
         self.relativeWidthSpinBox.setValue(self.theproperty._relativewidth*100)

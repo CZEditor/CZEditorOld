@@ -16,6 +16,7 @@ class StaticDecimalNumber(Provider):
             "value": FloatProperty(0)
         }
     )
+    output = ["Float"]
 
     def getValue(params, frame):
         return params.value(frame)

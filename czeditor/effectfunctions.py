@@ -23,50 +23,18 @@ imagecache = {}
     return imagecache[strparam]"""
 effectfunctionsdropdown = []
 
+
 class Effect:
     def __init_subclass__(cls):
-        effectfunctionsdropdown.append([cls.name,cls])
-
-class ImageComposite(Effect):
-    name = "Normal Media"
-    params = Params({
-        "x": 0,
-        "y": 0,
-        "width": 1280,
-        "height": 720,
-        "relativewidth": 100,
-        "relativeheight": 100
-    })
-
-    def imageEffect(canvas, imageparam, params, parentclass, keyframe):
-        img = imageparam.function().image(imageparam.params, parentclass)
-        # put this in the onupdate function! make sure that it gets called only after the image has been updated
-        params.params.width = int(img.size[0]*params.params.relativewidth/100)
-        params.params.height = int(
-            img.size[1]*params.params.relativeheight/100)
-        canvas.alpha_composite(img.resize((params.params.width, params.params.height),
-                               Image.Resampling.NEAREST), (params.params.x, params.params.y))
-        return canvas
-
-    def onupdate(self, imageparam, params, parentclass, keyframe):
-        img = imageparam.function().image(imageparam.params, parentclass)
-        params.params.width = int(img.size[0]*params.params.relativewidth/100)
-        params.params.height = int(
-            img.size[1]*params.params.relativeheight/100)
-
-    def handle(keyframe, parentclass, params):
-        return [CzeViewportDraggableHandle(None, parentclass, ParamLink(params.params, "x"), ParamLink(params.params, "y"))]
-
-    def __str__(self):
-        return self.name
+        effectfunctionsdropdown.append([cls.name, cls])
 
 
 class Media2D(Effect):
-    name = "2D Media",
+    name = "2D Media"
     params = Params({
         "x": IntProperty(0),
         "y": IntProperty(0),
-        "rotation": IntProperty(0),
+        "rotation": FloatProperty(0.0),
         "size": SizeProperty(1280, 720, 1280, 720),
         "transient": TransientProperty(Params({
             "lastsize": (32, 32)
@@ -99,7 +67,7 @@ class Media2D(Effect):
                                       [-width/2,  height/2, 0.0, 0.0, 1.0],
                                       [width/2,  height/2, 0.0, 1.0, 1.0]], dtype=np.float32)
 
-        angle = np.deg2rad(params.rotation())
+        angle = np.deg2rad(params.rotation(frame))
 
         rotationMatrix = np.array([[np.cos(angle), -np.sin(angle)],
                                    [np.sin(angle), np.cos(angle)]])
@@ -116,14 +84,14 @@ class Media2D(Effect):
 
 
 class Media3D(Effect):
-    name = "3D Media",
+    name = "3D Media"
     params = Params({
         "x": IntProperty(0),
         "y": IntProperty(0),
         "z": IntProperty(0),
-        "rotationX": IntProperty(0),
-        "rotationY": IntProperty(0),
-        "rotationZ": IntProperty(0),
+        "rotationX": FloatProperty(0.0),
+        "rotationY": FloatProperty(0.0),
+        "rotationZ": FloatProperty(0.0),
         "size": SizeProperty(1280, 720, 1280, 720),
         "transient": TransientProperty(Params({
             "lastsize": (32, 32)
@@ -159,9 +127,9 @@ class Media3D(Effect):
         newvertices = np.hstack(
             (
                 Rotation.from_euler("xyz", (
-                    params.rotationX(),
-                    params.rotationY(),
-                    params.rotationZ()), True).apply(
+                    params.rotationX(frame),
+                    params.rotationY(frame),
+                    params.rotationZ(frame)), True).apply(
                     newvertices[:, :3]
                 ),
                 newvertices[:, 3:]
@@ -448,6 +416,7 @@ class CustomVertexShader(Effect):
                        "vertexdeclaration": "void shadercustom"+str(index)+"(in vec3 inpos, in vec2 vertexColor, in float spectrum[512], float variableA, float variableB, float frame, out vec3 outpos);"})
         return image, vertices, shader
 # ["Normal Media",ImageComposite],
+
 
 """vertexes = np.array([
         params.params.x-1280/2,  params.params.y-720/2, sin(parentclass.playbackframe/10)/20, 0.0, 0.0,

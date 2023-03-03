@@ -654,6 +654,24 @@ class CzeTimelineAnimationModeBackground(QGraphicsItem):
         painter.drawRect(self.boundrect())
 
 
+class CzeTimelineAnimationTrackLine(QGraphicsItem):
+    def __init__(self, boundrect, track: int):
+        super().__init__()
+        self.boundrect = boundrect
+        self.track: int = track
+
+    def boundingRect(self):
+        rect: QRectF = self.boundrect()
+        rect.setHeight(1)
+        rect.setX(self.track)
+        return rect
+
+    def paint(self, painter: QPainter, option, widget) -> None:
+        painter.setPen(QPen(QColor(255, 255, 255), 0))
+        rect: QRectF = self.boundrect()
+        painter.drawLine(rect.left(), self.track, rect.right(), self.track)
+
+
 class CzeTimeline(QWidget):
     coolgradient = QRadialGradient(50, 50, 90)
     coolgradient.setColorAt(1, QColor(255, 255, 255))
@@ -1072,7 +1090,7 @@ class CzeTimeline(QWidget):
         else:
             if event.text() == "k":
                 keyframe = self.animationProperty.defaultKeyframe(
-                    self.parentclass.playbackframe)
+                    self.parentclass.playbackframe, 0) # TODO : Make track selection change what track the keyframe is created on.
                 self.animationProperty.timeline.add(keyframe)
                 self.addAnimationKeyframe(keyframe)
 
@@ -1082,12 +1100,16 @@ class CzeTimeline(QWidget):
         self.animationProperty = property
         if self.animationProperty.timeline is None:
             self.animationProperty.timeline = AnimationKeyframeList(
-                self.parentclass)
+                self.animationProperty.tracks, self.parentclass)
         for keyframe in self.animationKeyframes:
             self.scene.removeItem(self.animationKeyframes[keyframe])
         self.animationKeyframes = {}
-        self.animationKeyframes["background"] = CzeTimelineAnimationModeBackground(lambda: (
-            self.graphicsview.mapToScene(self.graphicsview.viewport().geometry()).boundingRect()))
+        boundrect = lambda: (
+            self.graphicsview.mapToScene(self.graphicsview.viewport().geometry()).boundingRect())
+        self.animationKeyframes["background"] = CzeTimelineAnimationModeBackground(boundrect)
+        for track in range(len(self.animationProperty.tracks)):
+            self.animationKeyframes["track" + str(track)] = CzeTimelineAnimationTrackLine(boundrect,track*20)
+            self.scene.addItem(self.animationKeyframes["track" +str(track)])
         self.scene.addItem(self.animationKeyframes["background"])
         for keyframe in self.animationProperty.timeline:
             self.addAnimationKeyframe(keyframe)

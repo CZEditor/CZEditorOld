@@ -12,6 +12,7 @@ class Mixer:
 class Constant(Mixer):
     name = "Constant"
     params = Params({})
+    output = ["Float"]
 
     def getValue(self, frame, length, a, b):
         return a
@@ -20,6 +21,7 @@ class Constant(Mixer):
 class FloatLerp(Mixer):
     name = "Linear"
     params = Params({})
+    output = ["Float"]
 
     def getValue(self, frame, length, a, b):
         return frame/length*b+(1-frame/length)*a
