@@ -13,6 +13,7 @@ from czeditor.handles import CzeViewportDraggableHandle
 from czeditor.openglfunctions import *
 from czeditor.properties import *
 from czeditor.util import ParamLink, Params
+from czeditor.code_edit_window import CodeEditWindow
 
 imagecache = {}
 """def cachecomposite(func,parentclass,width,height):
@@ -259,7 +260,7 @@ class CustomColorShader(Effect):
     params = Params({
         "variableA": FloatProperty(0.0),
         "variableB": FloatProperty(0.0),
-        "custom": StringProperty("color = texture(image,inpos);"),
+        "custom": OpenWindowButtonProperty("Edit Script...", CodeEditWindow, "color = texture(image,inpos);"),
         "transient": TransientProperty(Params({
             "shader": None,
             "previousCustom": "",
