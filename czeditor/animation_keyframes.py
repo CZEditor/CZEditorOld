@@ -15,11 +15,12 @@ class AnimationKeyframe():
 
 
 class AnimationKeyframeList():
-    def __init__(self, tracks, windowClass):
+    def __init__(self, tracks: dict, windowClass):
         self.windowClass = windowClass
         self.keyframes: List[AnimationKeyframe] = []
         self.needssorting = False
         self.tracks = tracks
+        self.originaltracks = tracks
 
     def add(self, keyframe: AnimationKeyframe) -> None:
         self.keyframes.append(keyframe)
@@ -159,6 +160,8 @@ class AnimationKeyframeList():
 
         if self.needssorting:
             self.keyframes = sorted(self.keyframes, key=lambda k: k.frame)
+
+        self.tracks = {k: v.copy() for k, v in self.originaltracks.items()}
 
         for keyframe in self.keyframes:
             if keyframe.frame > frame:

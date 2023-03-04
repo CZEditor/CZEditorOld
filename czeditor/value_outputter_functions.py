@@ -37,3 +37,20 @@ class FloatLerp(Outputter):
                 (1-t)+nextKeyframe.getValue(trackValues, frame)[i]["value"]*t
             i += 1
         return trackValues
+
+
+class FloatSmoothInterpolation(Outputter):
+    name = "Smooth 1"
+    params = Params({})
+    output = ["Float"]
+
+    def getValue(params, trackValues, keyframe, frame, nextKeyframes):
+        value = keyframe.getValue(trackValues, frame)
+        i = 0
+        for nextKeyframe in nextKeyframes:
+            t = frame/(nextKeyframe.frame-keyframe.frame)
+            t = t*t*3-t*t*t*2
+            trackValues[i]["value"] = value[i]["value"] * \
+                (1-t)+nextKeyframe.getValue(trackValues, frame)[i]["value"]*t
+            i += 1
+        return trackValues

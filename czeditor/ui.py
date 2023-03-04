@@ -897,17 +897,18 @@ class CzeTimeline(QWidget):
             self.graphicsview.update()
 
     def doubleClickEvent(self, event: QMouseEvent):
-        if event.button() == Qt.MouseButton.LeftButton:
-            founditem: QGraphicsItem = self.graphicsview.itemAt(
-                event.pos().x(), event.pos().y())
-            if isinstance(founditem, CzeTimelineKeyframeItem):
-                self.parentclass.draggedpreset = founditem.keyframe.copy()
-                drag = QDrag(self)
-                mime = QMimeData()
-                drag.setMimeData(mime)
-                drag.exec_(Qt.MoveAction)
-            else:
-                self.deselectFrame()
+        if self.animationProperty is None:
+            if event.button() == Qt.MouseButton.LeftButton:
+                founditem: QGraphicsItem = self.graphicsview.itemAt(
+                    event.pos().x(), event.pos().y())
+                if isinstance(founditem, CzeTimelineKeyframeShape):
+                    self.parentclass.draggedpreset = founditem.keyframe.copy()
+                    drag = QDrag(self)
+                    mime = QMimeData()
+                    drag.setMimeData(mime)
+                    drag.exec_(Qt.MoveAction)
+                else:
+                    self.deselectFrame()
 
     def pressEvent(self, event: QMouseEvent) -> None:
         if self.animationProperty is None:
@@ -1145,6 +1146,7 @@ class CzeTimeline(QWidget):
         return super().keyPressEvent(event)
 
     def enterAnimationMode(self, property):
+        self.parentclass.selectedAnimationFrame = None
         self.animationProperty = property
         if self.animationProperty.timeline is None:
             self.animationProperty.timeline = AnimationKeyframeList(
@@ -1173,6 +1175,7 @@ class CzeTimeline(QWidget):
         self.parentclass.keyframeoptions.rebuild(
             self.parentclass.selectedframe.params)
         self.backButton.hide()
+        self.parentclass.selectedAnimationFrame = None
 
 
 class CzePresetKeyframeItem(QGraphicsItem):
