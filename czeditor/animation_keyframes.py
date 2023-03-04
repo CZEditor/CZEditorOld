@@ -1,23 +1,23 @@
-from typing import overload
+from typing import overload, List
 
 
 class AnimationKeyframe():
-    def __init__(self, frame, track, params):
+    def __init__(self, frame, tracks, params):
         self.params = params
         self.frame = frame
-        self.track = track
+        self.tracks = tracks
 
-    def getValue(self, frame):
-        return self.params.provider.function().getValue(self.params.provider.params, frame)
+    def getValue(self, trackValues, frame):
+        return self.params.provider.function().getValue(self.params.provider.params, trackValues, self, frame)
 
-    def mix(self, frame, length, a, b):
-        return self.params.mixer.function().getValue(self.params.mixer.params, frame, length, a, b)
+    def output(self, trackValues, frame, nextKeyframes):
+        return self.params.outputter.function().getValue(self.params.outputter.params, trackValues, self, frame, nextKeyframes)
 
 
 class AnimationKeyframeList():
     def __init__(self, tracks, windowClass):
         self.windowClass = windowClass
-        self.keyframes = []
+        self.keyframes: List[AnimationKeyframe] = []
         self.needssorting = False
         self.tracks = tracks
 
@@ -105,23 +105,21 @@ class AnimationKeyframeList():
             i = o
         self.keyframes[i].frame = frame
         self.needssorting = True
-    
+
     @overload
-    def moveToTrack(self, keyframe: AnimationKeyframe, frame: int):
+    def moveToTrack(self, keyframe: AnimationKeyframe, track: int, index: int):
         ...
 
     @overload
-    def moveToTrack(self, i: int, frame: int):
+    def moveToTrack(self, i: int, track: int, index: int):
         ...
 
-    def moveToTrack(self, o, track: int):
-        if track < 0 or track >= len(self.tracks):
-            raise ValueError (f"track must be in range 0 - {len(self.tracks)-1}")
+    def moveToTrack(self, o, track: int, index: int):
         if isinstance(o, AnimationKeyframe):
             i = self.keyframes.index(o)
         else:
             i = o
-        self.keyframes[i].track = track
+        self.keyframes[i].tracks[index] = track
 
     def getsafe(self, i):
         if len(self.keyframes) > i and i > 0:
@@ -132,18 +130,46 @@ class AnimationKeyframeList():
     def isin(self, keyframe: AnimationKeyframe) -> bool:
         return keyframe in self.keyframes
 
+    def getKeyframeTracks(self, keyframe: AnimationKeyframe):
+        # Puts all the tracks of the keyframe in a list in order
+        # They dont have their original indexes because they are not needed.
+        # if the timeline tracks are {0:track0, 1:track1, ...} and the keyframe tracks are [0,2],
+        # then the result of this function will be [track0,track2],[0,2]
+        tracks = [self.tracks[i] for i in keyframe.tracks]
+        return tracks, keyframe.tracks
+
+    def getNextKeyframes(self, trackIds, keyframe: AnimationKeyframe):
+        startIndex = self.keyframes.index(keyframe)
+        if startIndex+1 >= len(self.keyframes):
+            return []
+        nextKeyframes = []
+        for trackId in trackIds:
+            # We can start from the keyframe in question.
+            for index in range(startIndex+1, len(self.keyframes)):
+                # Is the keyframe in the current wanted track?
+                if trackId in self.keyframes[index].tracks:
+                    nextKeyframes.append(self.keyframes[index])
+                    break
+        return nextKeyframes
+
     def getValueAt(self, frame: int):
+
         if len(self.keyframes) == 0:
             return None
-        if self.keyframes[0].frame > frame:
-            return self.keyframes[0].getValue(frame-self.keyframes[0].frame)
-        for keyframe in range(len(self.keyframes)-1):
-            if self.keyframes[keyframe+1].frame > frame:
-                return self.keyframes[keyframe].mix(
-                    frame-self.keyframes[keyframe].frame,
-                    self.keyframes[keyframe+1].frame -
-                    self.keyframes[keyframe].frame,
-                    self.keyframes[keyframe].getValue(
-                        frame-self.keyframes[keyframe].frame),
-                    self.keyframes[keyframe+1].getValue(frame-self.keyframes[keyframe+1].frame))
-        return self.keyframes[-1].getValue(frame-self.keyframes[-1].frame)
+
+        if self.needssorting:
+            self.keyframes = sorted(self.keyframes, key=lambda k: k.frame)
+
+        for keyframe in self.keyframes:
+            if keyframe.frame > frame:
+                return self.tracks  # Stop when reached the last keyframe before the cursor
+            # tracks is a list of tracks which have their corresponding index in trackIds
+            tracks, trackIds = self.getKeyframeTracks(keyframe)
+            tracks = keyframe.output(
+                tracks, frame-keyframe.frame, self.getNextKeyframes(trackIds, keyframe))  # Get the new tracks
+            i = 0
+            for track in trackIds:
+                # Set corresponding tracks to the new tracks
+                self.tracks[track] = tracks[i]
+                i += 1
+        return self.tracks

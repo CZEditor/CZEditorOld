@@ -4,7 +4,7 @@ from PySide6.QtGui import (QColor, QDrag, QDragEnterEvent, QDragMoveEvent,
                            QPen, QRadialGradient, QResizeEvent, QWheelEvent)
 from PySide6.QtWidgets import (QFormLayout, QGraphicsItem, QGraphicsScene,
                                QGraphicsView, QGridLayout, QSizePolicy,
-                               QWidget)
+                               QWidget, QGraphicsItemGroup)
 
 from czeditor.base_ui import *
 from czeditor.effectfunctions import *
@@ -583,7 +583,7 @@ class QGraphicsViewEvent(QGraphicsView):
         self.dragdrop(event)
 
 
-class CzeTimelineKeyframeItem(QGraphicsItem):
+class CzeTimelineKeyframeShape(QGraphicsItem):
     coolgradient = QRadialGradient(50, 50, 90)
     coolgradient.setColorAt(1, QColor(255, 255, 255))
     coolgradient.setColorAt(0, QColor(255, 0, 0))
@@ -595,22 +595,61 @@ class CzeTimelineKeyframeItem(QGraphicsItem):
         super().__init__()
         self.keyframe = keyframe
         self.currentBrush = self.coolgradient
+        self.setFlag(
+            QGraphicsItem.GraphicsItemFlag.ItemIgnoresTransformations, True)
 
     def boundingRect(self):
-        return QRectF(-30, -15, 60, 48)
+        return QRectF(-10, -10, 20, 20)
 
     def paint(self, painter: QPainter, option, widget) -> None:
         painter.setPen(QPen(QColor(0, 0, 0), 0))
         painter.setBrush(self.currentBrush)
         painter.drawPolygon(
-            [QPoint(-15, 0), QPoint(0, -15), QPoint(15, 0), QPoint(0, 15)])
-        painter.setPen(QPen(QColor(255, 255, 255), 0))
-        painter.setFont(QFont("Arial", 8))
-        painter.drawText(QRectF(-30, 16, 60, 32), self.keyframe.params.properties.params.name(),
-                         Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignHCenter)
+            [QPoint(-10, 0), QPoint(0, -10), QPoint(10, 0), QPoint(0, 10)])
 
     def setBrush(self, brush):
         self.currentBrush = brush
+
+
+class CzeTimelineKeyframeText(QGraphicsItem):
+
+    def __init__(self, keyframe):
+        super().__init__()
+        self.keyframe = keyframe
+        self.setFlag(
+            QGraphicsItem.GraphicsItemFlag.ItemIgnoresTransformations, True)
+
+    def boundingRect(self):
+        return QRectF(-30, 10, 60, 32)
+
+    def paint(self, painter: QPainter, option, widget) -> None:
+        painter.setPen(QPen(QColor(255, 255, 255), 0))
+        painter.setFont(QFont("Arial", 8))
+        painter.drawText(QRectF(-30, 10, 60, 32), self.keyframe.params.properties.params.name(),
+                         Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignHCenter)
+
+
+class CzeTimelineKeyframeItem(QGraphicsItemGroup):
+    coolgradient = QRadialGradient(50, 50, 90)
+    coolgradient.setColorAt(1, QColor(255, 255, 255))
+    coolgradient.setColorAt(0, QColor(255, 0, 0))
+    selectedcoolgradient = QRadialGradient(30, 30, 60)
+    selectedcoolgradient.setColorAt(1, QColor(255, 127, 127))
+    selectedcoolgradient.setColorAt(0, QColor(255, 0, 0))
+
+    def __init__(self, keyframe):
+        super().__init__()
+        self.keyframe = keyframe
+        self.currentBrush = self.coolgradient
+        self.setFlag(
+            QGraphicsItem.GraphicsItemFlag.ItemIgnoresTransformations, True)
+        self.keyframeshape = CzeTimelineKeyframeShape(self.keyframe)
+        self.addToGroup(self.keyframeshape)
+        self.addToGroup(CzeTimelineKeyframeText(self.keyframe))
+
+    def setBrush(self, brush):
+        self.currentBrush = brush
+        self.keyframeshape.setBrush(brush)
 
 
 class CzeTimelineAnimationKeyframeItem(QGraphicsItem):
@@ -690,6 +729,7 @@ class CzeTimeline(QWidget):
         self.parentclass = parentclass
 
         # self.setSizePolicy(QSizePolicy.Policy.Preferred,QSizePolicy.Policy.Ignored)
+
         self.scene = QGraphicsScene(self)
         self.graphicsview = QGraphicsViewEvent(self)
         # self.graphicsview.setSceneRect(QRectF(0,0,200,2000))
@@ -700,6 +740,7 @@ class CzeTimeline(QWidget):
             Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.graphicsview.horizontalScrollBar().disconnect(self.graphicsview)
         self.graphicsview.verticalScrollBar().disconnect(self.graphicsview)
+        self.graphicsview.ensureVisible = dummyfunction
         # kefrmae = self.scene.addRect(QRectF(0,0,18,18),QPen(QColor(0,0,0),0),coolgradient)
         # self.scene.addLine(QLine(0,0,0,self.scene.height()),QPen(QColor(0,0,0),0))
         self.graphicsview.setStyleSheet(
@@ -782,7 +823,7 @@ class CzeTimeline(QWidget):
 
                 founditem: QGraphicsItem = self.graphicsview.itemAt(
                     event.pos())
-                if isinstance(founditem, CzeTimelineKeyframeItem):
+                if isinstance(founditem, CzeTimelineKeyframeShape):
                     if founditem != self.hoveredkeyframe and self.hoveredkeyframe:
                         self.hoveredkeyframe.setBrush(self.coolgradient)
                         if founditem.currentBrush == self.coolgradient:
@@ -873,7 +914,7 @@ class CzeTimeline(QWidget):
             if event.button() == Qt.MouseButton.LeftButton:
                 founditem: QGraphicsItem = self.graphicsview.itemAt(
                     event.pos().x(), event.pos().y())
-                if isinstance(founditem, CzeTimelineKeyframeItem) or founditem is None:
+                if isinstance(founditem, CzeTimelineKeyframeShape) or founditem is None:
                     if founditem != None:
                         self.draggedframe = founditem.keyframe
                         if self.parentclass.selectedframe:
@@ -974,15 +1015,17 @@ class CzeTimeline(QWidget):
         # return super().mouseReleaseEvent(event)
 
     def resizeEvent(self, event: QResizeEvent) -> None:
+        # originaltransform = self.graphicsview.transform()
         self.scene.setSceneRect(self.rect())
         r = self.graphicsview.sceneRect()
         # hacky workaround, if this wasnt here it would snap to 0,0 every time you shrinked the view by more than 1 pixel per frame
         r.setSize(event.size()/self.graphicsview.transform().m11() +
-                  QSize(1000, 1000))
+                  QSize(10000, 10000))
         self.graphicsview.setSceneRect(r)
         self.graphicsview.setFixedSize(event.size())
         self.graphicsview.size().setHeight(event.size().height())
         self.graphicsview.size().setWidth(event.size().width())
+
         # self.graphicsview.adjustSize()
         r = self.graphicsview.sceneRect()
         r.setSize(event.size()/self.graphicsview.transform().m11())
@@ -990,6 +1033,11 @@ class CzeTimeline(QWidget):
         # print(r)
         # print(self.graphicsview.)
         super().resizeEvent(event)
+
+        # self.graphicsview.adjustSize()
+        # self.graphicsview.setSceneRect(r)
+        # self.graphicsview.setTransform(originaltransform)
+
         boundingrect = self.graphicsview.mapToScene(
             self.graphicsview.viewport().geometry()).boundingRect()
         self.playbackcursor.setLine(QLine(self.parentclass.playbackframe, boundingrect.top(
@@ -1090,7 +1138,7 @@ class CzeTimeline(QWidget):
         else:
             if event.text() == "k":
                 keyframe = self.animationProperty.defaultKeyframe(
-                    self.parentclass.playbackframe, 0) # TODO : Make track selection change what track the keyframe is created on.
+                    self.parentclass.playbackframe, [0])  # TODO : Make track selection change what track the keyframe is created on.
                 self.animationProperty.timeline.add(keyframe)
                 self.addAnimationKeyframe(keyframe)
 
@@ -1104,12 +1152,14 @@ class CzeTimeline(QWidget):
         for keyframe in self.animationKeyframes:
             self.scene.removeItem(self.animationKeyframes[keyframe])
         self.animationKeyframes = {}
-        boundrect = lambda: (
+        def boundrect(): return (
             self.graphicsview.mapToScene(self.graphicsview.viewport().geometry()).boundingRect())
-        self.animationKeyframes["background"] = CzeTimelineAnimationModeBackground(boundrect)
+        self.animationKeyframes["background"] = CzeTimelineAnimationModeBackground(
+            boundrect)
         for track in range(len(self.animationProperty.tracks)):
-            self.animationKeyframes["track" + str(track)] = CzeTimelineAnimationTrackLine(boundrect,track*20)
-            self.scene.addItem(self.animationKeyframes["track" +str(track)])
+            self.animationKeyframes["track" +
+                                    str(track)] = CzeTimelineAnimationTrackLine(boundrect, track*20)
+            self.scene.addItem(self.animationKeyframes["track" + str(track)])
         self.scene.addItem(self.animationKeyframes["background"])
         for keyframe in self.animationProperty.timeline:
             self.addAnimationKeyframe(keyframe)

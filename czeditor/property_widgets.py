@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QFileDialog, QHBoxLayout, QLabel, QVBoxLayout
+from PySide6.QtWidgets import QFileDialog, QHBoxLayout, QLabel, QVBoxLayout, QSizePolicy
 from PySide6.QtGui import QPainter
 
 from czeditor.base_ui import (QRedButton, QRedDecimalSpinBox, QRedFrame,
@@ -191,6 +191,8 @@ class FloatPropertyWidget(QRedFrame):
             self.windowObject.playbackframe))
         self.animationModeButton = QRedExpandableButton(
             self, "A", self.enterAnimationMode)
+        self.animationModeButton.setSizePolicy(
+            QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Fixed)
         self.widgets.addWidget(self.spinbox)
         self.widgets.addWidget(self.animationModeButton)
         self.setLayout(self.widgets)

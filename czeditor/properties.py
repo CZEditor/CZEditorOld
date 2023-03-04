@@ -180,7 +180,7 @@ class FloatProperty:
     def __init__(self, value, timeline=None):
         self._val = value
         self.timeline = timeline
-        self.tracks = ["Float"]
+        self.tracks = {0: {"type": "Float", "value": 0}}
         self.mixerFunctions = []
         self.providerFunctions = []
         self.compatibleTypes = ["Float", "Int"]
@@ -194,27 +194,27 @@ class FloatProperty:
         else:
             gotten = self.timeline.getValueAt(frame)
             if gotten is not None:
-                return gotten
+                return gotten[0]["value"]
             return self._val
 
     def widget(self, windowObject):
         return FloatPropertyWidget(self, windowObject)
 
-    def defaultKeyframe(self, frame, track):
-        from czeditor.value_mixer_functions import valueMixerFunctions
+    def defaultKeyframe(self, frame, tracks):
+        from czeditor.value_outputter_functions import valueOutputterFunctions
         from czeditor.value_provider_functions import valueProviderFunctions
 
-        return AnimationKeyframe(frame, track, Params(
+        return AnimationKeyframe(frame, tracks, Params(
             {
                 "provider":
                 {
                     "function": Selectable(0, valueProviderFunctions),
                     "params": Selectable(0, valueProviderFunctions)().params.copy()
                 },
-                "mixer":
+                "outputter":
                 {
-                    "function": Selectable(0, valueMixerFunctions),
-                    "params": Selectable(0, valueMixerFunctions)().params.copy()
+                    "function": Selectable(0, valueOutputterFunctions),
+                    "params": Selectable(0, valueOutputterFunctions)().params.copy()
                 }
             }
         ))
