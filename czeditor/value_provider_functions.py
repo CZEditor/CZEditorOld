@@ -16,9 +16,10 @@ class StaticDecimalNumber(Provider):
             "value": FloatProperty(0)
         }
     )
+    output = ["Float"]
 
-    def getValue(params, frame):
-        return params.value(frame)
+    def getValue(params, trackValues, keyframe, frame):
+        return [{"type": "Float", "value": params.value(frame)}]*len(trackValues)
 
 
 
