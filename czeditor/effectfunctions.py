@@ -226,7 +226,7 @@ class CustomShader(Effect):
     params = Params({
         "variableA": FloatProperty(0.0),
         "variableB": FloatProperty(0.0),
-        "custom": StringProperty("outpos = inpos;"),
+        "custom": OpenWindowButtonProperty("Edit Script...", CodeEditWindow, "outpos = inpos;"),
         "transient": TransientProperty(Params({
             "shader": None,
             "previousCustom": "",
@@ -295,7 +295,7 @@ class CustomColorShader(Effect):
 class CustomCode(Effect):
     name = "Custom Code"
     params = Params({
-        "code": StringProperty("")
+        "code": OpenWindowButtonProperty("Edit Script...", CodeEditWindow, "")
     })
 
     def imageEffect(image, vertices, shader, params, windowObject, keyframe, frame):
@@ -389,7 +389,7 @@ class CustomVertexShader(Effect):
     params = Params({
         "variableA": FloatProperty(0.0),
         "variableB": FloatProperty(0.0),
-        "custom": StringProperty("outpos = inpos;"),
+        "custom": OpenWindowButtonProperty("Edit Script...", CodeEditWindow, "outpos = inpos;"),
         "transient": TransientProperty(Params({
             "shader": None,
             "previousCustom": "",
