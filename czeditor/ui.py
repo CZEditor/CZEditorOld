@@ -979,7 +979,15 @@ class CzeTimeline(QWidget):
                                 self.parentclass.draggedpreset.params.copy())
             self.parentclass.keyframes.add(keyframe)
             self.addKeyframe(keyframe)
-        self.parentclass.draggedpreset = None
+            if self.parentclass.selectedframe:
+                self.keyframes[self.parentclass.selectedframe].setBrush(
+                    self.coolgradient)
+            self.parentclass.selectedframe = keyframe
+            self.parentclass.draggedpreset = None
+            self.parentclass.regeneratekeyframeoptions()
+            self.parentclass.viewport.updatehandles()
+            self.keyframes[keyframe].setBrush(self.selectedcoolgradient)
+            self.graphicsview.update()
         event.accept()
         return super().dropEvent(event)
 
