@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QFileDialog, QHBoxLayout, QLabel, QVBoxLayout, QSizePolicy
+from PySide6.QtWidgets import QFileDialog, QHBoxLayout, QLabel, QVBoxLayout, QSizePolicy, QMainWindow
 from PySide6.QtGui import QPainter
 
 from czeditor.base_ui import (QRedButton, QRedDecimalSpinBox, QRedFrame,
@@ -48,6 +48,25 @@ class StringPropertyWidget(QRedFrame):
 
     def updateself(self):
         self.textbox.setPlainText(self.theproperty._val)
+
+
+class OpenWindowButtonPropertyWidget(QRedFrame):
+    def __init__(self, property, windowObject):
+        super().__init__(None)
+        self.the_property = property
+        self.window_:QMainWindow = self.the_property.window(property, windowObject)
+
+        self.widgets = QHBoxLayout()
+
+        self.button = QRedButton(self, self.the_property.btn_name, self.open_window)
+        self.widgets.addWidget(self.button)
+
+        self.setLayout(self.widgets)
+
+        self.setStyleSheet("border-bottom-width:0px;")
+
+    def open_window(self):
+        self.window_.show()
 
 
 class LineStringPropertyWidget(QRedFrame):

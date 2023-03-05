@@ -13,6 +13,7 @@ from czeditor.handles import CzeViewportDraggableHandle
 from czeditor.openglfunctions import *
 from czeditor.properties import *
 from czeditor.util import ParamLink, Params
+from czeditor.code_edit_window import CodeEditWindow
 
 imagecache = {}
 """def cachecomposite(func,parentclass,width,height):
@@ -225,7 +226,7 @@ class CustomShader(Effect):
     params = Params({
         "variableA": FloatProperty(0.0),
         "variableB": FloatProperty(0.0),
-        "custom": StringProperty("outpos = inpos;"),
+        "custom": OpenWindowButtonProperty("Edit Script...", CodeEditWindow, "outpos = inpos;"),
         "transient": TransientProperty(Params({
             "shader": None,
             "previousCustom": "",
@@ -259,7 +260,7 @@ class CustomColorShader(Effect):
     params = Params({
         "variableA": FloatProperty(0.0),
         "variableB": FloatProperty(0.0),
-        "custom": StringProperty("color = texture(image,inpos);"),
+        "custom": OpenWindowButtonProperty("Edit Script...", CodeEditWindow, "color = texture(image,inpos);"),
         "transient": TransientProperty(Params({
             "shader": None,
             "previousCustom": "",
@@ -294,7 +295,7 @@ class CustomColorShader(Effect):
 class CustomCode(Effect):
     name = "Custom Code"
     params = Params({
-        "code": StringProperty("")
+        "code": OpenWindowButtonProperty("Edit Script...", CodeEditWindow, "")
     })
 
     def imageEffect(image, vertices, shader, params, windowObject, keyframe, frame):
@@ -388,7 +389,7 @@ class CustomVertexShader(Effect):
     params = Params({
         "variableA": FloatProperty(0.0),
         "variableB": FloatProperty(0.0),
-        "custom": StringProperty("outpos = inpos;"),
+        "custom": OpenWindowButtonProperty("Edit Script...", CodeEditWindow, "outpos = inpos;"),
         "transient": TransientProperty(Params({
             "shader": None,
             "previousCustom": "",
