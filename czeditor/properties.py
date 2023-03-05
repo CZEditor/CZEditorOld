@@ -57,10 +57,10 @@ class StringProperty:
 
     def __str__(self):
         return self._val
-    
+
 
 class OpenWindowButtonProperty:
-    def __init__(self, button_name:str, window:QMainWindow, value:Any):
+    def __init__(self, button_name: str, window: QMainWindow, value: Any):
         """A property that's capable of opening a secondary window with a button."""
         self._val = value
         self.__button_name = button_name
@@ -73,13 +73,13 @@ class OpenWindowButtonProperty:
     @property
     def window(self) -> QMainWindow:
         return self.__window
-    
+
     def copy(self):
         return OpenWindowButtonProperty(self.__button_name, self.__window, self._val)
 
     def widget(self, windowObject) -> OpenWindowButtonPropertyWidget:
         return OpenWindowButtonPropertyWidget(self, windowObject)
-    
+
     def __call__(self):
         return self._val
 
