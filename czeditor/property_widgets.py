@@ -54,11 +54,13 @@ class OpenWindowButtonPropertyWidget(QRedFrame):
     def __init__(self, property, windowObject):
         super().__init__(None)
         self.the_property = property
-        self.window_:QMainWindow = self.the_property.window(property, windowObject)
+        self.window_: QMainWindow = self.the_property.window(
+            property, windowObject)
 
         self.widgets = QHBoxLayout()
 
-        self.button = QRedButton(self, self.the_property.btn_name, self.open_window)
+        self.button = QRedButton(
+            self, self.the_property.btn_name, self.open_window)
         self.widgets.addWidget(self.button)
 
         self.setLayout(self.widgets)
@@ -67,6 +69,13 @@ class OpenWindowButtonPropertyWidget(QRedFrame):
 
     def open_window(self):
         self.window_.show()
+
+    def updateproperty(self):
+        self.the_property._val = self.window_.text_box.toPlainText()
+        self.windowObject.updateviewport()
+
+    def updateself(self):
+        self.window_.text_box.setPlainText(self.the_property._val)
 
 
 class LineStringPropertyWidget(QRedFrame):
