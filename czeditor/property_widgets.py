@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QFileDialog, QHBoxLayout, QLabel, QVBoxLayout
+from PySide6.QtWidgets import QFileDialog, QHBoxLayout, QLabel, QVBoxLayout, QSizePolicy, QMainWindow
 from PySide6.QtGui import QPainter
 
 from czeditor.base_ui import (QRedButton, QRedDecimalSpinBox, QRedFrame,
@@ -48,6 +48,25 @@ class StringPropertyWidget(QRedFrame):
 
     def updateself(self):
         self.textbox.setPlainText(self.theproperty._val)
+
+
+class OpenWindowButtonPropertyWidget(QRedFrame):
+    def __init__(self, property, windowObject):
+        super().__init__(None)
+        self.the_property = property
+        self.window_:QMainWindow = self.the_property.window(property, windowObject)
+
+        self.widgets = QHBoxLayout()
+
+        self.button = QRedButton(self, self.the_property.btn_name, self.open_window)
+        self.widgets.addWidget(self.button)
+
+        self.setLayout(self.widgets)
+
+        self.setStyleSheet("border-bottom-width:0px;")
+
+    def open_window(self):
+        self.window_.show()
 
 
 class LineStringPropertyWidget(QRedFrame):
@@ -115,7 +134,8 @@ class SizePropertyWidget(QRedFrame):
         self.widgets = QVBoxLayout()
 
         self.baseWidthLabel = QLabel(self)
-        self.baseWidthLabel.setText("Width\n"+str(self.theproperty._basewidth))
+        self.baseWidthLabel.setText(
+            "Base Width\n"+str(self.theproperty._basewidth))
         self.widgets.addWidget(self.baseWidthLabel)
 
         self.widthSpinBox = QRedSpinBox(self, self.updateproperty)
@@ -128,7 +148,7 @@ class SizePropertyWidget(QRedFrame):
 
         self.baseHeightLabel = QLabel(self)
         self.baseHeightLabel.setText(
-            "Height\n"+str(self.theproperty._baseheight))
+            "Base Height\n"+str(self.theproperty._baseheight))
         self.widgets.addWidget(self.baseHeightLabel)
 
         self.heightSpinBox = QRedSpinBox(self, self.updateproperty)
@@ -167,9 +187,10 @@ class SizePropertyWidget(QRedFrame):
         self.windowObject.updateviewport()
 
     def updateself(self):
-        self.baseWidthLabel.setText("Width\n"+str(self.theproperty._basewidth))
+        self.baseWidthLabel.setText(
+            "Base Width\n"+str(self.theproperty._basewidth))
         self.baseHeightLabel.setText(
-            "Height\n"+str(self.theproperty._baseheight))
+            "Base Height\n"+str(self.theproperty._baseheight))
         self.widthSpinBox.setValue(self.theproperty._width)
         self.heightSpinBox.setValue(self.theproperty._height)
         self.relativeWidthSpinBox.setValue(self.theproperty._relativewidth*100)
@@ -189,6 +210,8 @@ class FloatPropertyWidget(QRedFrame):
             self.windowObject.playbackframe))
         self.animationModeButton = QRedExpandableButton(
             self, "A", self.enterAnimationMode)
+        self.animationModeButton.setSizePolicy(
+            QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Fixed)
         self.widgets.addWidget(self.spinbox)
         self.widgets.addWidget(self.animationModeButton)
         self.setLayout(self.widgets)

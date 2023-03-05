@@ -1,3 +1,6 @@
+from typing import Any
+from PySide6.QtWidgets import QMainWindow
+
 from czeditor.property_widgets import *
 from czeditor.animation_keyframes import *
 from czeditor.util import Selectable, Params
@@ -51,6 +54,34 @@ class StringProperty:
 
     def set(self, value):
         self._val = value
+
+    def __str__(self):
+        return self._val
+    
+
+class OpenWindowButtonProperty:
+    def __init__(self, button_name:str, window:QMainWindow, value:Any):
+        """A property that's capable of opening a secondary window with a button."""
+        self._val = value
+        self.__button_name = button_name
+        self.__window = window
+
+    @property
+    def btn_name(self) -> str:
+        return self.__button_name
+
+    @property
+    def window(self) -> QMainWindow:
+        return self.__window
+    
+    def copy(self):
+        return OpenWindowButtonProperty(self.__button_name, self.__window, self._val)
+
+    def widget(self, windowObject) -> OpenWindowButtonPropertyWidget:
+        return OpenWindowButtonPropertyWidget(self, windowObject)
+    
+    def __call__(self):
+        return self._val
 
     def __str__(self):
         return self._val
@@ -180,6 +211,10 @@ class FloatProperty:
     def __init__(self, value, timeline=None):
         self._val = value
         self.timeline = timeline
+        self.tracks = {0: {"type": "Float", "value": 0}}
+        self.mixerFunctions = []
+        self.providerFunctions = []
+        self.compatibleTypes = ["Float", "Int"]
 
     def copy(self):
         return FloatProperty(self._val, self.timeline)
@@ -190,26 +225,27 @@ class FloatProperty:
         else:
             gotten = self.timeline.getValueAt(frame)
             if gotten is not None:
-                return gotten
+                return gotten[0]["value"]
             return self._val
 
     def widget(self, windowObject):
         return FloatPropertyWidget(self, windowObject)
 
-    def defaultKeyframe(self, frame):
-        from czeditor.value_mixer_functions import valueMixerFunctions
+    def defaultKeyframe(self, frame, tracks):
+        from czeditor.value_outputter_functions import valueOutputterFunctions
         from czeditor.value_provider_functions import valueProviderFunctions
-        return AnimationKeyframe(frame, Params(
+
+        return AnimationKeyframe(frame, tracks, Params(
             {
                 "provider":
                 {
                     "function": Selectable(0, valueProviderFunctions),
                     "params": Selectable(0, valueProviderFunctions)().params.copy()
                 },
-                "mixer":
+                "outputter":
                 {
-                    "function": Selectable(0, valueMixerFunctions),
-                    "params": Selectable(0, valueMixerFunctions)().params.copy()
+                    "function": Selectable(0, valueOutputterFunctions),
+                    "params": Selectable(0, valueOutputterFunctions)().params.copy()
                 }
             }
         ))
