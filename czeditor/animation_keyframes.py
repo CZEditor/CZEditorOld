@@ -120,6 +120,10 @@ class AnimationKeyframeList():
             i = self.keyframes.index(o)
         else:
             i = o
+        if track in self.keyframes[i].tracks:
+            return
+        if track not in self.tracks:
+            return
         self.keyframes[i].tracks[index] = track
 
     def getsafe(self, i):

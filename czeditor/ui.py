@@ -1,10 +1,12 @@
 from PySide6.QtCore import QLine, QMimeData, QPoint, QRectF, QSize, Qt
 from PySide6.QtGui import (QColor, QDrag, QDragEnterEvent, QDragMoveEvent,
                            QDropEvent, QFont, QKeyEvent, QMouseEvent, QPainter,
-                           QPen, QRadialGradient, QResizeEvent, QWheelEvent)
+                           QPen, QRadialGradient, QResizeEvent, QWheelEvent,
+                           QLinearGradient)
 from PySide6.QtWidgets import (QFormLayout, QGraphicsItem, QGraphicsScene,
                                QGraphicsView, QGridLayout, QSizePolicy,
-                               QWidget, QGraphicsItemGroup)
+                               QWidget, QGraphicsItemGroup, QGraphicsSceneMouseEvent,
+                               QGraphicsSceneHoverEvent)
 
 from czeditor.base_ui import *
 from czeditor.effectfunctions import *
@@ -652,7 +654,7 @@ class CzeTimelineKeyframeItem(QGraphicsItemGroup):
         self.keyframeshape.setBrush(brush)
 
 
-class CzeTimelineAnimationKeyframeItem(QGraphicsItem):
+class CzeTimelineAnimationKeyframeShape(QGraphicsItem):
     coolgradient = QRadialGradient(50, 50, 90)
     coolgradient.setColorAt(1, QColor(255, 255, 255))
     coolgradient.setColorAt(0, QColor(255, 0, 0))
@@ -660,9 +662,10 @@ class CzeTimelineAnimationKeyframeItem(QGraphicsItem):
     selectedcoolgradient.setColorAt(1, QColor(255, 127, 127))
     selectedcoolgradient.setColorAt(0, QColor(255, 0, 0))
 
-    def __init__(self, keyframe):
+    def __init__(self, keyframe, track):
         super().__init__()
         self.keyframe = keyframe
+        self.track = track
         self.currentBrush = self.coolgradient
         self.setFlag(
             QGraphicsItem.GraphicsItemFlag.ItemIgnoresTransformations, True)
@@ -680,6 +683,36 @@ class CzeTimelineAnimationKeyframeItem(QGraphicsItem):
         self.currentBrush = brush
 
 
+class CzeTimelineAnimationKeyframeItem(QGraphicsItemGroup):
+    coolgradient = QRadialGradient(50, 50, 90)
+    coolgradient.setColorAt(1, QColor(255, 255, 255))
+    coolgradient.setColorAt(0, QColor(255, 0, 0))
+
+    def __init__(self, keyframe: AnimationKeyframe):
+        super().__init__()
+        self.keyframe = keyframe
+        self.currentBrush = self.coolgradient
+        self.shapeItems: List[CzeTimelineAnimationKeyframeShape] = []
+        for track in range(len(self.keyframe.tracks)):
+            self.shapeItems.append(
+                CzeTimelineAnimationKeyframeShape(self.keyframe, track))
+            self.addToGroup(self.shapeItems[-1])
+
+    def setBrush(self, brush):
+        for shape in self.shapeItems:
+            shape.setBrush(brush)
+
+    def updateShapes(self):
+        if len(self.shapeItems) < len(self.keyframe.tracks):
+            for track in range(self.shapeItems[-1].track, len(self.keyframe.tracks)):
+                self.shapeItems.append(
+                    CzeTimelineAnimationKeyframeShape(self.keyframe, track))
+                self.addToGroup(self.shapeItems[-1])
+        elif len(self.shapeItems) > len(self.keyframe.tracks):
+            for track in range(len(self.keyframe.tracks), self.shapeItems[-1].track):
+                self.removeFromGroup(self.shapeItems[-1])
+                self.shapeItems.pop()
+
 class CzeTimelineAnimationModeBackground(QGraphicsItem):
     def __init__(self, boundrect):
         super().__init__()
@@ -694,22 +727,165 @@ class CzeTimelineAnimationModeBackground(QGraphicsItem):
 
 
 class CzeTimelineAnimationTrackLine(QGraphicsItem):
-    def __init__(self, boundrect, track: int):
+    def __init__(self, boundrect, animationProperty):
         super().__init__()
         self.boundrect = boundrect
-        self.track: int = track
+        self.animationProperty = animationProperty
 
     def boundingRect(self):
-        rect: QRectF = self.boundrect()
-        rect.setHeight(1)
-        rect.setX(self.track)
-        return rect
+        return self.boundrect()
 
     def paint(self, painter: QPainter, option, widget) -> None:
         painter.setPen(QPen(QColor(255, 255, 255), 0))
         rect: QRectF = self.boundrect()
-        painter.drawLine(rect.left(), self.track, rect.right(), self.track)
+        # distance = max(1,int((rect.bottom()-rect.top())/100+1))*20
+        # for track in range(int(rect.top()/distance-1),int(rect.bottom()/distance+1)):
+        for track in self.animationProperty.timeline.tracks:
+            painter.drawLine(rect.left(), track*20/painter.transform().m22(), rect.right(), track*20/painter.transform().m22())
 
+
+class CzeTimelineAnimationSidebar(QGraphicsItem):
+    coolgradient = QRadialGradient(100, 150, 200)
+    coolgradient.setColorAt(0, QColor(255, 0, 0))
+    coolgradient.setColorAt(1, QColor(0, 0, 0))
+    bottombuttongradient = QLinearGradient(0, -10, 0, 10)
+    bottombuttongradient.setColorAt(0, QColor(80, 0, 0))
+    bottombuttongradient.setColorAt(0.5, QColor(100, 0, 0))
+    bottombuttongradient.setColorAt(0.51, QColor(70, 0, 0))
+    bottombuttongradient.setColorAt(1, QColor(0, 0, 0))
+    topbuttongradient = QLinearGradient(0, -10, 0, 10)
+    topbuttongradient.setColorAt(0, QColor(80, 0, 0))
+    topbuttongradient.setColorAt(0.5, QColor(100, 0, 0))
+    topbuttongradient.setColorAt(0.51, QColor(70, 0, 0))
+    topbuttongradient.setColorAt(1, QColor(0, 0, 0))
+    def __init__(self, leftside, animationProperty, timelineWidget):
+        super().__init__()
+        self.leftside = leftside
+        self.animationProperty = animationProperty
+        self.timelineWidget = timelineWidget
+        self.setFlags(
+            QGraphicsItem.GraphicsItemFlag.ItemIgnoresTransformations)
+        self.topPlusButtonRect = QRectF(0, -19, 99, 19)
+        self.bottomPlusButtonRect = QRectF(0, 19, 99, 19)
+        self.setAcceptedMouseButtons(Qt.MouseButton.LeftButton)
+        self.setAcceptHoverEvents(True)
+        self.tophovered = False
+        self.tophover = False
+        self.topunhover = False
+        self.bottomhover = False
+        self.bottomhovered = False
+        self.bottomunhover = False
+
+    def boundingRect(self):
+        self.setPos(self.leftside().x(), 0)
+        return QRectF(0, self.topPlusButtonRect.top(), 100, 19+self.bottomPlusButtonRect.top()-self.topPlusButtonRect.top())
+
+    def paint(self, painter: QPainter, option, widget) -> None:
+        self.setPos(self.leftside().x(), 0)
+        maxtrack = 0
+        mintrack = 0
+        for track in self.animationProperty.timeline.tracks:
+            painter.setPen(QPen(QColor(0, 0, 0), 0))
+            painter.setBrush(QColor(255, 127, 127))
+            painter.drawRect(QRectF(1, track*20-9, 99, 19))
+            painter.setPen(QPen(QColor(255, 127, 127), 0))
+            self.coolgradient.setCenter(100,150+track*20)
+            painter.setBrush(self.coolgradient)
+            painter.drawRect(QRectF(2, track*20-8, 97, 17))
+            maxtrack = max(track, maxtrack)
+            mintrack = min(track, mintrack)
+        maxtrack += 1
+        mintrack -= 1
+        
+        self.bottombuttongradient.setStart(0, maxtrack*20-10)
+        self.bottombuttongradient.setFinalStop(0, maxtrack*20+10)
+        painter.setFont(QFont("Tahoma", 8))
+        painter.setPen(QColor(0, 0, 0))
+        painter.setBrush(QColor(127, 0, 0))
+        self.bottomPlusButtonRect = QRectF(1, maxtrack*20-9, 99, 19)
+        painter.drawRoundedRect(self.bottomPlusButtonRect, 3, 3)
+        if self.bottomhover:
+            self.bottombuttongradient.setColorAt(0, QColor(240, 0, 0))
+            self.bottombuttongradient.setColorAt(0.5, QColor(180, 0, 0))
+            self.bottombuttongradient.setColorAt(0.51, QColor(135, 0, 0))
+            self.bottombuttongradient.setColorAt(1, QColor(80, 0, 0))
+            self.bottomhover = False
+        if self.bottomunhover:
+            self.bottombuttongradient.setColorAt(0, QColor(80, 0, 0))
+            self.bottombuttongradient.setColorAt(0.5, QColor(100, 0, 0))
+            self.bottombuttongradient.setColorAt(0.51, QColor(70, 0, 0))
+            self.bottombuttongradient.setColorAt(1, QColor(0, 0, 0))
+            self.bottomunhover = False
+        painter.setBrush(self.bottombuttongradient)
+        painter.setPen(QColor(127, 0, 0))
+        painter.drawRoundedRect(QRectF(2, maxtrack*20-8, 97, 17), 3, 3)
+        painter.setPen(QColor(255, 192, 192))
+        painter.drawText(QRectF(1, maxtrack*20-9, 99, 19), "+",
+                         Qt.AlignmentFlag.AlignCenter)
+        self.topbuttongradient.setStart(0, mintrack*20-10)
+        self.topbuttongradient.setFinalStop(0, mintrack*20+10)
+        painter.setPen(QColor(0, 0, 0))
+        painter.setBrush(QColor(127, 0, 0))
+        if self.tophover:
+            self.topbuttongradient.setColorAt(0, QColor(240, 0, 0))
+            self.topbuttongradient.setColorAt(0.5, QColor(180, 0, 0))
+            self.topbuttongradient.setColorAt(0.51, QColor(135, 0, 0))
+            self.topbuttongradient.setColorAt(1, QColor(80, 0, 0))
+            self.tophover = False
+        if self.topunhover:
+            self.topbuttongradient.setColorAt(0, QColor(80, 0, 0))
+            self.topbuttongradient.setColorAt(0.5, QColor(100, 0, 0))
+            self.topbuttongradient.setColorAt(0.51, QColor(70, 0, 0))
+            self.topbuttongradient.setColorAt(1, QColor(0, 0, 0))
+            self.topunhover = False
+        self.topPlusButtonRect = QRectF(1, mintrack*20-9, 99, 19)
+        painter.drawRoundedRect(self.topPlusButtonRect, 3, 3)
+        painter.setBrush(self.topbuttongradient)
+        painter.setPen(QColor(127, 0, 0))
+        painter.drawRoundedRect(QRectF(2, mintrack*20-8, 97, 17), 3, 3)
+        painter.setPen(QColor(255, 192, 192))
+        painter.drawText(QRectF(1, mintrack*20-9, 99, 19), "+",
+                         Qt.AlignmentFlag.AlignCenter)
+
+    def mousePressEvent(self, event: QGraphicsSceneMouseEvent) -> None:
+        if event.button() == Qt.MouseButton.LeftButton:
+            if self.topPlusButtonRect.contains(event.pos()):
+                self.animationProperty.timeline.originaltracks[min(self.animationProperty.timeline.originaltracks.keys())-1] = self.animationProperty.timeline.originaltracks[min(self.animationProperty.timeline.originaltracks.keys())].copy()
+                self.timelineWidget.graphicsview.update()
+            elif self.bottomPlusButtonRect.contains(event.pos()):
+                self.animationProperty.timeline.originaltracks[max(self.animationProperty.timeline.originaltracks.keys())+1] = self.animationProperty.timeline.originaltracks[max(self.animationProperty.timeline.originaltracks.keys())].copy()
+                self.timelineWidget.graphicsview.update()
+
+        event.accept()
+
+
+    def hoverMoveEvent(self, event: QGraphicsSceneHoverEvent) -> None:
+        if self.topPlusButtonRect.contains(event.pos()) and not self.tophovered:
+            self.tophover = True
+            self.tophovered = True
+            self.update(self.boundingRect())
+        elif not self.topPlusButtonRect.contains(event.pos()) and self.tophovered:
+            self.topunhover = True
+            self.tophovered = False
+            self.update(self.boundingRect())
+
+        if self.bottomPlusButtonRect.contains(event.pos()) and not self.bottomhovered:
+            self.bottomhover = True
+            self.bottomhovered = True
+            self.update(self.boundingRect())
+        elif not self.bottomPlusButtonRect.contains(event.pos()) and self.bottomhovered:
+            self.bottomunhover = True
+            self.bottomhovered = False
+            self.update(self.boundingRect())
+
+        event.accept()
+    
+    def hoverLeaveEvent(self, event: QGraphicsSceneHoverEvent) -> None:
+        self.bottomunhover = True
+        self.bottomhovered = False
+        self.topunhover = True
+        self.tophovered = False
+        return super().hoverLeaveEvent(event)
 
 class CzeTimeline(QWidget):
     coolgradient = QRadialGradient(50, 50, 90)
@@ -775,7 +951,7 @@ class CzeTimeline(QWidget):
         self.hoveredkeyframe = None
         self.animationProperty = None
         self.animationKeyframes = {}
-        self.draggedAnimationFrame = None
+        self.draggedAnimationFrameItem = None
         self.backButton = QRedButton(self, "Back", self.exitAnimationMode)
         self.backButton.hide()
 
@@ -859,7 +1035,7 @@ class CzeTimeline(QWidget):
             if not (event.buttons() & Qt.MouseButton.LeftButton):
                 founditem: QGraphicsItem = self.graphicsview.itemAt(
                     event.pos())
-                if isinstance(founditem, CzeTimelineAnimationKeyframeItem):
+                if isinstance(founditem, CzeTimelineAnimationKeyframeShape):
                     if founditem != self.hoveredkeyframe and self.hoveredkeyframe:
                         self.hoveredkeyframe.setBrush(self.coolgradient)
                         if founditem.currentBrush == self.coolgradient:
@@ -877,15 +1053,15 @@ class CzeTimeline(QWidget):
                             self.hoveredkeyframe.setBrush(self.coolgradient)
                         self.hoveredkeyframe = None
                         self.graphicsview.update()
-            if self.draggedAnimationFrame is not None and self.graphicsview.geometry().contains(event.pos()):
+            if self.draggedAnimationFrameItem is not None and self.graphicsview.geometry().contains(event.pos()):
                 mapped = self.graphicsview.mapToScene(event.pos())
-
                 self.animationProperty.timeline.setframe(
-                    self.draggedAnimationFrame, int(mapped.x()))
-                self.animationKeyframes[self.draggedAnimationFrame].setPos(
-                    self.draggedAnimationFrame.frame, 0)
+                    self.draggedAnimationFrameItem.keyframe, int(mapped.x()))
+                self.animationProperty.timeline.moveToTrack(self.draggedAnimationFrameItem.keyframe, int(
+                    mapped.y()/20*self.graphicsview.transform().m22()-0.5), self.draggedAnimationFrameItem.track)
+                self.animationKeyframes[self.draggedAnimationFrameItem.keyframe].setPos(
+                    self.draggedAnimationFrameItem.keyframe.frame, self.draggedAnimationFrameItem.keyframe.tracks[self.draggedAnimationFrameItem.track]*20/self.graphicsview.transform().m22())
 
-        return super().mouseMoveEvent(event)
 
     def deselectFrame(self):
         if self.parentclass.selectedframe:
@@ -938,16 +1114,16 @@ class CzeTimeline(QWidget):
             if event.button() == Qt.MouseButton.LeftButton:
                 founditem: QGraphicsItem = self.graphicsview.itemAt(
                     event.pos().x(), event.pos().y())
-                if isinstance(founditem, CzeTimelineAnimationKeyframeItem) or isinstance(founditem, CzeTimelineAnimationModeBackground):
+                if isinstance(founditem, CzeTimelineAnimationKeyframeShape) or isinstance(founditem, CzeTimelineAnimationModeBackground):
                     if not isinstance(founditem, CzeTimelineAnimationModeBackground):
-                        self.draggedAnimationFrame = founditem.keyframe
+                        self.draggedAnimationFrameItem = founditem
                         if self.parentclass.selectedAnimationFrame is not None:
                             self.animationKeyframes[self.parentclass.selectedAnimationFrame].setBrush(
                                 self.coolgradient)
                         founditem.setBrush(self.selectedcoolgradient)
                         self.parentclass.selectedAnimationFrame = founditem.keyframe
                         self.parentclass.keyframeoptions.rebuild(
-                            self.draggedAnimationFrame.params)
+                            self.draggedAnimationFrameItem.keyframe.params)
                         self.parentclass.viewport.updatehandles()
                         self.graphicsview.update()
                     else:
@@ -962,8 +1138,6 @@ class CzeTimeline(QWidget):
             #    founditem.pressEvent(event,self.graphicsview.mapToScene(event.pos().x(),0).toPoint()) # TODO : Give more parameters to the function
 
             self.lastm1pos = event.pos()
-
-        return super().mousePressEvent(event)
 
     def dragEnterEvent(self, event: QDragEnterEvent) -> None:
         event.accept()
@@ -1008,14 +1182,16 @@ class CzeTimeline(QWidget):
                     self.parentclass.updateviewport()
         else:
             if event.button() == Qt.MouseButton.LeftButton:
-                if self.draggedAnimationFrame:
+                if self.draggedAnimationFrameItem:
                     mapped = self.graphicsview.mapToScene(event.pos())
 
                     self.animationProperty.timeline.setframe(
-                        self.draggedAnimationFrame, int(mapped.x()))
-                    self.animationKeyframes[self.draggedAnimationFrame].setPos(
-                        self.draggedAnimationFrame.frame, 0)
-                    self.draggedAnimationFrame = None
+                        self.draggedAnimationFrameItem.keyframe, int(mapped.x()))
+                    self.animationProperty.timeline.moveToTrack(self.draggedAnimationFrameItem.keyframe, int(
+                        mapped.y()/20*self.graphicsview.transform().m22()-0.5), self.draggedAnimationFrameItem.track)
+                    self.animationKeyframes[self.draggedAnimationFrameItem.keyframe].setPos(
+                        self.draggedAnimationFrameItem.keyframe.frame, self.draggedAnimationFrameItem.keyframe.tracks[self.draggedAnimationFrameItem.track]*20/self.graphicsview.transform().m22())
+                    self.draggedAnimationFrameItem = None
                     self.parentclass.updateviewport()
             # elif hasattr(founditem,"pressEvent"):
             #    founditem.pressEvent(event,self.graphicsview.mapToScene(event.pos().x(),0).toPoint())
@@ -1166,11 +1342,16 @@ class CzeTimeline(QWidget):
             self.graphicsview.mapToScene(self.graphicsview.viewport().geometry()).boundingRect())
         self.animationKeyframes["background"] = CzeTimelineAnimationModeBackground(
             boundrect)
-        for track in range(len(self.animationProperty.tracks)):
-            self.animationKeyframes["track" +
-                                    str(track)] = CzeTimelineAnimationTrackLine(boundrect, track*20)
-            self.scene.addItem(self.animationKeyframes["track" + str(track)])
+
+        def leftside(): return (self.graphicsview.mapToScene(0, 0))
+        print(self.graphicsview.transform())
+        self.animationKeyframes["tracks"] = CzeTimelineAnimationTrackLine(
+            boundrect, self.animationProperty)
+        self.animationKeyframes["sidebar"] = CzeTimelineAnimationSidebar(
+            leftside, self.animationProperty, self)
+        self.scene.addItem(self.animationKeyframes["tracks"])
         self.scene.addItem(self.animationKeyframes["background"])
+        self.scene.addItem(self.animationKeyframes["sidebar"])
         for keyframe in self.animationProperty.timeline:
             self.addAnimationKeyframe(keyframe)
         self.backButton.show()

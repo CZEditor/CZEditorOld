@@ -87,7 +87,7 @@ class XPError(Source):
             "title": StringProperty(""),
             "buttons": StringList(["OK"]),
             "buttonstyles": emptylist(0),
-            "erroricon": Selectable(0, [
+            "erroricon": SelectableProperty([
                 ["Critical Error", "Wxp:Critical Error.png"],
                 ["Exclamation", "Wxp:Exclamation.png"],
                 ["Information", "Wxp:Information.png"],

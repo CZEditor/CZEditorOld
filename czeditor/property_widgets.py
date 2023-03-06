@@ -255,9 +255,12 @@ class SelectablePropertyWidget(QRedFrame):
         self.theproperty = property
         self.widgets = QHBoxLayout()
         self.combobox = QRedComboBox(
-            self.widgets, self.theproperty._selectable.names)
+            self, self.theproperty._selectable.names)
         self.combobox.setCurrentIndex(self.theproperty._selectable.index)
-        self.combobox.onchange = self.updateproperty
+        self.combobox.onchange = self.updateProperty
+        self.widgets.addWidget(self.combobox)
+        self.setLayout(self.widgets)
+        self.setStyleSheet("border-width:0px;")
 
     def updateProperty(self, name, index):
         self.theproperty._selectable.index = index
