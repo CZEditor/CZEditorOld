@@ -12,7 +12,8 @@ class Outputter:
 class Constant(Outputter):
     name = "Constant"
     params = Params({})
-    output = ["Float"]
+    outputs = ["Float"]
+    inputs = []
 
     def getValue(params, trackValues, keyframe, frame, nextKeyframes):
         values = keyframe.getValue(trackValues, frame)
@@ -26,7 +27,8 @@ class Constant(Outputter):
 class FloatLerp(Outputter):
     name = "Linear"
     params = Params({})
-    output = ["Float"]
+    outputs = ["Float"]
+    inputs = []
 
     def getValue(params, trackValues, keyframe, frame, nextKeyframes):
         value = keyframe.getValue(trackValues, frame)
@@ -42,7 +44,8 @@ class FloatLerp(Outputter):
 class FloatSmoothInterpolation(Outputter):
     name = "Smooth 1"
     params = Params({})
-    output = ["Float"]
+    outputs = ["Float"]
+    inputs = []
 
     def getValue(params, trackValues, keyframe, frame, nextKeyframes):
         value = keyframe.getValue(trackValues, frame)
@@ -53,4 +56,16 @@ class FloatSmoothInterpolation(Outputter):
             trackValues[i]["value"] = value[i]["value"] * \
                 (1-t)+nextKeyframe.getValue(trackValues, frame)[i]["value"]*t
             i += 1
+        return trackValues
+
+
+class FloatAddition(Outputter):
+    name = "Add"
+    params = Params({})
+    outputs = ["Float"]
+    inputs = ["Float", "Float"]
+
+    def getValue(params, trackValues, keyframe, frame, nextKeyframes):
+        trackValues[0]["value"] = trackValues[0]["value"] + \
+            trackValues[1]["value"]
         return trackValues

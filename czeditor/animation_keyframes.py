@@ -13,6 +13,12 @@ class AnimationKeyframe():
     def output(self, trackValues, frame, nextKeyframes):
         return self.params.outputter.function().getValue(self.params.outputter.params, trackValues, self, frame, nextKeyframes)
 
+    def getInputs(self):
+        return self.params.outputter.function().inputs
+
+    def getOutputs(self):
+        return self.params.outputter.function().outputs
+
 
 class AnimationKeyframeList():
     def __init__(self, tracks: dict, windowClass, associatedKeyframe=None):
@@ -22,6 +28,7 @@ class AnimationKeyframeList():
         self.tracks = tracks
         self.originaltracks = tracks
         self.associatedKeyframe = associatedKeyframe
+        self.windowClass.connectToEvent("UpdateAnimationKeyframe",self.updateKeyframeTracks)
 
     def add(self, keyframe: AnimationKeyframe) -> None:
         self.keyframes.append(keyframe)
@@ -143,6 +150,20 @@ class AnimationKeyframeList():
         # then the result of this function will be [track0,track2],[0,2]
         tracks = [self.tracks[i] for i in keyframe.tracks]
         return tracks, keyframe.tracks
+
+    def updateKeyframeTracks(self):
+        keyframe:AnimationKeyframe = self.windowClass.selectedAnimationFrame
+        tracks = keyframe.inputs() + keyframe.outputs()
+        if len(keyframe.tracks) < len(tracks):
+            for i in range(len(keyframe.tracks), len(tracks)):
+                keyframe.tracks.pop()
+        elif len(keyframe.tracks) > len(tracks):
+            for i in range(len(tracks), len(keyframe.tracks)):
+                nexttrack = keyframe.tracks[-1]+1
+                if nexttrack not in self.tracks:
+                    self.tracks.append(self.tracks[-1].copy())
+                keyframe.tracks.append(nexttrack)
+
 
     def getNextKeyframes(self, trackIds, keyframe: AnimationKeyframe):
         startIndex = self.keyframes.index(keyframe)

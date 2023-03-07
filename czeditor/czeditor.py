@@ -358,6 +358,10 @@ class Window(QMainWindow):
         for function in self.events[event]:
             function()
 
+    def triggerEventWithParam(self, event, param):
+        for function in self.events[event]:
+            function(param)
+
     def updateviewport(self):
         self.needtoupdate = True
         # self.viewport.update()

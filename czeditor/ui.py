@@ -227,6 +227,8 @@ class CzeKeyframeOptionCategory(QRedDropDownFrame):
         if self.parentclass.selectedframe:
             paramsAssociateKeyframe(
                 self.params.params, self.parentclass.selectedframe)
+        if self.parentclass.selectedAnimationFrame:
+            self.parentclass.triggerEvent("UpdateAnimationFrame")
         self.iterate(self.params.params)
         self.parentclass.timeline.createKeyframeItem(
             self.parentclass.selectedframe, self.params)
@@ -250,6 +252,8 @@ class CzeKeyframeOptionCategory(QRedDropDownFrame):
         if self.parentclass.selectedframe:
             paramsAssociateKeyframe(
                 self.params.params, self.parentclass.selectedframe)
+        if self.parentclass.selectedAnimationFrame:
+            self.parentclass.triggerEvent("UpdateAnimationFrame")
         self.iterate(self.params.params)
         self.parentclass.updateviewport()
 
@@ -868,17 +872,18 @@ class CzeTimelineAnimationSidebar(QGraphicsItem):
     def mousePressEvent(self, event: QGraphicsSceneMouseEvent) -> None:
         if event.button() == Qt.MouseButton.LeftButton:
             if self.topPlusButtonRect.contains(event.pos()):
-                self.animationProperty.timeline.originaltracks[min(self.animationProperty.timeline.originaltracks.keys())-1] = self.animationProperty.timeline.originaltracks[min(self.animationProperty.timeline.originaltracks.keys())].copy()
-                self.timelineWidget.graphicsview.update()
+                self.animationProperty.timeline.originaltracks[min(self.animationProperty.timeline.originaltracks.keys(
+                ))-1] = self.animationProperty.timeline.originaltracks[min(self.animationProperty.timeline.originaltracks.keys())].copy()
+                self.timelineWidget.graphicsview.viewport().update()
             elif self.bottomPlusButtonRect.contains(event.pos()):
-                self.animationProperty.timeline.originaltracks[max(self.animationProperty.timeline.originaltracks.keys())+1] = self.animationProperty.timeline.originaltracks[max(self.animationProperty.timeline.originaltracks.keys())].copy()
-                self.timelineWidget.graphicsview.update()
+                self.animationProperty.timeline.originaltracks[max(self.animationProperty.timeline.originaltracks.keys(
+                ))+1] = self.animationProperty.timeline.originaltracks[max(self.animationProperty.timeline.originaltracks.keys())].copy()
+                self.timelineWidget.graphicsview.viewport().update()
 
         event.accept()
 
     def frameUpdate(self):
         self.update(self.boundingRect())
-
 
     def hoverMoveEvent(self, event: QGraphicsSceneHoverEvent) -> None:
         if self.topPlusButtonRect.contains(event.pos()) and not self.tophovered:
@@ -900,13 +905,14 @@ class CzeTimelineAnimationSidebar(QGraphicsItem):
             self.update(self.boundingRect())
 
         event.accept()
-    
+
     def hoverLeaveEvent(self, event: QGraphicsSceneHoverEvent) -> None:
         self.bottomunhover = True
         self.bottomhovered = False
         self.topunhover = True
         self.tophovered = False
         return super().hoverLeaveEvent(event)
+
 
 class CzeTimeline(QWidget):
     coolgradient = QRadialGradient(50, 50, 90)
@@ -1076,13 +1082,13 @@ class CzeTimeline(QWidget):
                         self.graphicsview.update()
             if self.draggedAnimationFrameItem is not None and self.graphicsview.geometry().contains(event.pos()):
                 mapped = self.graphicsview.mapToScene(event.pos())
-                if self.animationProperty.timeline.associatedKeyframe:
+                if self.animationProperty.associatedKeyframe:
                     self.animationProperty.timeline.setframe(
-                        self.draggedAnimationFrameItem.keyframe-self.animationProperty.timeline.associatedKeyframe.frame, int(mapped.x()))
+                        self.draggedAnimationFrameItem.keyframe, int(mapped.x()-self.animationProperty.associatedKeyframe.frame))
                     self.animationProperty.timeline.moveToTrack(self.draggedAnimationFrameItem.keyframe, int(
                         (mapped.y()/20+0.5)*self.graphicsview.transform().m22()), self.draggedAnimationFrameItem.track)
                     self.animationKeyframes[self.draggedAnimationFrameItem.keyframe].setPos(
-                        self.draggedAnimationFrameItem.keyframe.frame+self.animationProperty.timeline.associatedKeyframe.frame, self.draggedAnimationFrameItem.keyframe.tracks[self.draggedAnimationFrameItem.track]*20/self.graphicsview.transform().m22())
+                        self.draggedAnimationFrameItem.keyframe.frame+self.animationProperty.associatedKeyframe.frame, self.draggedAnimationFrameItem.keyframe.tracks[self.draggedAnimationFrameItem.track]*20/self.graphicsview.transform().m22())
                 else:
                     self.animationProperty.timeline.setframe(
                         self.draggedAnimationFrameItem.keyframe, int(mapped.x()))
@@ -1090,7 +1096,6 @@ class CzeTimeline(QWidget):
                         (mapped.y()/20+0.5)*self.graphicsview.transform().m22()), self.draggedAnimationFrameItem.track)
                     self.animationKeyframes[self.draggedAnimationFrameItem.keyframe].setPos(
                         self.draggedAnimationFrameItem.keyframe.frame, self.draggedAnimationFrameItem.keyframe.tracks[self.draggedAnimationFrameItem.track]*20/self.graphicsview.transform().m22())
-
 
     def deselectFrame(self):
         if self.parentclass.selectedframe:
@@ -1213,13 +1218,13 @@ class CzeTimeline(QWidget):
             if event.button() == Qt.MouseButton.LeftButton:
                 if self.draggedAnimationFrameItem:
                     mapped = self.graphicsview.mapToScene(event.pos())
-                    if self.animationProperty.timeline.associatedKeyframe:
+                    if self.animationProperty.associatedKeyframe:
                         self.animationProperty.timeline.setframe(
-                            self.draggedAnimationFrameItem.keyframe-self.animationProperty.timeline.associatedKeyframe.frame, int(mapped.x()))
+                            self.draggedAnimationFrameItem.keyframe, int(mapped.x()-self.animationProperty.associatedKeyframe.frame))
                         self.animationProperty.timeline.moveToTrack(self.draggedAnimationFrameItem.keyframe, int(
                             (mapped.y()/20+0.5)*self.graphicsview.transform().m22()), self.draggedAnimationFrameItem.track)
                         self.animationKeyframes[self.draggedAnimationFrameItem.keyframe].setPos(
-                            self.draggedAnimationFrameItem.keyframe.frame+self.animationProperty.timeline.associatedKeyframe.frame, self.draggedAnimationFrameItem.keyframe.tracks[self.draggedAnimationFrameItem.track]*20/self.graphicsview.transform().m22())
+                            self.draggedAnimationFrameItem.keyframe.frame+self.animationProperty.associatedKeyframe.frame, self.draggedAnimationFrameItem.keyframe.tracks[self.draggedAnimationFrameItem.track]*20/self.graphicsview.transform().m22())
                     else:
                         self.animationProperty.timeline.setframe(
                             self.draggedAnimationFrameItem.keyframe, int(mapped.x()))
@@ -1282,7 +1287,11 @@ class CzeTimeline(QWidget):
         self.animationKeyframes[keyframe] = CzeTimelineAnimationKeyframeItem(
             keyframe)
         self.scene.addItem(self.animationKeyframes[keyframe])
-        self.animationKeyframes[keyframe].setPos(keyframe.frame, 0)
+        if self.animationProperty.timeline.associatedKeyframe:
+            self.animationKeyframes[keyframe].setPos(
+                keyframe.frame+self.animationProperty.timeline.associatedKeyframe.frame, 0)
+        else:
+            self.animationKeyframes[keyframe].setPos(keyframe.frame, 0)
 
     def createKeyframeItem(self, keyframe: Keyframe, param: Params):
         if (keyframe is None):
