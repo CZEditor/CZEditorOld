@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Union
 from PySide6.QtWidgets import QMainWindow
 
 from czeditor.property_widgets import *
@@ -6,7 +6,25 @@ from czeditor.animation_keyframes import *
 from czeditor.util import Selectable, Params
 
 
-class IntProperty:
+class Property:
+    def __init__(self, value):
+        self._val = value
+        self.associatedKeyframe = None
+
+    def copy(self):
+        return Property(self._val)
+
+    def __call__(self):
+        return self._val
+
+    def set(self, value):
+        self._val = value
+
+    def associateKeyframe(self, keyframe):
+        self.associatedKeyframe = keyframe
+
+
+class IntProperty(Property):
     def __init__(self, value):
         self._val = value
 
@@ -31,7 +49,7 @@ class IntProperty:
         self._val = value
 
 
-class StringProperty:
+class StringProperty(Property):
     def __init__(self, value):
         self._val = value
 
@@ -59,7 +77,7 @@ class StringProperty:
         return self._val
 
 
-class OpenWindowButtonProperty:
+class OpenWindowButtonProperty(Property):
     def __init__(self, button_name: str, window: QMainWindow, value: Any):
         """A property that's capable of opening a secondary window with a button."""
         self._val = value
@@ -87,7 +105,7 @@ class OpenWindowButtonProperty:
         return self._val
 
 
-class LineStringProperty:
+class LineStringProperty(Property):
     def __init__(self, value):
         self._val = value
 
@@ -115,7 +133,7 @@ class LineStringProperty:
         return self._val
 
 
-class FileProperty:
+class FileProperty(Property):
     def __init__(self, value, filetypes=""):
         self._val = value
         self._filetypes = filetypes
@@ -141,7 +159,7 @@ class FileProperty:
         self._val = value
 
 
-class TransientProperty:
+class TransientProperty(Property):
     def __init__(self, param):
         self._val = param.copy()
         self._originalparam = param
@@ -164,7 +182,7 @@ class TransientProperty:
         self._val = value
 
 
-class SizeProperty():
+class SizeProperty(Property):
     def __init__(self, basewidth, baseheight, width, height):
         self._basewidth = basewidth
         self._baseheight = baseheight
@@ -207,8 +225,8 @@ class SizeProperty():
         return SizePropertyWidget(self, windowObject)
 
 
-class FloatProperty:
-    def __init__(self, value, timeline=None):
+class FloatProperty(Property):
+    def __init__(self, value, timeline: Union[AnimationKeyframeList, None] = None):
         self._val = value
         self.timeline = timeline
         self.tracks = {0: {"type": "Float", "value": 0}}
@@ -253,8 +271,13 @@ class FloatProperty:
     def set(self, value):
         self._val = value
 
+    def associateKeyframe(self, keyframe):
+        if self.timeline:
+            self.timeline.associatedKeyframe = keyframe
+        return super().associateKeyframe(keyframe)
 
-class SelectableProperty:
+
+class SelectableProperty(Property):
 
     def __init__(self, options=[["None", None]], index=0):
         self._selectable = Selectable(index, options)
@@ -267,3 +290,6 @@ class SelectableProperty:
 
     def set(self, value):
         self._selectable.index = value
+
+    def copy(self):
+        return SelectableProperty(self._selectable.copy().options, self._selectable.index)

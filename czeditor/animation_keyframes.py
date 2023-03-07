@@ -15,12 +15,13 @@ class AnimationKeyframe():
 
 
 class AnimationKeyframeList():
-    def __init__(self, tracks: dict, windowClass):
+    def __init__(self, tracks: dict, windowClass, associatedKeyframe=None):
         self.windowClass = windowClass
         self.keyframes: List[AnimationKeyframe] = []
         self.needssorting = False
         self.tracks = tracks
         self.originaltracks = tracks
+        self.associatedKeyframe = associatedKeyframe
 
     def add(self, keyframe: AnimationKeyframe) -> None:
         self.keyframes.append(keyframe)

@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 class Params(object):
     def __init__(self, params: dict, **kwargs):
         for k in params.keys():
@@ -84,7 +86,7 @@ class Selectable():
         return str(self.options[self.index][1])
 
     def copy(self):
-        return Selectable(self.index, self.options)
+        return Selectable(self.index, deepcopy(self.options))
 
     def name(self):
         return self.names[self.index]

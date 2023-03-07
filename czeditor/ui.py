@@ -16,6 +16,9 @@ from czeditor.keyframes import *
 from czeditor.actionfunctions import *
 from czeditor.util import *
 from czeditor.animation_keyframes import *
+from czeditor.util.params_operations import *
+
+from typing import Union
 
 playbackframe = 100
 
@@ -221,6 +224,9 @@ class CzeKeyframeOptionCategory(QRedDropDownFrame):
         for i in range(self.widgets.rowCount()):
             self.widgets.removeRow(0)
         self.params.params = self.params.function().params.copy()
+        if self.parentclass.selectedframe:
+            paramsAssociateKeyframe(
+                self.params.params, self.parentclass.selectedframe)
         self.iterate(self.params.params)
         self.parentclass.timeline.createKeyframeItem(
             self.parentclass.selectedframe, self.params)
@@ -241,6 +247,9 @@ class CzeKeyframeOptionCategory(QRedDropDownFrame):
         for i in range(self.widgets.rowCount()):
             self.widgets.removeRow(0)
         self.params = params
+        if self.parentclass.selectedframe:
+            paramsAssociateKeyframe(
+                self.params.params, self.parentclass.selectedframe)
         self.iterate(self.params.params)
         self.parentclass.updateviewport()
 
@@ -713,6 +722,7 @@ class CzeTimelineAnimationKeyframeItem(QGraphicsItemGroup):
                 self.removeFromGroup(self.shapeItems[-1])
                 self.shapeItems.pop()
 
+
 class CzeTimelineAnimationModeBackground(QGraphicsItem):
     def __init__(self, boundrect):
         super().__init__()
@@ -741,7 +751,8 @@ class CzeTimelineAnimationTrackLine(QGraphicsItem):
         # distance = max(1,int((rect.bottom()-rect.top())/100+1))*20
         # for track in range(int(rect.top()/distance-1),int(rect.bottom()/distance+1)):
         for track in self.animationProperty.timeline.tracks:
-            painter.drawLine(rect.left(), track*20/painter.transform().m22(), rect.right(), track*20/painter.transform().m22())
+            painter.drawLine(rect.left(), track*20/painter.transform().m22(),
+                             rect.right(), track*20/painter.transform().m22())
 
 
 class CzeTimelineAnimationSidebar(QGraphicsItem):
@@ -758,6 +769,7 @@ class CzeTimelineAnimationSidebar(QGraphicsItem):
     topbuttongradient.setColorAt(0.5, QColor(100, 0, 0))
     topbuttongradient.setColorAt(0.51, QColor(70, 0, 0))
     topbuttongradient.setColorAt(1, QColor(0, 0, 0))
+
     def __init__(self, leftside, animationProperty, timelineWidget):
         super().__init__()
         self.leftside = leftside
@@ -775,6 +787,8 @@ class CzeTimelineAnimationSidebar(QGraphicsItem):
         self.bottomhover = False
         self.bottomhovered = False
         self.bottomunhover = False
+        timelineWidget.parentclass.connectToEvent(
+            "FrameUpdate", self.frameUpdate)
 
     def boundingRect(self):
         self.setPos(self.leftside().x(), 0)
@@ -784,22 +798,26 @@ class CzeTimelineAnimationSidebar(QGraphicsItem):
         self.setPos(self.leftside().x(), 0)
         maxtrack = 0
         mintrack = 0
+        painter.setFont(QFont("Tahoma", 8))
         for track in self.animationProperty.timeline.tracks:
             painter.setPen(QPen(QColor(0, 0, 0), 0))
             painter.setBrush(QColor(255, 127, 127))
             painter.drawRect(QRectF(1, track*20-9, 99, 19))
             painter.setPen(QPen(QColor(255, 127, 127), 0))
-            self.coolgradient.setCenter(100,150+track*20)
+            self.coolgradient.setCenter(100, 150+track*20)
             painter.setBrush(self.coolgradient)
             painter.drawRect(QRectF(2, track*20-8, 97, 17))
+            painter.setPen(QColor(255, 192, 192))
+            painter.drawText(QRectF(1, track*20-9, 99, 19), str(self.animationProperty.timeline.tracks[track]["value"])[:5],
+                             Qt.AlignmentFlag.AlignCenter)
             maxtrack = max(track, maxtrack)
             mintrack = min(track, mintrack)
         maxtrack += 1
         mintrack -= 1
-        
+
         self.bottombuttongradient.setStart(0, maxtrack*20-10)
         self.bottombuttongradient.setFinalStop(0, maxtrack*20+10)
-        painter.setFont(QFont("Tahoma", 8))
+
         painter.setPen(QColor(0, 0, 0))
         painter.setBrush(QColor(127, 0, 0))
         self.bottomPlusButtonRect = QRectF(1, maxtrack*20-9, 99, 19)
@@ -857,6 +875,9 @@ class CzeTimelineAnimationSidebar(QGraphicsItem):
                 self.timelineWidget.graphicsview.update()
 
         event.accept()
+
+    def frameUpdate(self):
+        self.update(self.boundingRect())
 
 
     def hoverMoveEvent(self, event: QGraphicsSceneHoverEvent) -> None:
@@ -1055,12 +1076,20 @@ class CzeTimeline(QWidget):
                         self.graphicsview.update()
             if self.draggedAnimationFrameItem is not None and self.graphicsview.geometry().contains(event.pos()):
                 mapped = self.graphicsview.mapToScene(event.pos())
-                self.animationProperty.timeline.setframe(
-                    self.draggedAnimationFrameItem.keyframe, int(mapped.x()))
-                self.animationProperty.timeline.moveToTrack(self.draggedAnimationFrameItem.keyframe, int(
-                    mapped.y()/20*self.graphicsview.transform().m22()-0.5), self.draggedAnimationFrameItem.track)
-                self.animationKeyframes[self.draggedAnimationFrameItem.keyframe].setPos(
-                    self.draggedAnimationFrameItem.keyframe.frame, self.draggedAnimationFrameItem.keyframe.tracks[self.draggedAnimationFrameItem.track]*20/self.graphicsview.transform().m22())
+                if self.animationProperty.timeline.associatedKeyframe:
+                    self.animationProperty.timeline.setframe(
+                        self.draggedAnimationFrameItem.keyframe-self.animationProperty.timeline.associatedKeyframe.frame, int(mapped.x()))
+                    self.animationProperty.timeline.moveToTrack(self.draggedAnimationFrameItem.keyframe, int(
+                        (mapped.y()/20+0.5)*self.graphicsview.transform().m22()), self.draggedAnimationFrameItem.track)
+                    self.animationKeyframes[self.draggedAnimationFrameItem.keyframe].setPos(
+                        self.draggedAnimationFrameItem.keyframe.frame+self.animationProperty.timeline.associatedKeyframe.frame, self.draggedAnimationFrameItem.keyframe.tracks[self.draggedAnimationFrameItem.track]*20/self.graphicsview.transform().m22())
+                else:
+                    self.animationProperty.timeline.setframe(
+                        self.draggedAnimationFrameItem.keyframe, int(mapped.x()))
+                    self.animationProperty.timeline.moveToTrack(self.draggedAnimationFrameItem.keyframe, int(
+                        (mapped.y()/20+0.5)*self.graphicsview.transform().m22()), self.draggedAnimationFrameItem.track)
+                    self.animationKeyframes[self.draggedAnimationFrameItem.keyframe].setPos(
+                        self.draggedAnimationFrameItem.keyframe.frame, self.draggedAnimationFrameItem.keyframe.tracks[self.draggedAnimationFrameItem.track]*20/self.graphicsview.transform().m22())
 
 
     def deselectFrame(self):
@@ -1184,13 +1213,20 @@ class CzeTimeline(QWidget):
             if event.button() == Qt.MouseButton.LeftButton:
                 if self.draggedAnimationFrameItem:
                     mapped = self.graphicsview.mapToScene(event.pos())
-
-                    self.animationProperty.timeline.setframe(
-                        self.draggedAnimationFrameItem.keyframe, int(mapped.x()))
-                    self.animationProperty.timeline.moveToTrack(self.draggedAnimationFrameItem.keyframe, int(
-                        mapped.y()/20*self.graphicsview.transform().m22()-0.5), self.draggedAnimationFrameItem.track)
-                    self.animationKeyframes[self.draggedAnimationFrameItem.keyframe].setPos(
-                        self.draggedAnimationFrameItem.keyframe.frame, self.draggedAnimationFrameItem.keyframe.tracks[self.draggedAnimationFrameItem.track]*20/self.graphicsview.transform().m22())
+                    if self.animationProperty.timeline.associatedKeyframe:
+                        self.animationProperty.timeline.setframe(
+                            self.draggedAnimationFrameItem.keyframe-self.animationProperty.timeline.associatedKeyframe.frame, int(mapped.x()))
+                        self.animationProperty.timeline.moveToTrack(self.draggedAnimationFrameItem.keyframe, int(
+                            (mapped.y()/20+0.5)*self.graphicsview.transform().m22()), self.draggedAnimationFrameItem.track)
+                        self.animationKeyframes[self.draggedAnimationFrameItem.keyframe].setPos(
+                            self.draggedAnimationFrameItem.keyframe.frame+self.animationProperty.timeline.associatedKeyframe.frame, self.draggedAnimationFrameItem.keyframe.tracks[self.draggedAnimationFrameItem.track]*20/self.graphicsview.transform().m22())
+                    else:
+                        self.animationProperty.timeline.setframe(
+                            self.draggedAnimationFrameItem.keyframe, int(mapped.x()))
+                        self.animationProperty.timeline.moveToTrack(self.draggedAnimationFrameItem.keyframe, int(
+                            (mapped.y()/20+0.5)*self.graphicsview.transform().m22()), self.draggedAnimationFrameItem.track)
+                        self.animationKeyframes[self.draggedAnimationFrameItem.keyframe].setPos(
+                            self.draggedAnimationFrameItem.keyframe.frame, self.draggedAnimationFrameItem.keyframe.tracks[self.draggedAnimationFrameItem.track]*20/self.graphicsview.transform().m22())
                     self.draggedAnimationFrameItem = None
                     self.parentclass.updateviewport()
             # elif hasattr(founditem,"pressEvent"):
@@ -1344,7 +1380,6 @@ class CzeTimeline(QWidget):
             boundrect)
 
         def leftside(): return (self.graphicsview.mapToScene(0, 0))
-        print(self.graphicsview.transform())
         self.animationKeyframes["tracks"] = CzeTimelineAnimationTrackLine(
             boundrect, self.animationProperty)
         self.animationKeyframes["sidebar"] = CzeTimelineAnimationSidebar(
