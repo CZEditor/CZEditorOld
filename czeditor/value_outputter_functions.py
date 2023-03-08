@@ -29,7 +29,7 @@ class FloatLerp(Outputter):
     def getValue(params, trackValues, keyframe, frame, nextKeyframes):
         value = keyframe.getValue(trackValues, frame)
         if nextKeyframes:
-            t = frame/(nextKeyframes[0].frame-keyframe.frame)
+            t = frame/max(frame, nextKeyframes[0].frame-keyframe.frame)
             return [{"type": "Float", "value": value[0]["value"] * (1-t)+nextKeyframes[0].getValue(trackValues, frame)[0]["value"]*t}]
         return value
 
@@ -43,10 +43,11 @@ class FloatSmoothInterpolation(Outputter):
     def getValue(params, trackValues, keyframe, frame, nextKeyframes):
         value = keyframe.getValue(trackValues, frame)
         if nextKeyframes:
-            t = frame/(nextKeyframes[0].frame-keyframe.frame)
+            t = frame/max(frame, nextKeyframes[0].frame-keyframe.frame)
             t = t*t*3-t*t*t*2
             return [{"type": "Float", "value": value[0]["value"] * (1-t)+nextKeyframes[0].getValue(trackValues, frame)[0]["value"]*t}]
         return value
+
 
 class FloatAddition(Outputter):
     name = "Add"
