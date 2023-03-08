@@ -17,11 +17,7 @@ class Constant(Outputter):
 
     def getValue(params, trackValues, keyframe, frame, nextKeyframes):
         values = keyframe.getValue(trackValues, frame)
-        i = 0
-        for value in values:
-            trackValues[i]["value"] = value["value"]
-            i += 1
-        return trackValues
+        return values
 
 
 class FloatLerp(Outputter):
@@ -32,13 +28,10 @@ class FloatLerp(Outputter):
 
     def getValue(params, trackValues, keyframe, frame, nextKeyframes):
         value = keyframe.getValue(trackValues, frame)
-        i = 0
-        for nextKeyframe in nextKeyframes:
-            t = frame/(nextKeyframe.frame-keyframe.frame)
-            trackValues[i]["value"] = value[i]["value"] * \
-                (1-t)+nextKeyframe.getValue(trackValues, frame)[i]["value"]*t
-            i += 1
-        return trackValues
+        if nextKeyframes:
+            t = frame/(nextKeyframes[0].frame-keyframe.frame)
+            return [{"type": "Float", "value": value[0]["value"] * (1-t)+nextKeyframes[0].getValue(trackValues, frame)[0]["value"]*t}]
+        return value
 
 
 class FloatSmoothInterpolation(Outputter):
@@ -49,15 +42,11 @@ class FloatSmoothInterpolation(Outputter):
 
     def getValue(params, trackValues, keyframe, frame, nextKeyframes):
         value = keyframe.getValue(trackValues, frame)
-        i = 0
-        for nextKeyframe in nextKeyframes:
-            t = frame/(nextKeyframe.frame-keyframe.frame)
+        if nextKeyframes:
+            t = frame/(nextKeyframes[0].frame-keyframe.frame)
             t = t*t*3-t*t*t*2
-            trackValues[i]["value"] = value[i]["value"] * \
-                (1-t)+nextKeyframe.getValue(trackValues, frame)[i]["value"]*t
-            i += 1
-        return trackValues
-
+            return [{"type": "Float", "value": value[0]["value"] * (1-t)+nextKeyframes[0].getValue(trackValues, frame)[0]["value"]*t}]
+        return value
 
 class FloatAddition(Outputter):
     name = "Add"
@@ -66,6 +55,4 @@ class FloatAddition(Outputter):
     inputs = ["Float", "Float"]
 
     def getValue(params, trackValues, keyframe, frame, nextKeyframes):
-        trackValues[0]["value"] = trackValues[0]["value"] + \
-            trackValues[1]["value"]
-        return trackValues
+        return [{"type": "Float", "value": trackValues[0]["value"] + trackValues[1]["value"]}]

@@ -253,7 +253,7 @@ class FloatProperty(Property):
         from czeditor.value_outputter_functions import valueOutputterFunctions
         from czeditor.value_provider_functions import valueProviderFunctions
 
-        return AnimationKeyframe(frame, tracks, Params(
+        return AnimationKeyframe(frame, [], tracks, Params(
             {
                 "provider":
                 {

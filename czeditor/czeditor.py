@@ -292,6 +292,7 @@ class CzeViewport(QWidget):
 class Window(QMainWindow):
     def __init__(self):
         super().__init__()
+        self.events = {}
         self.playbackframe = 100
         self.sourcefunctionsdropdown = sourcefunctionsdropdown
         self.actionfunctionsdropdown = actionfunctionsdropdown
@@ -342,23 +343,32 @@ class Window(QMainWindow):
         self.currentspectrum = np.zeros(512)
         self.renderaudiobuffer = np.zeros(0)
         self.selectedAnimationFrame = None
-        self.events = {}
         self.registerEvent("FrameUpdate")
 
     def registerEvent(self, event):
-        self.events[event] = []
+        if event not in self.events:
+            self.events[event] = []
 
     def connectToEvent(self, event, function):
+        if event not in self.events:
+            self.events[event] = []
         self.events[event].append(function)
 
     def disconnectFromEvent(self, event, function):
+        if event not in self.events:
+            self.events[event] = []
+            return
         self.events[event].remove(function)
 
     def triggerEvent(self, event):
+        if event not in self.events:
+            return
         for function in self.events[event]:
             function()
 
     def triggerEventWithParam(self, event, param):
+        if event not in self.events:
+            return
         for function in self.events[event]:
             function(param)
 

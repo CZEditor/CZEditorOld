@@ -2,21 +2,22 @@ from typing import overload, List
 
 
 class AnimationKeyframe():
-    def __init__(self, frame, tracks, params):
+    def __init__(self, frame, inputTracks, outputTracks, params):
         self.params = params
         self.frame = frame
-        self.tracks = tracks
+        self.outputTracks = outputTracks
+        self.inputTracks = inputTracks
 
     def getValue(self, trackValues, frame):
         return self.params.provider.function().getValue(self.params.provider.params, trackValues, self, frame)
 
-    def output(self, trackValues, frame, nextKeyframes):
+    def outputValue(self, trackValues, frame, nextKeyframes):
         return self.params.outputter.function().getValue(self.params.outputter.params, trackValues, self, frame, nextKeyframes)
 
-    def getInputs(self):
+    def inputs(self):
         return self.params.outputter.function().inputs
 
-    def getOutputs(self):
+    def outputs(self):
         return self.params.outputter.function().outputs
 
 
@@ -28,7 +29,7 @@ class AnimationKeyframeList():
         self.tracks = tracks
         self.originaltracks = tracks
         self.associatedKeyframe = associatedKeyframe
-        self.windowClass.connectToEvent("UpdateAnimationKeyframe",self.updateKeyframeTracks)
+        self.windowClass.connectToEvent("UpdateAnimationKeyframeTracks",self.updateKeyframeTracks)
 
     def add(self, keyframe: AnimationKeyframe) -> None:
         self.keyframes.append(keyframe)
@@ -116,23 +117,42 @@ class AnimationKeyframeList():
         self.needssorting = True
 
     @overload
-    def moveToTrack(self, keyframe: AnimationKeyframe, track: int, index: int):
+    def moveOutputToTrack(self, keyframe: AnimationKeyframe, track: int, index: int):
         ...
 
     @overload
-    def moveToTrack(self, i: int, track: int, index: int):
+    def moveOutputToTrack(self, i: int, track: int, index: int):
         ...
 
-    def moveToTrack(self, o, track: int, index: int):
+    def moveOutputToTrack(self, o, track: int, index: int):
         if isinstance(o, AnimationKeyframe):
             i = self.keyframes.index(o)
         else:
             i = o
-        if track in self.keyframes[i].tracks:
+        if track in self.keyframes[i].outputTracks:
             return
         if track not in self.tracks:
             return
-        self.keyframes[i].tracks[index] = track
+        self.keyframes[i].outputTracks[index] = track
+
+    @overload
+    def moveInputToTrack(self, keyframe: AnimationKeyframe, track: int, index: int):
+        ...
+
+    @overload
+    def moveInputToTrack(self, i: int, track: int, index: int):
+        ...
+
+    def moveInputToTrack(self, o, track: int, index: int):
+        if isinstance(o, AnimationKeyframe):
+            i = self.keyframes.index(o)
+        else:
+            i = o
+        if track in self.keyframes[i].inputTracks:
+            return
+        if track not in self.tracks:
+            return
+        self.keyframes[i].inputTracks[index] = track
 
     def getsafe(self, i):
         if len(self.keyframes) > i and i > 0:
@@ -148,21 +168,40 @@ class AnimationKeyframeList():
         # They dont have their original indexes because they are not needed.
         # if the timeline tracks are {0:track0, 1:track1, ...} and the keyframe tracks are [0,2],
         # then the result of this function will be [track0,track2],[0,2]
-        tracks = [self.tracks[i] for i in keyframe.tracks]
-        return tracks, keyframe.tracks
+        outputTracks = [self.tracks[i] for i in keyframe.outputTracks]
+        inputTracks = [self.tracks[i] for i in keyframe.inputTracks]
+        return inputTracks, outputTracks, keyframe.inputTracks, keyframe.outputTracks
 
     def updateKeyframeTracks(self):
         keyframe:AnimationKeyframe = self.windowClass.selectedAnimationFrame
-        tracks = keyframe.inputs() + keyframe.outputs()
-        if len(keyframe.tracks) < len(tracks):
-            for i in range(len(keyframe.tracks), len(tracks)):
-                keyframe.tracks.pop()
-        elif len(keyframe.tracks) > len(tracks):
-            for i in range(len(tracks), len(keyframe.tracks)):
-                nexttrack = keyframe.tracks[-1]+1
-                if nexttrack not in self.tracks:
-                    self.tracks.append(self.tracks[-1].copy())
-                keyframe.tracks.append(nexttrack)
+        inputTracks = keyframe.inputs()
+        outputTracks = keyframe.outputs()
+
+        if len(keyframe.inputTracks) > len(inputTracks):
+            for i in range(len(inputTracks),len(keyframe.inputTracks)):
+                keyframe.inputTracks.pop()
+        elif len(keyframe.inputTracks) < len(inputTracks):
+            for i in range(len(keyframe.inputTracks),len(inputTracks)):
+                if keyframe.inputTracks:
+                    nexttrack = keyframe.inputTracks[-1]+1
+                else:
+                    nexttrack = 0
+                if nexttrack not in self.originaltracks:
+                    self.originaltracks[nexttrack] = self.originaltracks[max(self.originaltracks.keys())].copy()
+                keyframe.inputTracks.append(nexttrack)
+
+        if len(keyframe.outputTracks) > len(outputTracks):
+            for i in range(len(outputTracks),len(keyframe.outputTracks)):
+                keyframe.outputTracks.pop()
+        elif len(keyframe.outputTracks) < len(outputTracks):
+            for i in range(len(keyframe.outputTracks),len(outputTracks)):
+                if keyframe.outputTracks:
+                    nexttrack = keyframe.outputTracks[-1]+1
+                else:
+                    nexttrack = 0
+                if nexttrack not in self.originaltracks:
+                    self.originaltracks[nexttrack] = self.originaltracks[max(self.originaltracks.keys())].copy()
+                keyframe.outputTracks.append(nexttrack)
 
 
     def getNextKeyframes(self, trackIds, keyframe: AnimationKeyframe):
@@ -174,7 +213,7 @@ class AnimationKeyframeList():
             # We can start from the keyframe in question.
             for index in range(startIndex+1, len(self.keyframes)):
                 # Is the keyframe in the current wanted track?
-                if trackId in self.keyframes[index].tracks:
+                if trackId in self.keyframes[index].outputTracks:
                     nextKeyframes.append(self.keyframes[index])
                     break
         return nextKeyframes
@@ -193,12 +232,12 @@ class AnimationKeyframeList():
             if keyframe.frame > frame:
                 return self.tracks  # Stop when reached the last keyframe before the cursor
             # tracks is a list of tracks which have their corresponding index in trackIds
-            tracks, trackIds = self.getKeyframeTracks(keyframe)
-            tracks = keyframe.output(
-                tracks, frame-keyframe.frame, self.getNextKeyframes(trackIds, keyframe))  # Get the new tracks
+            inputTracks, outputTracks, inputTrackIds, outputTrackIds = self.getKeyframeTracks(keyframe)
+            outputTracks = keyframe.outputValue(
+                inputTracks, frame-keyframe.frame, self.getNextKeyframes(outputTrackIds, keyframe))  # Get the new tracks
             i = 0
-            for track in trackIds:
+            for track in outputTrackIds:
                 # Set corresponding tracks to the new tracks
-                self.tracks[track] = tracks[i]
+                self.tracks[track] = outputTracks[i]
                 i += 1
         return self.tracks
