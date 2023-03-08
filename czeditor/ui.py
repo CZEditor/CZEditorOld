@@ -685,11 +685,11 @@ class CzeTimelineAnimationKeyframeShape(QGraphicsItem):
         self.isInput = isInput
         self.connectTop = 0
         self.connectBottom = 0
-
+        self.getNeighboringTracks()
     def boundingRect(self):
         if self.isInput:
             return QRectF(-7, -7, 7, 15)
-        return QRectF(0, -7, 7, 15)
+        return QRectF(-1, -7, 8, 15)
 
     def getNeighboringTracks(self):
         if self.isInput:
@@ -730,7 +730,7 @@ class CzeTimelineAnimationKeyframeShape(QGraphicsItem):
                 #   CENTER           GO ↙️       ⬇️ to connect         ➡️ by 4           ⬆️ back         ➡️            ⬆️           ⬅️            ⬆️ to connect         ⬅️ by 4            ⬇️ back
         else:
             painter.drawPolygon(
-                [QPoint(0, 0), QPoint(0, -7), QPoint(7, 0), QPoint(0, 7)])
+                [QPoint(-1, 7), QPoint(-1, -7), QPoint(0, -7), QPoint(7, 0), QPoint(0, 7)])
 
     def setBrush(self, brush):
         self.currentBrush = brush
@@ -765,13 +765,13 @@ class CzeTimelineAnimationKeyframeItem(QGraphicsItemGroup):
         self.inputShapeItems.append(
             CzeTimelineAnimationKeyframeShape(self.keyframe, track, True))
         self.addToGroup(self.inputShapeItems[-1])
-        self.inputShapeItems[-1].setPos(0, track*20)
+        self.inputShapeItems[-1].setPos(0, self.keyframe.inputTracks[track]*20)
 
     def addOutputShapeItem(self, track):
         self.outputShapeItems.append(
             CzeTimelineAnimationKeyframeShape(self.keyframe, track, False))
         self.addToGroup(self.outputShapeItems[-1])
-        self.outputShapeItems[-1].setPos(0, track*20)
+        self.outputShapeItems[-1].setPos(0, self.keyframe.outputTracks[track]*20)
 
     def updateShapeTracks(self):
         for shape in self.inputShapeItems:
