@@ -228,21 +228,22 @@ def getFFmpeg(platform: str, silent: bool) -> None:
 
 
 def checkAndInstall() -> bool:
-    # detect if we're running from a frozen executable
-    runSilently = "__compiled__" in globals() or getattr(sys, "frozen", False)
+    # Check `pip list` for package `czeditor` to see if
+    # running from an installed package. If so, we install the
+    # dependencies silently
+    try:
+        res = subprocess.run(
+            ["pip", "list"], capture_output=True, check=True, text=True)
+    except:  # Don't crash if pip is not installed or something
+        installed = False
+    else:
+        installed = "czeditor" in res.stdout
 
-    if not runSilently:
-        # Check `pip list` for package `czeditor` to see if
-        # running from an installed package. If so, we install the
-        # dependencies silently
-        try:
-            res = subprocess.run(
-                ["pip", "list"], capture_output=True, check=True, text=True)
-        except:  # Don't crash if pip is not installed or something
-            pass
-        else:
-            if "czeditor" in res.stdout:
-                runSilently = True
+    # detect if we're running from a frozen executable
+    compiled = "__compiled__" in globals() or getattr(sys, "frozen", False)
+
+    # If the program was installed via wheel, we also install the dependencies silently
+    runSilently = compiled or installed
 
     # detect platform
     if sys.platform.startswith("win") or sys.platform.startswith("cygwin") or sys.platform.startswith("msys"):
@@ -268,5 +269,14 @@ def checkAndInstall() -> bool:
     except RuntimeError:
         getFFmpeg(platform, runSilently)
         ret = True
+
+    # If chosen to install the dependencies silently, we restart the program
+    if ret and runSilently:
+        # Restart the program via subprocess
+        if not compiled:
+            subprocess.run(["python", "-m", "czeditor", *sys.argv[1:]])
+        else:
+            subprocess.run(sys.argv)
+        exit(0)
 
     return ret
