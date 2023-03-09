@@ -691,8 +691,8 @@ class CzeTimelineAnimationKeyframeShape(QGraphicsItem):
         top = min(0, self.connectTop*10+7)
         bottom = max(0, self.connectBottom*10-7)
         if self.isInput:
-            return self.keyframe.params.outputter.function().getInputRect(self.keyframe.params.outputter.params, self.track,bottom,top, self.keyframe)
-        return self.keyframe.params.outputter.function().getOutputRect(self.keyframe.params.outputter.params, self.track,bottom,top, self.keyframe)
+            return self.keyframe.params.outputter.function().getInputRect(self.keyframe.params.outputter.params, self.track, bottom, top, self.keyframe)
+        return self.keyframe.params.outputter.function().getOutputRect(self.keyframe.params.outputter.params, self.track, bottom, top, self.keyframe)
 
     def getNeighboringTracks(self):
         if self.isInput:
@@ -750,7 +750,7 @@ class CzeTimelineAnimationKeyframeShape(QGraphicsItem):
         if self.isInput:
             return self.keyframe.params.outputter.function().getInputPath(self.keyframe.params.outputter.params, self.track, self.keyframe)
         return self.keyframe.params.outputter.function().getOutputPath(self.keyframe.params.outputter.params, self.track, self.keyframe)
-        
+
 
 class CzeTimelineAnimationKeyframeItem(QGraphicsItemGroup):
     coolgradient = QRadialGradient(50, 50, 90)
@@ -833,6 +833,7 @@ class CzeTimelineAnimationModeBackground(QGraphicsItem):
 
     def paint(self, painter: QPainter, option, widget) -> None:
         painter.setBrush(QColor(127, 127, 127, 127))
+        painter.setPen(QPen(QColor(255, 255, 255), 0))
         painter.drawRect(self.boundrect())
 
 
@@ -848,11 +849,17 @@ class CzeTimelineAnimationTrackLine(QGraphicsItem):
     def paint(self, painter: QPainter, option, widget) -> None:
         painter.setPen(QPen(QColor(255, 255, 255), 0))
         rect: QRectF = self.boundrect()
-        # distance = max(1,int((rect.bottom()-rect.top())/100+1))*20
+        distance = max(1, 2**int(log(32/painter.transform().m22()+1, 2)))
         # for track in range(int(rect.top()/distance-1),int(rect.bottom()/distance+1)):
+
         for track in self.animationProperty.timeline.tracks:
-            painter.drawLine(rect.left(), track*20/painter.transform().m22(),
-                             rect.right(), track*20/painter.transform().m22())
+            painter.drawLine(rect.left()-1, track*20/painter.transform().m22(),
+                             rect.right()+1, track*20/painter.transform().m22())
+
+        painter.setPen(QPen(QColor(255,255,255,63),0))
+        for grid in range(int(rect.left()/distance-1), int(rect.right()/distance+1)):
+            painter.drawLine(grid*distance, rect.top()-1,
+                             grid*distance, rect.bottom()+1)
 
 
 class CzeTimelineAnimationSidebar(QGraphicsItem):
@@ -1390,7 +1397,7 @@ class CzeTimeline(QWidget):
         r = self.graphicsview.sceneRect()
         # hacky workaround, if this wasnt here it would snap to 0,0 every time you shrinked the view by more than 1 pixel per frame
         r.setSize(event.size()/self.graphicsview.transform().m11() +
-                  QSize(10000, 10000))
+                  QSize(100000, 100000))
         self.graphicsview.setSceneRect(r)
         self.graphicsview.setFixedSize(event.size())
         self.graphicsview.size().setHeight(event.size().height())
@@ -1481,7 +1488,8 @@ class CzeTimeline(QWidget):
         self.graphicsview.scale((factor if event.angleDelta().y(
         ) > 0 else 1/factor), (factor if event.angleDelta().y() > 0 else 1/factor))
         r = self.graphicsview.sceneRect()
-        r.setSize(self.size()/self.graphicsview.transform().m11())
+        r.setSize(self.size()/self.graphicsview.transform().m11() +
+                  QSize(10000, 10000))
         self.graphicsview.setSceneRect(r)
         newpos = self.graphicsview.mapToScene(event.position().toPoint())
         delta = newpos-oldpos

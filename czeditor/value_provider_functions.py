@@ -22,4 +22,14 @@ class StaticDecimalNumber(Provider):
         return [{"type": "Float", "value": params.value(frame)}]
 
 
+class StaticText(Provider):
+    name = "Text"
+    params = Params(
+        {
+            "value": StringProperty("")
+        }
+    )
+    output = ["String"]
 
+    def getValue(params, trackValues, keyframe, frame):
+        return [{"type": "String", "value": params.value()}]
