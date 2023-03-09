@@ -2,7 +2,7 @@ from PySide6.QtCore import QLine, QMimeData, QPoint, QRectF, QSize, Qt
 from PySide6.QtGui import (QColor, QDrag, QDragEnterEvent, QDragMoveEvent,
                            QDropEvent, QFont, QKeyEvent, QMouseEvent, QPainter,
                            QPen, QRadialGradient, QResizeEvent, QWheelEvent,
-                           QLinearGradient)
+                           QLinearGradient, QPainterPath)
 from PySide6.QtWidgets import (QFormLayout, QGraphicsItem, QGraphicsScene,
                                QGraphicsView, QGridLayout, QSizePolicy,
                                QWidget, QGraphicsItemGroup, QGraphicsSceneMouseEvent,
@@ -688,9 +688,11 @@ class CzeTimelineAnimationKeyframeShape(QGraphicsItem):
         self.getNeighboringTracks()
 
     def boundingRect(self):
+        top = min(0, self.connectTop*10+7)
+        bottom = max(0, self.connectBottom*10-7)
         if self.isInput:
-            return self.keyframe.params.outputter.function().getInputRect(self.keyframe.params.outputter.params, self.track, self.keyframe)
-        return self.keyframe.params.outputter.function().getOutputRect(self.keyframe.params.outputter.params, self.track, self.keyframe)
+            return self.keyframe.params.outputter.function().getInputRect(self.keyframe.params.outputter.params, self.track,bottom,top, self.keyframe)
+        return self.keyframe.params.outputter.function().getOutputRect(self.keyframe.params.outputter.params, self.track,bottom,top, self.keyframe)
 
     def getNeighboringTracks(self):
         if self.isInput:
@@ -744,6 +746,11 @@ class CzeTimelineAnimationKeyframeShape(QGraphicsItem):
     def setBrush(self, brush):
         self.currentBrush = brush
 
+    def shape(self) -> QPainterPath:
+        if self.isInput:
+            return self.keyframe.params.outputter.function().getInputPath(self.keyframe.params.outputter.params, self.track, self.keyframe)
+        return self.keyframe.params.outputter.function().getOutputPath(self.keyframe.params.outputter.params, self.track, self.keyframe)
+        
 
 class CzeTimelineAnimationKeyframeItem(QGraphicsItemGroup):
     coolgradient = QRadialGradient(50, 50, 90)

@@ -18,11 +18,23 @@ class Outputter:
         painter.drawPolygon(
             [QPoint(-7, 0), QPoint(0, -7), QPoint(7, 0), QPoint(0, 7)])
 
-    def getInputRect(params, track, keyframe):
+    def getInputRect(params, track, bottom, top, keyframe):
         return QRectF(-7, -7, 15, 15)
 
-    def getOutputRect(params, track, keyframe):
+    def getOutputRect(params, track, bottom, top, keyframe):
         return QRectF(-7, -7, 15, 15)
+
+    def getInputPath(params, track, keyframe):
+        path = QPainterPath()
+        path.addPolygon([QPoint(-7, 0), QPoint(0, -7),
+                        QPoint(7, 0), QPoint(0, 7)])
+        return path
+
+    def getOutputPath(params, track, keyframe):
+        path = QPainterPath()
+        path.addPolygon([QPoint(-7, 0), QPoint(0, -7),
+                        QPoint(7, 0), QPoint(0, 7)])
+        return path
 
 
 class Constant(Outputter):
@@ -34,9 +46,11 @@ class Constant(Outputter):
     def getValue(params, trackValues, keyframe, frame, nextKeyframes):
         values = keyframe.getValue(trackValues, frame)
         return values
-        
-    def getOutputIcon(params, track, keyframe, painter:QPainter):
-        painter.drawLines([QPoint(-2,2),QPoint(0,2),QPoint(0,2),QPoint(0,-2),QPoint(0,-2),QPoint(2,-2)])
+
+    def getOutputIcon(params, track, keyframe, painter: QPainter):
+        painter.drawLines([QPoint(-2, 2), QPoint(0, 2), QPoint(0, 2),
+                          QPoint(0, -2), QPoint(0, -2), QPoint(2, -2)])
+
 
 class FloatLerp(Outputter):
     name = "Linear"
@@ -50,9 +64,9 @@ class FloatLerp(Outputter):
             t = frame/max(frame, nextKeyframes[0].frame-keyframe.frame)
             return [{"type": "Float", "value": value[0]["value"] * (1-t)+nextKeyframes[0].getValue(trackValues, frame)[0]["value"]*t}]
         return value
-    
-    def getOutputIcon(params, track, keyframe, painter:QPainter):
-        painter.drawLine(-2,2,2,-2)
+
+    def getOutputIcon(params, track, keyframe, painter: QPainter):
+        painter.drawLine(-2, 2, 2, -2)
 
 
 class FloatSmoothInterpolation(Outputter):
@@ -87,14 +101,28 @@ class FloatAddition(Outputter):
     def getInputShape(params, track, bottom, top, keyframe, painter: QPainter):
         painter.drawPolygon(
             [QPoint(-3, 0), QPoint(-7, -4), QPoint(-7, -7+top), QPoint(-3, -7+top), QPoint(-3, -7), QPoint(0, -7), QPoint(0, 7), QPoint(-3, 7), QPoint(-3, 7+bottom), QPoint(-7, 7+bottom), QPoint(-7, 4)])
-        #   CENTER           GO ↙️       ⬇️ to connect         ➡️ by 4           ⬆️ back         ➡️            ⬆️           ⬅️            ⬆️ to connect         ⬅️ by 4            ⬇️ back
+            #   CENTER           GO ↙️       ⬇️ to connect         ➡️ by 4           ⬆️ back         ➡️            ⬆️           ⬅️            ⬆️ to connect         ⬅️ by 4            ⬇️ back
 
     def getOutputShape(params, track, bottom, top, keyframe, painter: QPainter):
         painter.drawPolygon(
             [QPoint(-1, 7), QPoint(-1, -7), QPoint(0, -7), QPoint(7, 0), QPoint(0, 7)])
 
-    def getInputRect(params, track, keyframe):
-        return QRectF(-7, -7, 7, 15)
+    def getInputRect(params, track, bottom, top, keyframe):
+        return QRectF(-7, -7+top, 7, 15+bottom-top)
 
-    def getOutputRect(params, track, keyframe):
+    def getOutputRect(params, track, bottom, top, keyframe):
         return QRectF(-1, -7, 8, 15)
+
+    def getOutputIcon(params, track, keyframe, painter: QPainter):
+        painter.drawLines([QPoint(2, -3), QPoint(2, 3),
+                          QPoint(0, 0), QPoint(6, 0)])
+
+    def getInputPath(params, track, keyframe):
+        path = QPainterPath()
+        path.addRect(-7, -7, 7, 15)
+        return path
+
+    def getOutputPath(params, track, keyframe):
+        path = QPainterPath()
+        path.addRect(-1, -7, 8, 15)
+        return path
