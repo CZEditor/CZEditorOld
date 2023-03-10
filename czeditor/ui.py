@@ -210,17 +210,21 @@ class CzeKeyframeOptionCategory(QRedDropDownFrame):
         self.parentclass = parentclass
         self.params = params
         if (params.function):
-            self.whole.insertWidget(0, QRedSelectableProperty(
-                None, params.function, self.parentclass, self.rebuild))
+            # self.whole.insertWidget(0, QRedSelectableProperty(
+            #    None, params.function, self.parentclass, self.rebuild))
+            self.selectable = SelectableProperty([SelectableItem()], 0)
+            self.selectable._selectable = params.function
+            self.selectablewidget = self.selectable.widget(self.parentclass)
+            self.selectablewidget.callback = self.rebuild
+            self.whole.insertWidget(0, self.selectablewidget)
         self.iterate(self.params.params)
         self.parentclass.timeline.createKeyframeItem(
             self.parentclass.selectedframe, params)
 
-    def rebuild(self, name, index):
+    def rebuild(self):
 
         self.parentclass.timeline.deleteKeyframeItem(
             self.parentclass.selectedframe, self.params)
-        self.params.function.index = index
         for i in range(self.widgets.rowCount()):
             self.widgets.removeRow(0)
         self.params.params = self.params.function().params.copy()
@@ -243,10 +247,12 @@ class CzeKeyframeOptionCategory(QRedDropDownFrame):
         if (params.function):
             toremove = self.whole.itemAt(0).widget()
             self.whole.removeItem(self.whole.itemAt(0))
-            toremove.setParent(None)
-            toremove.destroy()
-            self.whole.insertWidget(0, QRedSelectableProperty(
-                None, params.function, self.parentclass, self.rebuild))
+            toremove.deleteLater()
+            self.selectable = SelectableProperty([SelectableItem()], 0)
+            self.selectable._selectable = params.function
+            self.selectablewidget = self.selectable.widget(self.parentclass)
+            self.selectablewidget.callback = self.rebuild
+            self.whole.insertWidget(0, self.selectablewidget)
         for i in range(self.widgets.rowCount()):
             self.widgets.removeRow(0)
         self.params = params
@@ -1813,3 +1819,50 @@ class CzePresets(QWidget):
             self.drawnkeyframes[self.selectedpreset.keyframe] = None
             self.scene.removeItem(self.selectedpreset)
             self.selectedpreset = None
+
+
+class CzeDropdownSelectableItem(QRedExpandableButton):
+    def __init__(self, item: SelectableItem, onpress):
+        super().__init__(None, item.title, onpress, item)
+        self.item = item
+        self.setMaximumHeight(48)
+        self.setIcon(item.icon())
+
+
+class CzeDropdownSelectable(QRedScrollArea):
+    def __init__(self, property: SelectableProperty, callback):
+        super().__init__(None)
+        self.withDownBar = QVBoxLayout()
+        self.widgets = QGridLayout()
+        self.downBar = QHBoxLayout()
+        self.viewFrame = QRedFrame(self)
+        self.theproperty = property
+        self.callback = callback
+        i = 0
+        for element in self.theproperty._selectable.options:
+            createdButton = CzeDropdownSelectableItem(element, self.select)
+            self.widgets.addWidget(createdButton,
+                                   int(i/3), i % 3,
+                                   Qt.AlignmentFlag.AlignCenter)
+            i += 1
+        self.cancelButton = QRedExpandableButton(self,"Cancel",self.cancel)
+        self.downBar.addWidget(self.cancelButton)
+        self.withDownBar.addLayout(self.widgets)
+        self.withDownBar.addLayout(self.downBar)
+        self.viewFrame.setLayout(self.withDownBar)
+        self.setWidget(self.viewFrame)
+        self.setSizePolicy(QSizePolicy.Policy.Maximum,
+                           QSizePolicy.Policy.Maximum)
+
+    def select(self, element: SelectableItem):
+        self.theproperty.set(
+            self.theproperty._selectable.options.index(element))
+        self.callback()
+        self.deleteLater()
+    
+    def cancel(self):
+        self.deleteLater()
+
+    def resizeEvent(self, arg__1) -> None:
+        self.setMaximumSize(self.viewFrame.size()+QSize(4, 4))
+        return super().resizeEvent(arg__1)

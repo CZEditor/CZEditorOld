@@ -1,4 +1,4 @@
-from czeditor.util import Params
+from czeditor.util import Params, SelectableItem
 from czeditor.properties import *
 
 valueProviderFunctions = []
@@ -6,7 +6,7 @@ valueProviderFunctions = []
 
 class Provider:
     def __init_subclass__(cls):
-        valueProviderFunctions.append([cls.name, cls])
+        valueProviderFunctions.append(SelectableItem(cls.name, cls))
 
 
 class StaticDecimalNumber(Provider):

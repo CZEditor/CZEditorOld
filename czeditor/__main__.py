@@ -11,7 +11,6 @@ if __name__ == "__main__":
 
 from PySide6.QtCore import QDir
 from PySide6.QtWidgets import QApplication
-
 from czeditor.czeditor import *
 
 # Set up resource paths for Qt internals like stylesheets
@@ -22,7 +21,9 @@ for path in os.listdir(os.path.join(root, "res")):
     if os.path.isdir(os.path.join(root, "res", path)):
         QDir.addSearchPath(path, os.path.join(root, "res", path))
 
+
 if __name__ == "__main__":
+    
     app = QApplication(sys.argv)
     window = Window()
     sys.exit(app.exec())

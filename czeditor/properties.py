@@ -3,7 +3,7 @@ from PySide6.QtWidgets import QMainWindow
 
 from czeditor.property_widgets import *
 from czeditor.animation_keyframes import *
-from czeditor.util import Selectable, Params
+from czeditor.util import Selectable, Params, SelectableItem
 
 
 class Property:
@@ -279,7 +279,7 @@ class FloatProperty(Property):
 
 class SelectableProperty(Property):
 
-    def __init__(self, options=[["None", None]], index=0):
+    def __init__(self, options=[SelectableItem()], index=0):
         self._selectable = Selectable(index, options)
 
     def __call__(self):

@@ -4,7 +4,7 @@ from czeditor.keyframes import Keyframe
 
 
 def paramsAssociateKeyframe(params: Params, keyframe: Keyframe):
-    def iterateoverlist(self, l: list):
+    def iterateoverlist(l: list):
         for i in l:
             if isinstance(i, Property):
                 i.associateKeyframe(keyframe)

@@ -1,4 +1,4 @@
-from czeditor.util import Params
+from czeditor.util import Params, SelectableItem
 from czeditor.properties import *
 from math import floor, ceil
 
@@ -7,7 +7,7 @@ valueConverterFunctions = []
 
 class Converter:
     def __init_subclass__(cls):
-        valueConverterFunctions.append([cls.name, cls])
+        valueConverterFunctions.append(SelectableItem(cls.name, cls))
 
 
 class RoundFloatToInt(Converter):

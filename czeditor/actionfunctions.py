@@ -1,14 +1,14 @@
 from czeditor.handles import (CzeViewportDraggableOffset,
                               CzeViewportDraggableOffsetLine)
 from czeditor.properties import *
-from czeditor.util import Params
+from czeditor.util import Params, SelectableItem
 
 
 actionfunctionsdropdown = []
 
 class Action:
     def __init_subclass__(cls):
-        actionfunctionsdropdown.append([cls.name,cls])
+        actionfunctionsdropdown.append(SelectableItem(cls.name, cls))
 
 class NormalKeyframe(Action):
     name = "Media"

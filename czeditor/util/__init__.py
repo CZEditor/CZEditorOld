@@ -1,4 +1,6 @@
 from copy import deepcopy
+from PySide6.QtGui import QIcon
+from PySide6.QtCore import QFileInfo
 
 class Params(object):
     def __init__(self, params: dict, **kwargs):
@@ -73,20 +75,34 @@ class Params(object):
         return self
 
 
-class Selectable():
-    def __init__(self, index=0, options=[["None", None]]):
-        self.options = options
-        self.index = index
-        self.names = [i[0] for i in self.options]
-
-    def __call__(self):
-        return self.options[self.index][1]
-
-    def __str__(self):
-        return str(self.options[self.index][1])
+class SelectableItem():
+    def __init__(self, title="", object=None, icon=QIcon()):
+        self.title = title
+        self.object = object
+        self._icon = icon
 
     def copy(self):
-        return Selectable(self.index, deepcopy(self.options))
+        return SelectableItem(self.title, self.object, QIcon(self.icon()))
+
+    def icon(self):
+        if isinstance(self._icon, str):
+            self._icon = QIcon(QFileInfo(self._icon).canonicalFilePath())
+        return self._icon
+
+class Selectable():
+    def __init__(self, index=0, options=[SelectableItem("None")]):
+        self.options = options
+        self.index = index
+        self.names = [i.title for i in self.options]
+
+    def __call__(self):
+        return self.options[self.index].object
+
+    def __str__(self):
+        return str(self.options[self.index].object)
+
+    def copy(self):
+        return Selectable(self.index, [i.copy() for i in self.options])
 
     def name(self):
         return self.names[self.index]

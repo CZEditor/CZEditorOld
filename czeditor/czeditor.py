@@ -344,6 +344,7 @@ class Window(QMainWindow):
         self.renderaudiobuffer = np.zeros(0)
         self.selectedAnimationFrame = None
         self.registerEvent("FrameUpdate")
+        self.currentDropdown = None
 
     def registerEvent(self, event):
         if event not in self.events:
@@ -533,3 +534,18 @@ class Window(QMainWindow):
 
     def enterAnimationMode(self, property):
         self.timeline.enterAnimationMode(property)
+
+    def createDropdown(self, pos: QPoint, widget: QWidget):
+        if self.currentDropdown:
+            try:
+                self.currentDropdown.deleteLater()
+                self.currentDropdown = None
+            except:
+                self.currentDropdown = None
+        widget.setParent(self)
+        widget.raise_()
+        widget.setWindowFlag(Qt.WindowType.WindowStaysOnTopHint)
+        widget.move(pos)
+        widget.show()
+        self.currentDropdown = widget
+        

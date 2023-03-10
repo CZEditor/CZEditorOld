@@ -21,7 +21,7 @@ sourcefunctionsdropdown = []
 
 class Source:
     def __init_subclass__(cls) -> None:
-        sourcefunctionsdropdown.append([cls.name, cls])
+        sourcefunctionsdropdown.append(SelectableItem(cls.name, cls))
 
 
 class NormalImage(Source):
@@ -88,11 +88,15 @@ class XPError(Source):
             "buttons": StringList(["OK"]),
             "buttonstyles": emptylist(0),
             "erroricon": SelectableProperty([
-                ["Critical Error", "Wxp:Critical Error.png"],
-                ["Exclamation", "Wxp:Exclamation.png"],
-                ["Information", "Wxp:Information.png"],
-                ["Question", "Wxp:Question.png"],
-                ["None", ""]]),
+                SelectableItem(
+                    "Critical Error", "Wxp:Critical Error.png", "Wxp:Critical Error.png"),
+                SelectableItem(
+                    "Exclamation", "Wxp:Exclamation.png", "Wxp:Exclamation.png"),
+                SelectableItem(
+                    "Information", "Wxp:Information.png", "Wxp:Information.png"),
+                SelectableItem("Question", "Wxp:Question.png",
+                               "Wxp:Question.png"),
+                SelectableItem("None", "")]),
             "transient": TransientProperty(Params({
                 "cached": None,
                 "lastParams": None

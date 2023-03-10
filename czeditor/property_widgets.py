@@ -1,5 +1,5 @@
 from PySide6.QtWidgets import QFileDialog, QHBoxLayout, QLabel, QVBoxLayout, QSizePolicy, QMainWindow
-from PySide6.QtGui import QPainter
+from PySide6.QtGui import QPainter, QCursor
 
 from czeditor.base_ui import (QRedButton, QRedDecimalSpinBox, QRedFrame,
                               QRedSpinBox, QRedTextBox, QRedTextEntry,
@@ -254,21 +254,28 @@ class SelectablePropertyWidget(QRedFrame):
         self.windowObject = windowObject
         self.theproperty = property
         self.widgets = QHBoxLayout()
-        self.combobox = QRedComboBox(
-            self, self.theproperty._selectable.names)
-        self.combobox.setCurrentIndex(self.theproperty._selectable.index)
-        self.combobox.onchange = self.updateProperty
-        self.widgets.addWidget(self.combobox)
+        self.callback = None
+        # self.combobox = QRedComboBox(
+        #    self, self.theproperty._selectable.names)
+        # self.combobox.setCurrentIndex(self.theproperty._selectable.index)
+        # self.combobox.onchange = self.updateProperty
+        self.openbutton = QRedExpandableButton(self, "", self.openDropdown)
+        selected = self.theproperty._selectable.options[self.theproperty._selectable.index]
+        self.openbutton.setText(selected.title)
+        self.openbutton.setIcon(selected.icon())
+        self.widgets.addWidget(self.openbutton)
         self.setLayout(self.widgets)
         self.setStyleSheet("border-width:0px;")
 
-    def updateProperty(self, name, index):
-        self.theproperty._selectable.index = index
-        self.windowObject.updateviewport()
-
     def updateself(self):
-        self.combobox.onchange = self.lock
-        self.combobox.setCurrentIndex(self.theproperty._selectable.index)
+        selected = self.theproperty._selectable.options[self.theproperty._selectable.index]
+        self.openbutton.setText(selected.title)
+        self.openbutton.setIcon(selected.icon())
+        if self.callback:
+            self.callback()
 
-    def lock(self, name, index):
-        self.combobox.onchange = self.updateProperty
+
+    def openDropdown(self):
+        from czeditor.ui import CzeDropdownSelectable
+        self.windowObject.createDropdown(
+            QCursor.pos()-self.windowObject.frameGeometry().topLeft(), CzeDropdownSelectable(self.theproperty, self.updateself))

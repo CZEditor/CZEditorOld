@@ -12,7 +12,7 @@ from scipy.spatial.transform import Rotation
 from czeditor.handles import CzeViewportDraggableHandle
 from czeditor.openglfunctions import *
 from czeditor.properties import *
-from czeditor.util import ParamLink, Params
+from czeditor.util import ParamLink, Params, SelectableItem
 from czeditor.code_edit_window import CodeEditWindow
 
 imagecache = {}
@@ -27,7 +27,7 @@ effectfunctionsdropdown = []
 
 class Effect:
     def __init_subclass__(cls):
-        effectfunctionsdropdown.append([cls.name, cls])
+        effectfunctionsdropdown.append(SelectableItem(cls.name, cls))
 
 
 class Media2D(Effect):
