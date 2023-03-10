@@ -1118,8 +1118,12 @@ class CzeTimeline(QWidget):
 
         if event.buttons() & Qt.MouseButton.MiddleButton:
 
-            delta = (event.pos()-prevpos) * \
-                (self.graphicsview.sceneRect().width()/self.size().width())
+            delta = self.graphicsview.mapToScene(
+                event.pos())-self.graphicsview.mapToScene(prevpos)
+
+            # delta = (event.pos()-prevpos) * (self.graphicsview.sceneRect().width() /
+            #                                 self.size().width())/self.graphicsview.transform().m22()
+            #
             self.graphicsview.translate(delta.x(), delta.y())
 
             boundingrect = self.graphicsview.mapToScene(
