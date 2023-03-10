@@ -21,7 +21,7 @@ sourcefunctionsdropdown = []
 
 class Source:
     def __init_subclass__(cls) -> None:
-        sourcefunctionsdropdown.append(SelectableItem(cls.name, cls))
+        sourcefunctionsdropdown.append(SelectableItem(cls.name, cls, cls.icon))
 
 
 class NormalImage(Source):
@@ -31,6 +31,7 @@ class NormalImage(Source):
             "imagepath": FileProperty("")
         }
     )
+    icon = "editor:sources/Image.png"
 
     def image(param: Params, parentclass, frame):
         path = param.imagepath()
@@ -68,6 +69,7 @@ class FilledRectangle(Source):
             "color": [192, 255, 192, 255]
         }
     )
+    icon = "editor:sources/Filled Rectangle.png"
 
     def image(param: Params, parentclass, frame):
         # return CreateFilledRectangle((param.width,param.height),tuple(param.color))
@@ -103,6 +105,7 @@ class XPError(Source):
             }))
         }
     )
+    icon = "editor:sources/Windows Error.png"
 
     def image(param: Params, parentclass, frame):
         # fillindefaults(param,{"text":"","title":"","buttons":[],"buttonstyles":emptylist(0),"erroricon":Selectable(1,[["Critical Error","xp/Critical Error.png"],["Exclamation","xp/Exclamation.png"],["Information","xp/Information.png"],["Question","xp/Question.png"],["None",""]])})
@@ -133,6 +136,8 @@ class ImageSequence(Source):
     params = Params({
         "imagespath": FileProperty("")
     })
+    icon = "editor:sources/Image Sequence.png"
+
 
     def image(param: Params, parentclass, frame):
         # return Image.open(param.imagespath.replace("*",str(int(parentclass.playbackframe))))
@@ -162,7 +167,7 @@ class Video(Source):
     """
     Return the current frame the cursor is on in a video file
     """
-
+    icon = "editor:sources/Video.png"
     def image(param: Params, parentclass, frame):
         # return Image.open(param.imagespath.replace("*",str(int(parentclass.playbackframe))))
         transient = param.transient()
@@ -277,7 +282,7 @@ class Record(Source):
         }
         ))
     })
-
+    icon = "editor:sources/Record.png"
     def sound(param: Params, sample):
         transient = param.transient()
         if transient.sounddevice is None:

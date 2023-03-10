@@ -27,7 +27,7 @@ effectfunctionsdropdown = []
 
 class Effect:
     def __init_subclass__(cls):
-        effectfunctionsdropdown.append(SelectableItem(cls.name, cls))
+        effectfunctionsdropdown.append(SelectableItem(cls.name, cls, cls.icon))
 
 
 class Media2D(Effect):
@@ -41,7 +41,7 @@ class Media2D(Effect):
             "lastsize": (32, 32)
         }))
     })
-
+    icon = "editor:effects/2D Media.png"
     def imageEffect(image, vertices, shader, params, windowObject, keyframe, frame):
 
         transient = params.transient()
@@ -98,7 +98,7 @@ class Media3D(Effect):
             "lastsize": (32, 32)
         }))
     })
-
+    icon = "editor:effects/3D Media.png"
     def imageEffect(image, vertices, shader, params, windowObject, keyframe, frame):
 
         transient = params.transient()
@@ -152,7 +152,7 @@ class BasicShader(Effect):
             "shader": None
         }))
     })
-
+    icon = "editor:effects/Basic Shader.png"
     def imageEffect(image, vertices, shader, params, windowObject, keyframe, frame):
         transient = params.transient()
         if (transient.shader is None):
@@ -178,7 +178,7 @@ class ScrollingShader(Effect):
             "shader": None
         }))
     })
-
+    icon = "editor:effects/Scrolling Shader.png"
     def imageEffect(image, vertices, shader, params, windowObject, keyframe, frame):
         transient = params.transient()
         if (transient.shader is None):
@@ -205,7 +205,7 @@ class TilingShader(Effect):
             "shader": None
         }))
     })
-
+    icon = "editor:effects/Tiling Shader.png"
     def imageEffect(image, vertices, shader, params, windowObject, keyframe, frame):
         transient = params.transient()
         if (transient.shader is None):
@@ -233,7 +233,7 @@ class CustomShader(Effect):
             "previousIndex": None
         }))
     })
-
+    icon = "editor:effects/Custom Shader.png"
     def imageEffect(image, vertices, shader, params, windowObject, keyframe, frame):
         transient = params.transient()
         # There may be a better way to avoid function name collisions, but this works, it's just not really efficient.
@@ -267,7 +267,7 @@ class CustomColorShader(Effect):
             "previousIndex": None
         }))
     })
-
+    icon = "editor:effects/Custom Color Shader.png"
     def imageEffect(image, vertices, shader, params, windowObject, keyframe, frame):
         transient = params.transient()
         # There may be a better way to avoid function name collisions, but this works, it's just not really efficient.
@@ -297,7 +297,7 @@ class CustomCode(Effect):
     params = Params({
         "code": OpenWindowButtonProperty("Edit Script...", CodeEditWindow, "")
     })
-
+    icon = "editor:effects/Custom Code.png"
     def imageEffect(image, vertices, shader, params, windowObject, keyframe, frame):
         try:
             localdict = {"image": image, "vertices": vertices, "shader": shader,
@@ -331,7 +331,7 @@ class BlurShader(Effect):
             "shader": None
         }))
     })
-
+    icon = "editor:effects/Blur Shader.png"
     def imageEffect(image, vertices, shader, params, windowObject, keyframe, frame):
         transient = params.transient()
         if (transient.shader is None):
@@ -363,7 +363,7 @@ class GlitchShader(Effect):
             "shader": None
         }))
     })
-
+    icon = "editor:effects/Glitch Shader.png"
     def imageEffect(image, vertices, shader, params, windowObject, keyframe, frame):
         transient = params.transient()
         if (transient.shader is None):
@@ -396,7 +396,7 @@ class CustomVertexShader(Effect):
             "previousIndex": None
         }))
     })
-
+    icon = "editor:effects/Custom Vertex Shader.png"
     def imageEffect(image, vertices, shader, params, windowObject, keyframe, frame):
         transient = params.transient()
         # There may be a better way to avoid function name collisions, but this works, it's just not really efficient.
