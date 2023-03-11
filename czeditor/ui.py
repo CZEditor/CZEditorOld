@@ -878,17 +878,44 @@ class CzeTimelineAnimationTrackLine(QGraphicsItem):
     def paint(self, painter: QPainter, option, widget) -> None:
         painter.setPen(QPen(QColor(255, 255, 255), 0))
         rect: QRectF = self.boundrect()
-        distance = max(1, 2**int(log(32/painter.transform().m22()+1, 2)))
         # for track in range(int(rect.top()/distance-1),int(rect.bottom()/distance+1)):
 
         for track in self.animationProperty.timeline.tracks:
             painter.drawLine(rect.left()-1, track*20/painter.transform().m22(),
                              rect.right()+1, track*20/painter.transform().m22())
 
+
+class CzeTimelineGridLines(QGraphicsItem):
+
+    def __init__(self, boundrect):
+        super().__init__()
+        self.boundrect = boundrect
+
+    def boundingRect(self):
+        return self.boundrect()
+
+    def paint(self, painter: QPainter, option, widget) -> None:
+        
+        transform = painter.transform()
+        rect: QRectF = self.boundrect()
+        scale = transform.m22()
+        distance = max(1, 2**int(log(64/scale+1, 2))*scale)
+        rect.setLeft(rect.left()*scale)
+        rect.setTop(rect.top()*scale)
+        rect.setRight(rect.right()*scale)
+        rect.setBottom(rect.bottom()*scale)
+        
+        transform.setMatrix(1,0,0,0,1,0,transform.m31(),transform.m32(),1)
+        painter.setTransform(transform)
+        
         painter.setPen(QPen(QColor(255, 255, 255, 63), 0))
+        
+        painter.setFont(QFont("Tahoma", 8))
         for grid in range(int(rect.left()/distance-1), int(rect.right()/distance+1)):
             painter.drawLine(grid*distance, rect.top()-1,
                              grid*distance, rect.bottom()+1)
+            painter.drawText(QRectF(grid*distance, rect.top(),distance,30),Qt.AlignmentFlag.AlignTop,str(int(grid*distance/scale)))
+
 
 
 class CzeTimelineAnimationSidebar(QGraphicsItem):
@@ -1086,7 +1113,7 @@ class CzeTimeline(QWidget):
         boundingrect = self.graphicsview.mapToScene(
             self.graphicsview.viewport().geometry()).boundingRect()
         self.playbackcursor = self.scene.addLine(QLine(playbackframe, boundingrect.top(
-        ), playbackframe, boundingrect.bottom()), QPen(QColor(255, 0, 0), 0))
+        )-1, playbackframe, boundingrect.bottom()+1), QPen(QColor(255, 0, 0), 0))
         self.draggedframe = None
         self.graphicsview.onpress = self.pressEvent
         self.graphicsview.onrelease = self.releaseEvent
@@ -1115,6 +1142,10 @@ class CzeTimeline(QWidget):
         self.backButton.hide()
         self.parentclass.connectToEvent(
             "UpdateAnimationKeyframe", self.updateAnimationKeyframe)
+        def boundrect(): return self.graphicsview.mapToScene(
+            self.graphicsview.viewport().geometry()).boundingRect()
+        self.gridlines = CzeTimelineGridLines(boundrect)
+        self.scene.addItem(self.gridlines)
 
     def timerEvent(self, event) -> None:
         self.updateSeekingState()
@@ -1127,7 +1158,7 @@ class CzeTimeline(QWidget):
         boundingrect = self.graphicsview.mapToScene(
             self.graphicsview.viewport().geometry()).boundingRect()
         self.playbackcursor.setLine(
-            QLine(frame, boundingrect.top(), frame, boundingrect.bottom()))
+            QLine(frame, boundingrect.top()-1, frame, boundingrect.bottom()+1))
 
     def updateSeekingState(self):
         if self.parentclass.seeking and not self.seekingBackground:
@@ -1158,7 +1189,7 @@ class CzeTimeline(QWidget):
             boundingrect = self.graphicsview.mapToScene(
                 self.graphicsview.viewport().geometry()).boundingRect()
             self.playbackcursor.setLine(QLine(self.parentclass.playbackframe, boundingrect.top(
-            ), self.parentclass.playbackframe, boundingrect.bottom()))
+            )-1, self.parentclass.playbackframe, boundingrect.bottom()+1))
         if self.animationProperty is None:
             if not (event.buttons() & Qt.MouseButton.LeftButton):
 
@@ -1285,25 +1316,23 @@ class CzeTimeline(QWidget):
             if event.button() == Qt.MouseButton.LeftButton:
                 founditem: QGraphicsItem = self.graphicsview.itemAt(
                     event.pos().x(), event.pos().y())
-                if isinstance(founditem, CzeTimelineKeyframeShape) or founditem is None:
-                    if founditem != None:
-                        self.draggedframe = founditem.keyframe
-                        if self.parentclass.selectedframe:
-                            self.keyframes[self.parentclass.selectedframe].setBrush(
-                                self.coolgradient)
-                        founditem.setBrush(self.selectedcoolgradient)
-                        self.parentclass.selectedframe = founditem.keyframe
-                        self.parentclass.regeneratekeyframeoptions()
-                        self.parentclass.viewport.updatehandles()
-                        self.graphicsview.update()
-
-                    else:
-                        self.parentclass.seek(
-                            self.graphicsview.mapToScene(event.pos().x(), 0).x())
-                        self.updateplaybackcursor(
-                            self.graphicsview.mapToScene(event.pos().x(), 0).x())
-                        self.parentclass.updateviewport()
-                        self.graphicsview.update()
+                if isinstance(founditem, CzeTimelineKeyframeShape):
+                    self.draggedframe = founditem.keyframe
+                    if self.parentclass.selectedframe:
+                        self.keyframes[self.parentclass.selectedframe].setBrush(
+                            self.coolgradient)
+                    founditem.setBrush(self.selectedcoolgradient)
+                    self.parentclass.selectedframe = founditem.keyframe
+                    self.parentclass.regeneratekeyframeoptions()
+                    self.parentclass.viewport.updatehandles()
+                    self.graphicsview.update()
+                elif isinstance(founditem, CzeTimelineGridLines):
+                    self.parentclass.seek(
+                        self.graphicsview.mapToScene(event.pos().x(), 0).x())
+                    self.updateplaybackcursor(
+                        self.graphicsview.mapToScene(event.pos().x(), 0).x())
+                    self.parentclass.updateviewport()
+                    self.graphicsview.update()
         else:
             if event.button() == Qt.MouseButton.LeftButton:
                 founditem: QGraphicsItem = self.graphicsview.itemAt(
