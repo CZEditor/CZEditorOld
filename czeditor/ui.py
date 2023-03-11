@@ -6,7 +6,7 @@ from PySide6.QtGui import (QColor, QDrag, QDragEnterEvent, QDragMoveEvent,
 from PySide6.QtWidgets import (QFormLayout, QGraphicsItem, QGraphicsScene,
                                QGraphicsView, QGridLayout, QSizePolicy,
                                QWidget, QGraphicsItemGroup, QGraphicsSceneMouseEvent,
-                               QGraphicsSceneHoverEvent)
+                               QGraphicsSceneHoverEvent, QGroupBox)
 
 from czeditor.base_ui import *
 from czeditor.effectfunctions import *
@@ -175,22 +175,30 @@ class QRedTextListProperty(QRedFrame):
 class QRedDropDownFrame(QRedFrame):
     def __init__(self, parent, name):
         super().__init__(parent)
-
-        self.whole = QVBoxLayout(self)
-        self.collapseButton = QRedExpandableButton(None, name, self.collapse)
+        self.whole = QGridLayout(self)
+        self.whole.setContentsMargins(2, 2, 2, 2)
+        self.collapseButton = QRedExpandableButton(
+            None, "", self.collapse)
+        self.collapseButton.setIcon(QIcon("editor:Arrow Down.png"))
+        self.collapseButton.setSizePolicy(
+            QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Maximum)
         self.mainView = QRedFrame(self)
         self.widgets = QFormLayout(self.mainView)
 
         self.mainView.setLayout(self.widgets)
-        self.mainView.sizePolicy().setVerticalPolicy(QSizePolicy.Policy.Minimum)
+        self.mainView.sizePolicy().setVerticalPolicy(QSizePolicy.Policy.Maximum)
         self.mainView.sizePolicy().setHorizontalPolicy(QSizePolicy.Policy.Preferred)
-        self.whole.addWidget(self.collapseButton)
-        self.whole.addWidget(self.mainView)
-        self.setLayout(self.whole)
+        if name:
+            self.label = QLabel(name, None)
+            self.label.setStyleSheet("border-width:0px; background:none;")
+            self.whole.addWidget(self.label,0,0,1,2)
+        self.whole.addWidget(self.collapseButton, 1, 0)
+        self.whole.addWidget(self.mainView, 2, 0, 1, 2)
+        #self.setLayout(self.whole)
         self.collapsed = False
         self.whole.setAlignment(Qt.AlignmentFlag.AlignTop)
         self.whole.setSizeConstraint(
-            QVBoxLayout.SizeConstraint.SetNoConstraint)
+            QGridLayout.SizeConstraint.SetNoConstraint)
         # print(self.mainView.maximumHeight())
         # self.setMaximumHeight(200)
         self.mainView.setStyleSheet("border-width:0px; background:none;")
@@ -199,9 +207,11 @@ class QRedDropDownFrame(QRedFrame):
         if self.collapsed:
             self.mainView.setMaximumHeight(9999)
             self.collapsed = False
+            self.collapseButton.setIcon(QIcon("editor:Arrow Down.png"))
         else:
             self.mainView.setMaximumHeight(0)
             self.collapsed = True
+            self.collapseButton.setIcon(QIcon("editor:Arrow Up.png"))
 
 
 class CzeKeyframeOptionCategory(QRedDropDownFrame):
@@ -216,7 +226,9 @@ class CzeKeyframeOptionCategory(QRedDropDownFrame):
             self.selectable._selectable = params.function
             self.selectablewidget = self.selectable.widget(self.parentclass)
             self.selectablewidget.callback = self.rebuild
-            self.whole.insertWidget(0, self.selectablewidget)
+            self.selectablewidget.setSizePolicy(
+                QSizePolicy.Policy.MinimumExpanding, QSizePolicy.Policy.MinimumExpanding)
+            self.whole.addWidget(self.selectablewidget, 1, 1)
         self.iterate(self.params.params)
         self.parentclass.timeline.createKeyframeItem(
             self.parentclass.selectedframe, params)
@@ -245,14 +257,16 @@ class CzeKeyframeOptionCategory(QRedDropDownFrame):
 
     def regenerate(self, params):
         if (params.function):
-            toremove = self.whole.itemAt(0).widget()
-            self.whole.removeItem(self.whole.itemAt(0))
+            toremove = self.whole.itemAtPosition(1, 1).widget()
+            self.whole.removeItem(self.whole.itemAtPosition(1, 1))
             toremove.deleteLater()
             self.selectable = SelectableProperty([SelectableItem()], 0)
             self.selectable._selectable = params.function
             self.selectablewidget = self.selectable.widget(self.parentclass)
             self.selectablewidget.callback = self.rebuild
-            self.whole.insertWidget(0, self.selectablewidget)
+            self.selectablewidget.setSizePolicy(
+                QSizePolicy.Policy.MinimumExpanding, QSizePolicy.Policy.MinimumExpanding)
+            self.whole.addWidget(self.selectablewidget, 1, 1)
         for i in range(self.widgets.rowCount()):
             self.widgets.removeRow(0)
         self.params = params
@@ -273,13 +287,13 @@ class CzeKeyframeOptionCategory(QRedDropDownFrame):
 
 
 class CzeKeyframeOptionCategoryList(QRedFrame):
-    def __init__(self, parent, thelist, baseparam, parentclass):
+    def __init__(self, parent, thelist, baseparam, parentclass, title):
         super().__init__(parent)
         self.parentclass = parentclass
         self.baseparam = baseparam
         self.whole = QVBoxLayout(self)
-        self.whole.setSpacing(2)
-        self.whole.setContentsMargins(2, 2, 2, 2)
+        self.whole.setSpacing(8)
+        self.whole.setContentsMargins(2, 8, 2, 8)
         self.collapseButton = QRedExpandableButton(
             None, "expand", self.collapse)
         self.collapseButton.sizePolicy().setHorizontalPolicy(
@@ -287,17 +301,17 @@ class CzeKeyframeOptionCategoryList(QRedFrame):
         self.collapseButton.setMinimumWidth(60)
         self.mainView = QRedFrame(self)
         self.withbuttons = QGridLayout()
-        self.withbuttons.setSpacing(2)
-        self.withbuttons.setContentsMargins(2, 2, 2, 2)
+        self.withbuttons.setSpacing(8)
+        self.withbuttons.setContentsMargins(2, 8, 2, 8)
         self.widgets = QFormLayout()
-        self.widgets.setSpacing(2)
-        self.widgets.setContentsMargins(2, 2, 2, 2)
+        self.widgets.setSpacing(8)
+        self.widgets.setContentsMargins(2, 8, 2, 8)
         self.thelist = thelist
         self.entries = []
         self.widgetbuttons = QGridLayout()
         for i in range(len(self.thelist)):
             self.entries.append(CzeKeyframeOptionCategory(
-                None, "expand/collapse", self.thelist[i], parentclass))
+                None, "", self.thelist[i], parentclass))
             arow = QHBoxLayout()
             arow.addWidget(self.entries[i])
             buttons = QVBoxLayout()
@@ -313,10 +327,13 @@ class CzeKeyframeOptionCategoryList(QRedFrame):
         self.mainView.setLayout(self.withbuttons)
         self.mainView.sizePolicy().setVerticalPolicy(QSizePolicy.Policy.Minimum)
         self.mainView.sizePolicy().setHorizontalPolicy(QSizePolicy.Policy.Preferred)
+        self.title = QLabel(title, None)
+        self.title.setStyleSheet("border-width:0px; background:none;")
+        self.whole.addWidget(self.title)
         self.whole.addWidget(self.collapseButton)
         self.whole.addWidget(self.mainView)
         # self.whole.addWidget(QRedExpandableButton(None,"+",self.add))
-        self.setLayout(self.whole)
+        #self.setLayout(self.whole)
         self.collapsed = False
         self.whole.setAlignment(Qt.AlignmentFlag.AlignTop)
         self.whole.setSizeConstraint(
@@ -337,7 +354,7 @@ class CzeKeyframeOptionCategoryList(QRedFrame):
         for element in thelist:
             if (i >= len(self.entries)):
                 self.entries.append(CzeKeyframeOptionCategory(
-                    None, "expand/collapse", element, self.parentclass))
+                    None, "", element, self.parentclass))
                 arow = QHBoxLayout()
                 arow.addWidget(self.entries[i])
                 buttons = QVBoxLayout()
@@ -401,7 +418,7 @@ class CzeKeyframeOptionCategoryList(QRedFrame):
         self.thelist.append(self.baseparam.copy())
         i = len(self.thelist)-1
         self.entries.append(CzeKeyframeOptionCategory(
-            None, "expand/collapse", self.thelist[i], self.parentclass))
+            None, "", self.thelist[i], self.parentclass))
         # print([self.thelist[i].params],[self.baseparam.params])
         arow = QHBoxLayout()
         arow.addWidget(self.entries[i])
@@ -410,7 +427,7 @@ class CzeKeyframeOptionCategoryList(QRedFrame):
         buttons.addWidget(QRedButton(None, "\\/", self.movedown, arow))
         buttons.addWidget(QRedButton(None, "-", self.remove, arow))
         arow.addLayout(buttons)
-        self.widgets.addRow("button", arow)
+        self.widgets.addRow("", arow)
         self.parentclass.updateviewport()
 
 
@@ -438,21 +455,27 @@ class CzeKeyframeOptions(QRedScrollArea):
         self.parentclass = parentclass
         self.viewframe = QRedFrame(None)
 
-        # self.whole = QVBoxLayout()
+        self.whole = QVBoxLayout()
 
         # self.whole.addWidget(self.keyframeNameWidget)
+        self.title = QLabel("Keyframe Options", None)
+        self.title.setStyleSheet("background:none;")
+        self.whole.addWidget(self.title)
+        self.whole.setSpacing(0)
+        self.whole.setContentsMargins(2, 2, 2, 2)
 
         self.widgets = QVBoxLayout()
-        self.widgets.setSpacing(2)
-        self.widgets.setContentsMargins(2, 2, 2, 2)
+        self.widgets.setSpacing(16)
+        self.widgets.setContentsMargins(2, 16, 2, 16)
 
         self.iterate(self.params)
 
-        # self.whole.addLayout(self.widgets)
+        self.whole.addLayout(self.widgets)
 
-        self.viewframe.setLayout(self.widgets)
+        self.viewframe.setLayout(self.whole)
+        self.viewframe.setContentsMargins(2,8,2,8)
 
-        self.widgets.setAlignment(Qt.AlignmentFlag.AlignTop)
+        self.widgets.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.setWidget(self.viewframe)
 
         self.setSizePolicy(QSizePolicy.Policy.Maximum,
@@ -478,10 +501,10 @@ class CzeKeyframeOptions(QRedScrollArea):
             param = params[key]
             if isinstance(param, Params):
                 self.widgets.addWidget(CzeKeyframeOptionCategory(
-                    None, "Expand/Collapse", param, self.parentclass))  # Make it display the actual name!
+                    None, key, param, self.parentclass))  # Make it display the actual name!
             elif isinstance(param, list):
                 self.widgets.addWidget(CzeKeyframeOptionCategoryList(
-                    None, param, self.baseparams[key], self.parentclass))
+                    None, param, self.baseparams[key], self.parentclass, key))
 
     def iterateUpdate(self, params):
         i = 0
@@ -862,7 +885,7 @@ class CzeTimelineAnimationTrackLine(QGraphicsItem):
             painter.drawLine(rect.left()-1, track*20/painter.transform().m22(),
                              rect.right()+1, track*20/painter.transform().m22())
 
-        painter.setPen(QPen(QColor(255,255,255,63),0))
+        painter.setPen(QPen(QColor(255, 255, 255, 63), 0))
         for grid in range(int(rect.left()/distance-1), int(rect.right()/distance+1)):
             painter.drawLine(grid*distance, rect.top()-1,
                              grid*distance, rect.bottom()+1)
@@ -1650,8 +1673,14 @@ class CzePresets(QWidget):
     def __init__(self, parent, parentclass):
         super().__init__(parent)
         self.parentclass = parentclass
+        self.widgets = QVBoxLayout(self)
+        self.widgets.setContentsMargins(2, 2, 2, 2)
+        self.label = QLabel("Presets", None)
+        self.label.setStyleSheet("background:none;")
+        self.widgets.addWidget(self.label)
         self.scene = QGraphicsScene(self)
         self.graphicsview = QGraphicsViewEvent(self)
+        self.widgets.addWidget(self.graphicsview)
         self.graphicsview.setScene(self.scene)
         self.keyframes = [Keyframe(0, 0, Params({
             "properties": {
@@ -1739,7 +1768,7 @@ class CzePresets(QWidget):
         r.setSize(event.size()/self.graphicsview.transform().m11() +
                   QSize(1000, 1000))
         self.graphicsview.setSceneRect(r)
-        self.graphicsview.setFixedSize(event.size())
+        #self.graphicsview.setFixedSize(event.size())
         r = self.graphicsview.sceneRect()
         r.setSize(event.size()/self.graphicsview.transform().m11())
         self.graphicsview.setSceneRect(r)
@@ -1825,8 +1854,11 @@ class CzeDropdownSelectableItem(QRedExpandableButton):
     def __init__(self, item: SelectableItem, onpress):
         super().__init__(None, item.title, onpress, item)
         self.item = item
-        self.setMaximumHeight(48)
+        # self.setMaximumHeight(48)
         self.setIcon(item.icon())
+        self.setSizePolicy(QSizePolicy.Policy.MinimumExpanding,
+                           QSizePolicy.Policy.MinimumExpanding)
+        self.sizePolicy().setControlType(QSizePolicy.ControlType.ButtonBox)
 
 
 class CzeDropdownSelectable(QRedScrollArea):
@@ -1836,6 +1868,9 @@ class CzeDropdownSelectable(QRedScrollArea):
         self.widgets = QGridLayout()
         self.downBar = QHBoxLayout()
         self.viewFrame = QRedFrame(self)
+        self.withDownBar.addLayout(self.widgets)
+        self.withDownBar.addLayout(self.downBar)
+        self.viewFrame.setLayout(self.withDownBar)
         self.theproperty = property
         self.callback = callback
         i = 0
@@ -1845,21 +1880,20 @@ class CzeDropdownSelectable(QRedScrollArea):
                                    int(i/3), i % 3,
                                    Qt.AlignmentFlag.AlignCenter)
             i += 1
-        self.cancelButton = QRedExpandableButton(self,"Cancel",self.cancel)
+        self.widgets.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.cancelButton = QRedExpandableButton(self, "Cancel", self.cancel)
         self.downBar.addWidget(self.cancelButton)
-        self.withDownBar.addLayout(self.widgets)
-        self.withDownBar.addLayout(self.downBar)
-        self.viewFrame.setLayout(self.withDownBar)
+
         self.setWidget(self.viewFrame)
-        self.setSizePolicy(QSizePolicy.Policy.Maximum,
-                           QSizePolicy.Policy.Maximum)
+        # self.setSizePolicy(QSizePolicy.Policy.Maximum,
+        #                   QSizePolicy.Policy.Maximum)
 
     def select(self, element: SelectableItem):
         self.theproperty.set(
             self.theproperty._selectable.options.index(element))
         self.callback()
         self.deleteLater()
-    
+
     def cancel(self):
         self.deleteLater()
 

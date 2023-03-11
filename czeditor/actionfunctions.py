@@ -8,11 +8,12 @@ actionfunctionsdropdown = []
 
 class Action:
     def __init_subclass__(cls):
-        actionfunctionsdropdown.append(SelectableItem(cls.name, cls))
+        actionfunctionsdropdown.append(SelectableItem(cls.name, cls, cls.icon))
 
 class NormalKeyframe(Action):
     name = "Media"
     params = Params({})
+    icon = "editor:actions/Media.png"
 
     def action(statetomodify, keyframe, stateparam, frame, windowObject):
         if (keyframe.params.source.params.duration and keyframe.params.source.params.duration() != 0):
@@ -28,6 +29,7 @@ class NormalKeyframe(Action):
 class ErrorKeyframe(Action):
     name = "Windows Error"
     params = Params({})
+    icon = "editor:actions/Windows Error.png"
 
     def action(statetomodify, keyframe, stateparam, frame, windowObject):
         if statetomodify:
@@ -47,6 +49,7 @@ class CascadeKeyframe(Action):
             "x": IntProperty(16),
             "y": IntProperty(16)
         })
+    icon = "editor:actions/Cascade.png"
 
     def action(statetomodify, keyframe, stateparam, frame, windowObject):
         if statetomodify:
@@ -86,7 +89,7 @@ class CameraMotionKeyframe(Action):
         "roll": IntProperty(0),
         "fov": IntProperty(90)
     })
-
+    icon = "editor:actions/Camera Motion.png"
     def action(statetomodify, keyframe, params, frame, windowObject):
         windowObject.cameraParams.x = params.params.x()
         windowObject.cameraParams.y = params.params.y()

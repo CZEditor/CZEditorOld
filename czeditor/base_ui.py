@@ -1,7 +1,7 @@
 from PySide6.QtGui import QTextOption
 from PySide6.QtWidgets import (QComboBox, QDoubleSpinBox, QFrame, QLineEdit,
                                QPlainTextEdit, QPushButton, QScrollArea,
-                               QSizePolicy, QSpinBox, QToolButton)
+                               QSizePolicy, QSpinBox, QToolButton, QGroupBox)
 
 from czeditor.util import dummyfunction
 
@@ -62,6 +62,13 @@ class QRedFrame(QFrame):
         self.setStyleSheet(
             "border-image:url(editor:Square Frame.png) 2; border-width:2;")
 
+
+class QRedGroupBox(QGroupBox):
+    def __init__(self, text, parent):
+        super().__init__(text, parent)
+        self.setContentsMargins(2, 16, 2, 2)
+        self.setStyleSheet(
+            "border-image:url(editor:Square Frame.png) 2; border-width:2;")
 
 class QRedScrollArea(QScrollArea):
     def __init__(self, parent):
