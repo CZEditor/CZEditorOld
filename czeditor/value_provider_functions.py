@@ -1,5 +1,7 @@
 from czeditor.util import Params, SelectableItem
 from czeditor.properties import *
+from czeditor.code_edit_window import CodeEditWindow
+from math import *
 
 valueProviderFunctions = []
 
@@ -20,6 +22,19 @@ class StaticDecimalNumber(Provider):
 
     def getValue(params, trackValues, keyframe, frame):
         return [{"type": "Float", "value": params.value(frame)}]
+
+
+class MathProvider(Provider):
+    name = "Math function"
+    params = Params(
+        {
+            "function": OpenWindowButtonProperty("Edit Script...", CodeEditWindow, "sin(frame)")
+        }
+    )
+    output = ["Float"]
+
+    def getValue(params, trackValues, keyframe, frame):
+        return [{"type": "Float", "value": eval(params.function(), globals(), {"frame": frame})}]
 
 
 class StaticText(Provider):

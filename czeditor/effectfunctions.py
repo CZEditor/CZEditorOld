@@ -33,8 +33,8 @@ class Effect:
 class Media2D(Effect):
     name = "2D Media"
     params = Params({
-        "x": IntProperty(0),
-        "y": IntProperty(0),
+        "x": FloatProperty(0.0),
+        "y": FloatProperty(0.0),
         "rotation": FloatProperty(0.0),
         "size": SizeProperty(1280, 720, 1280, 720),
         "transient": TransientProperty(Params({
@@ -50,7 +50,7 @@ class Media2D(Effect):
 
         imageResolution = (image.shape[1], image.shape[0])
 
-        x, y = params.x(), params.y()
+        x, y = params.x(frame), params.y(frame)
 
         # Detect change in image resolution
         if transient.lastsize[0] != imageResolution[0] or transient.lastsize[1] != imageResolution[1]:
@@ -87,9 +87,9 @@ class Media2D(Effect):
 class Media3D(Effect):
     name = "3D Media"
     params = Params({
-        "x": IntProperty(0),
-        "y": IntProperty(0),
-        "z": IntProperty(0),
+        "x": FloatProperty(0.0),
+        "y": FloatProperty(0.0),
+        "z": FloatProperty(0.0),
         "rotationX": FloatProperty(0.0),
         "rotationY": FloatProperty(0.0),
         "rotationZ": FloatProperty(0.0),
@@ -107,7 +107,7 @@ class Media3D(Effect):
 
         imageResolution = (image.shape[1], image.shape[0])
 
-        x, y, z = params.x(), params.y(), params.z()
+        x, y, z = params.x(frame), params.y(frame), params.z(frame)
 
         # Detect change in image resolution
         if transient.lastsize[0] != imageResolution[0] or transient.lastsize[1] != imageResolution[1]:

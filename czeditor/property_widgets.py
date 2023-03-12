@@ -1,9 +1,9 @@
 from PySide6.QtWidgets import QFileDialog, QHBoxLayout, QLabel, QVBoxLayout, QSizePolicy, QMainWindow
-from PySide6.QtGui import QPainter, QCursor
+from PySide6.QtGui import QPainter, QCursor, QColor
 
 from czeditor.base_ui import (QRedButton, QRedDecimalSpinBox, QRedFrame,
                               QRedSpinBox, QRedTextBox, QRedTextEntry,
-                              QRedExpandableButton, QRedComboBox)
+                              QRedExpandableButton, QRedComboBox, QRedColorPicker)
 
 
 class IntPropertyWidget(QRedFrame):
@@ -279,3 +279,27 @@ class SelectablePropertyWidget(QRedFrame):
         from czeditor.ui import CzeDropdownSelectable
         self.windowObject.createDropdown(
             QCursor.pos()-self.windowObject.frameGeometry().topLeft(), CzeDropdownSelectable(self.theproperty, self.updateself))
+
+
+class RGBPropertyWidget(QRedFrame):
+    def __init__(self, property, windowObject):
+        super().__init__(None)
+        self.windowObject = windowObject
+        self.theproperty = property
+        self.widgets = QHBoxLayout()
+        self.colorButton = QRedColorPicker(None, self.updateProperty)
+        r, g, b, a = self.theproperty()
+        self.colorButton.currentColor = QColor(r, g, b, a)
+        self.widgets.addWidget(self.colorButton)
+        self.setLayout(self.widgets)
+
+    def updateProperty(self, color: QColor):
+        self.theproperty._r = color.red()
+        self.theproperty._g = color.green()
+        self.theproperty._b = color.blue()
+        self.theproperty._a = color.alpha()
+        self.windowObject.updateviewport()
+
+    def updateSelf(self):
+        r, g, b, a = self.theproperty()
+        self.colorButton.currentColor = QColor(r, g, b, a)

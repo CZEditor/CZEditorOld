@@ -12,7 +12,7 @@ from moviepy.audio.AudioClip import AudioClip
 from PIL import Image
 from PySide6.QtCore import QPoint, QSize, Qt, QTimerEvent
 from PySide6.QtGui import (QImage, QKeyEvent, QMouseEvent, QPixmap,
-                           QResizeEvent, QWheelEvent)
+                           QResizeEvent, QWheelEvent, QPalette)
 from PySide6.QtOpenGLWidgets import QOpenGLWidget
 from PySide6.QtWidgets import (QGraphicsScene, QGraphicsView, QLabel,
                                QMainWindow, QSizePolicy, QSplitter, QWidget)
@@ -345,6 +345,16 @@ class Window(QMainWindow):
         self.selectedAnimationFrame = None
         self.registerEvent("FrameUpdate")
         self.currentDropdown = None
+        palette = self.palette()
+        palette.setColor(QPalette.ColorGroup.All,
+                         QPalette.ColorRole.Light, QColor(255, 0, 0))
+        palette.setColor(QPalette.ColorGroup.All,
+                         QPalette.ColorRole.Dark, QColor(0, 0, 0))
+        palette.setColor(QPalette.ColorGroup.All,
+                         QPalette.ColorRole.Mid, QColor(127, 0, 0))
+        palette.setColor(QPalette.ColorGroup.All,
+                         QPalette.ColorRole.Button, QColor(127, 0, 0))
+        self.setPalette(palette)
 
     def registerEvent(self, event):
         if event not in self.events:
@@ -368,6 +378,7 @@ class Window(QMainWindow):
             function()
 
     def triggerEventWithParam(self, event, param):
+        print(event)
         if event not in self.events:
             return
         for function in self.events[event]:
@@ -425,7 +436,6 @@ class Window(QMainWindow):
         os.remove("_tempaudio.mp3")
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
-        # print(event.text())
         if event.text() == " ":
             self.isplaying = not self.isplaying
             self.starttime = perf_counter()

@@ -1,6 +1,7 @@
 import os
 
 import numpy as np
+import scipy.interpolate
 import pyspng
 import sounddevice
 from moviepy.audio.io.AudioFileClip import AudioFileClip
@@ -296,4 +297,33 @@ class Record(Source):
         return self.name
 
 
+class RadialGradient(Source):
+    name = "Radial Gradient"
+    params = Params({
+        "width": IntProperty(100),
+        "height": IntProperty(100),
+        "Xcenter": FloatProperty(50.0),
+        "Ycenter": FloatProperty(50.0),
+        "radius": FloatProperty(100.0),
+        "color_inner": RGBProperty(255, 0, 0, 255),
+        "color_outer": RGBProperty(0, 0, 0, 255)
+    })
+    icon = "editor:Rounded Frame.png"
 
+    def image(params:Params, windowObject, frame):
+        x = np.arange(params.width())
+        y = np.arange(params.height())
+        xx, yy = np.meshgrid(x, y)
+        dist = np.hypot(xx - params.Xcenter(frame), yy - params.Ycenter(frame))
+        radius = [0,params.radius(frame)]
+        i_r,i_g,i_b,i_a = params.color_inner()
+        o_r,o_g,o_b,o_a = params.color_outer()
+        f_r = scipy.interpolate.interp1d(radius,[i_r,o_r], bounds_error = False, fill_value=(i_r,o_r))
+        f_g = scipy.interpolate.interp1d(radius,[i_g,o_g], bounds_error = False, fill_value=(i_g,o_g))
+        f_b = scipy.interpolate.interp1d(radius,[i_b,o_b], bounds_error = False, fill_value=(i_b,o_b))
+        f_a = scipy.interpolate.interp1d(radius,[i_a,o_a], bounds_error = False, fill_value=(i_a,o_a))
+        r = f_r(dist).astype(np.uint8)
+        g = f_g(dist).astype(np.uint8)
+        b = f_b(dist).astype(np.uint8)
+        a = f_a(dist).astype(np.uint8)
+        return np.dstack((r,g,b,a))

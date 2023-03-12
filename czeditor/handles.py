@@ -1,6 +1,6 @@
 from typing import *
 
-from PySide6.QtCore import QRectF, Qt
+from PySide6.QtCore import QRectF, Qt, QPointF
 from PySide6.QtGui import QColor, QPainter, QPen
 from PySide6.QtWidgets import QGraphicsItem, QGraphicsSceneMouseEvent, QWidget
 
@@ -11,16 +11,22 @@ class CzeViewportDraggableHandle(QGraphicsItem):
         self.xproperty = x
         self.yproperty = y
         self.parentclass = parentclass
-        self.setPos(self.xproperty(), self.yproperty())
+        self.setPos(self.xproperty.currentvalue,
+                    self.yproperty.currentvalue)
 
         self.setCursor(Qt.CursorShape.OpenHandCursor)
+        self.parentclass.connectToEvent("FrameUpdate", self.frameUpdate)
 
     def boundingRect(self) -> QRectF:
+        # self.setPos(self.xproperty.currentvalue,
+        #            self.yproperty.currentvalue)
         return QRectF(-4, -4, 7, 7)
+
 
     def paint(self, painter: QPainter, option, widget: Optional[QWidget] = ...) -> None:
         # print(self.params)
-        self.setPos(self.xproperty(), self.yproperty())
+
+
         painter.setPen(QPen(QColor(255, 255, 255), 1))
         painter.drawEllipse(QRectF(-4, -4, 7, 7))
         # draw black border
@@ -38,7 +44,11 @@ class CzeViewportDraggableHandle(QGraphicsItem):
         if event.buttons() & Qt.MouseButton.LeftButton:
             self.xproperty.set(int(event.scenePos().x()))
             self.yproperty.set(int(event.scenePos().y()))
-            self.setPos(self.xproperty(), self.yproperty())
+            sub = 0
+            if self.xproperty.associatedKeyframe:
+                sub = self.xproperty.associatedKeyframe.frame
+            self.setPos(self.xproperty.currentvalue,
+                        self.yproperty.currentvalue)
         event.accept()
         self.parentclass.updateviewport()
         self.parentclass.updatekeyframeoptions()
@@ -49,6 +59,11 @@ class CzeViewportDraggableHandle(QGraphicsItem):
         self.parentclass.updatekeyframeoptions()
         return super().mouseReleaseEvent(event)
 
+    def frameUpdate(self):
+        self.setPos(self.xproperty.currentvalue, self.yproperty.currentvalue)
+    
+    def __del__(self):
+        self.parentclass.disconnectFromEvent("FrameUpdate",self.frameUpdate)
 
 class CzeViewportDraggableOffset(QGraphicsItem):
     def __init__(self, parent, parentclass, x, y, lengthx, lengthy):

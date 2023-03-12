@@ -1,10 +1,14 @@
-from PySide6.QtGui import QTextOption
+from PySide6.QtGui import QTextOption, QColor, QPaintEvent, QPainter, QPen, QPalette
+from PySide6.QtCore import QRect
 from PySide6.QtWidgets import (QComboBox, QDoubleSpinBox, QFrame, QLineEdit,
                                QPlainTextEdit, QPushButton, QScrollArea,
-                               QSizePolicy, QSpinBox, QToolButton, QGroupBox)
+                               QSizePolicy, QSpinBox, QToolButton, QGroupBox,
+                               QColorDialog, QDialogButtonBox, QHBoxLayout,
+                               QVBoxLayout, QSlider, QWidget)
 
 from czeditor.util import dummyfunction
 
+from typing import List
 
 class QRedButton(QToolButton):
 
@@ -164,3 +168,133 @@ class QRedComboBox(QComboBox):
 
     def valuechanged(self, index) -> None:
         self.onchange(self.currentText(), self.currentIndex())
+
+
+class QRedColorPicker(QPushButton):
+    def __init__(self, parent=None, onchange=dummyfunction):
+        super().__init__(parent)
+        self.onchange = onchange
+        self.pressed.connect(self.pressedEvent)
+        self.currentColor = QColor(255, 0, 0, 255)
+        self.setStyleSheet(
+            """
+            
+            QColorDialog {
+                background-color: qradialgradient(spread:pad, cx:4.5, cy:4.5, radius:7, fx:4.5, fy:4.5, stop:0 rgba(255, 0, 0, 255), stop:1 rgba(0, 0, 0, 255)); 
+            }
+            QFrame { 
+                border-image:url(editor:Square Frame.png) 2; 
+                border-width:2; 
+                background-color: qradialgradient(spread:pad, cx:4.5, cy:4.5, radius:7, fx:4.5, fy:4.5, stop:0 rgba(255, 0, 0, 255), stop:1 rgba(0, 0, 0, 255)); 
+            }
+            QPushButton { 
+                border-image:url(editor:Button.png) 3; 
+                border-width: 3; 
+                color: rgb(255,192,192);
+            }
+            QPushButton:hover {
+                border-image:url(editor:Button Highlighted.png) 3; 
+                border-width: 3; 
+                color: rgb(255,192,192);
+            }
+            QPushButton:pressed {
+                border-image:url(editor:Button Pressed.png) 3; 
+                border-width: 3;
+            }
+            QSpinBox {
+                border-image:url(editor:Text Box.png) 2;
+                border-width:2;
+            }
+            QSpinBox::up-button {
+                border-image:url(editor:Button.png) 3; 
+                border-width: 3; 
+                color: rgb(255,192,192);
+                image: url(editor:Arrow Up.png);
+            }
+            QSpinBox::up-button:hover {
+                border-image:url(editor:Button Highlighted.png) 3; 
+                border-width: 3; 
+                color: rgb(255,192,192);
+            }
+            QSpinBox::up-button:pressed {
+                border-image:url(editor:Button Pressed.png) 3; 
+                border-width: 3;
+            }
+            QSpinBox::down-button {
+                border-image:url(editor:Button.png) 3; 
+                border-width: 3; 
+                color: rgb(255,192,192);
+                image: url(editor:Arrow Down.png);
+            }
+            QSpinBox::down-button:hover {
+                border-image:url(editor:Button Highlighted.png) 3; 
+                border-width: 3; 
+                color: rgb(255,192,192);
+            }
+            QSpinBox::down-button:pressed {
+                border-image:url(editor:Button Pressed.png) 3; 
+                border-width: 3;
+            }
+            QLineEdit {
+                border-image:url(editor:Text Box.png) 2;
+                border-width:2;
+            }
+            QDialogButtonBox {
+                border-image:url(editor:Text Box.png) 2;
+                border-width:2;
+            }
+            """)
+        self.dialog = None
+        self.originalclose = None
+
+    def pressedEvent(self):
+        if self.dialog:
+            return
+        dialog = QColorDialog(self.currentColor, self)
+        dialog.currentColorChanged.connect(self.pickColor)
+        dialog.finished.connect(self.done)
+        dialog.setOptions(QColorDialog.ColorDialogOption.ShowAlphaChannel)
+        self.dialog = dialog
+        dialog.show()
+        dialogButtonBox: QDialogButtonBox = dialog.findChild(QDialogButtonBox)
+        buttons: List[QPushButton] = dialogButtonBox.findChildren(QPushButton)
+        layout: QHBoxLayout = dialogButtonBox.findChild(QHBoxLayout)
+        layout.setContentsMargins(2, 2, 2, 2)
+        layout.setSpacing(2)
+        for button in buttons:
+            button.setSizePolicy(QSizePolicy.Policy.Preferred,
+                                 QSizePolicy.Policy.MinimumExpanding)
+            button.setFixedSize(button.size().width()+8,
+                                button.size().height()+4)
+        dialog.findChildren(QWidget)[8].setStyleSheet(
+            """background: transparent;
+        border-image:url(editor:Square Frame.png) 2; 
+        border-width:2;""")
+        p: QWidget = dialog.findChildren(QWidget)[8]
+        palette = p.palette()
+        palette.setColor(QPalette.ColorGroup.All,
+                         QPalette.ColorRole.Light, QColor(127, 0, 0))
+        palette.setColor(QPalette.ColorGroup.All,
+                         QPalette.ColorRole.Dark, QColor(0, 0, 0))
+        palette.setColor(QPalette.ColorGroup.All,
+                         QPalette.ColorRole.Mid, QColor(64, 0, 0))
+        p.setPalette(palette)
+
+    def pickColor(self, color: QColor):
+        self.currentColor = color
+        self.onchange(color)
+
+    def done(self):
+        self.dialog = None
+        
+
+    def paintEvent(self, event: QPaintEvent) -> None:
+        painter = QPainter(self)
+        rect = self.rect()
+        painter.setPen(QPen(QColor(0, 0, 0), 0))
+        painter.setBrush(QColor(127, 0, 0))
+        painter.drawRect(rect)
+        painter.setPen(QPen(QColor(127, 0, 0), 0))
+        painter.setBrush(self.currentColor)
+        painter.drawRect(QRect(rect.left()+1, rect.top()+1,
+                         rect.width()-2, rect.height()-2))

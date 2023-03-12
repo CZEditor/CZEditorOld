@@ -532,8 +532,8 @@ class CzeKeyframeOptions(QRedScrollArea):
                     param, self.baseparams[key])
 
             i += 1
-        self.setMaximumWidth(self.viewframe.contentsRect(
-        ).width()+self.verticalScrollBar().width())
+        # self.setMaximumWidth(self.viewframe.contentsRect(
+        # ).width()+self.verticalScrollBar().width())
 
     def rebuild(self, params=None):
         if params:
@@ -552,8 +552,8 @@ class CzeKeyframeOptions(QRedScrollArea):
             for i in range(self.widgets.count()):
                 self.widgets.itemAt(0).widget().deleteLater()
                 self.widgets.takeAt(0)
-        self.setMaximumWidth(self.viewframe.contentsRect(
-        ).width()+self.verticalScrollBar().width())
+        # self.setMaximumWidth(self.viewframe.contentsRect(
+        # ).width()+self.verticalScrollBar().width())
 
     def update(self):
         if self.parentclass.selectedframe:
@@ -575,8 +575,8 @@ class CzeKeyframeOptions(QRedScrollArea):
             for i in range(self.widgets.count()):
                 self.widgets.itemAt(0).widget().deleteLater()
                 self.widgets.takeAt(0)
-        self.setMaximumWidth(self.viewframe.contentsRect(
-        ).width()+self.verticalScrollBar().width())
+        # self.setMaximumWidth(self.viewframe.contentsRect(
+        # ).width()+self.verticalScrollBar().width())
 
 
 class QGraphicsViewEvent(QGraphicsView):
@@ -1731,7 +1731,7 @@ class CzePresets(QWidget):
             "effects": [
                 {
                     "function": Selectable(0, self.parentclass.effectfunctionsdropdown),
-                    "params": Selectable(0, self.parentclass.effectfunctionsdropdown)().params.copy().set("x", IntProperty(640)).set("y", IntProperty(360))
+                    "params": Selectable(0, self.parentclass.effectfunctionsdropdown)().params.copy().set("x", FloatProperty(640)).set("y", FloatProperty(360))
                 },
                 {
                     "function": Selectable(2, self.parentclass.effectfunctionsdropdown),
@@ -1759,7 +1759,7 @@ class CzePresets(QWidget):
                 "effects": [
                     {
                         "function": Selectable(0, self.parentclass.effectfunctionsdropdown),
-                        "params": Selectable(0, self.parentclass.effectfunctionsdropdown)().params.copy().set("x", IntProperty(640)).set("y", IntProperty(360))
+                        "params": Selectable(0, self.parentclass.effectfunctionsdropdown)().params.copy().set("x", FloatProperty(640)).set("y", FloatProperty(360))
                     },
                     {
                         "function": Selectable(2, self.parentclass.effectfunctionsdropdown),

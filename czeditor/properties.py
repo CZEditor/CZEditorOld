@@ -233,18 +233,28 @@ class FloatProperty(Property):
         self.mixerFunctions = []
         self.providerFunctions = []
         self.compatibleTypes = ["Float", "Int"]
+        self.currentvalue = 0
+        self.lastframe = 0
+
 
     def copy(self):
         return FloatProperty(self._val, self.timeline)
 
     def __call__(self, frame):
         if self.timeline is None:
+            self.currentvalue = self._val
             return self._val
         else:
+            if self.lastframe == frame:
+                return self.currentvalue
+            self.lastframe = frame
             gotten = self.timeline.getValueAt(frame)
             if gotten is not None:
-                return gotten[0]["value"]
-            return self._val
+                self.currentvalue = gotten[0]["value"]
+                return self.currentvalue
+
+            self.currentvalue = self._val
+            return self.currentvalue
 
     def widget(self, windowObject):
         return FloatPropertyWidget(self, windowObject)
@@ -293,3 +303,26 @@ class SelectableProperty(Property):
 
     def copy(self):
         return SelectableProperty(self._selectable.copy().options, self._selectable.index)
+
+
+class RGBProperty(Property):
+    def __init__(self, R, G, B, A=255):
+        self._r = R
+        self._g = G
+        self._b = B
+        self._a = A
+
+    def __call__(self):
+        return self._r, self._g, self._b, self._a
+
+    def set(self, R, G, B, A=255):
+        self._r = R
+        self._g = G
+        self._b = B
+        self._a = A
+
+    def copy(self):
+        return RGBProperty(self._r, self._g, self._b, self._a)
+
+    def widget(self, windowObject):
+        return RGBPropertyWidget(self, windowObject)
