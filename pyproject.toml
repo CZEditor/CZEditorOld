@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "CZEditor"
-version = "0.1.0"
+version = "0.0.1b0"
 description = "General purpose video editor. Made in Python."
 authors = []
 license = "GPLv3"
