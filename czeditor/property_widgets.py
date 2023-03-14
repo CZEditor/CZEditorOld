@@ -300,6 +300,6 @@ class RGBPropertyWidget(QRedFrame):
         self.theproperty._a = color.alpha()
         self.windowObject.updateviewport()
 
-    def updateSelf(self):
+    def updateself(self):
         r, g, b, a = self.theproperty()
         self.colorButton.currentColor = QColor(r, g, b, a)

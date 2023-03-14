@@ -2,13 +2,12 @@ from czeditor.util import Params, SelectableItem
 from czeditor.properties import *
 from czeditor.code_edit_window import CodeEditWindow
 from math import *
-
-valueProviderFunctions = []
+import czeditor.shared
 
 
 class Provider:
     def __init_subclass__(cls):
-        valueProviderFunctions.append(SelectableItem(cls.name, cls))
+        czeditor.shared.valueProviderFunctions[cls.__name__] = cls
 
 
 class StaticDecimalNumber(Provider):

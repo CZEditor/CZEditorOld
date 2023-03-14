@@ -2,13 +2,12 @@ from czeditor.util import Params,SelectableItem
 from czeditor.properties import *
 from PySide6.QtGui import QPainter, QPainterPath
 from PySide6.QtCore import QPoint, QRectF
-
-valueOutputterFunctions = []
+import czeditor.shared
 
 
 class Outputter:
     def __init_subclass__(cls):
-        valueOutputterFunctions.append(SelectableItem(cls.name, cls))
+        czeditor.shared.valueOutputterFunctions[cls.__name__] = cls
 
     def getOutputShape(params, track, bottom, top, keyframe, painter: QPainter):
         painter.drawPolygon(

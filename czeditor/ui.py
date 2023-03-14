@@ -6,7 +6,7 @@ from PySide6.QtGui import (QColor, QDrag, QDragEnterEvent, QDragMoveEvent,
 from PySide6.QtWidgets import (QFormLayout, QGraphicsItem, QGraphicsScene,
                                QGraphicsView, QGridLayout, QSizePolicy,
                                QWidget, QGraphicsItemGroup, QGraphicsSceneMouseEvent,
-                               QGraphicsSceneHoverEvent, QGroupBox)
+                               QGraphicsSceneHoverEvent, QGroupBox, QMenuBar)
 
 from czeditor.base_ui import *
 from czeditor.effectfunctions import *
@@ -191,10 +191,10 @@ class QRedDropDownFrame(QRedFrame):
         if name:
             self.label = QLabel(name, None)
             self.label.setStyleSheet("border-width:0px; background:none;")
-            self.whole.addWidget(self.label,0,0,1,2)
+            self.whole.addWidget(self.label, 0, 0, 1, 2)
         self.whole.addWidget(self.collapseButton, 1, 0)
         self.whole.addWidget(self.mainView, 2, 0, 1, 2)
-        #self.setLayout(self.whole)
+        # self.setLayout(self.whole)
         self.collapsed = False
         self.whole.setAlignment(Qt.AlignmentFlag.AlignTop)
         self.whole.setSizeConstraint(
@@ -333,7 +333,7 @@ class CzeKeyframeOptionCategoryList(QRedFrame):
         self.whole.addWidget(self.collapseButton)
         self.whole.addWidget(self.mainView)
         # self.whole.addWidget(QRedExpandableButton(None,"+",self.add))
-        #self.setLayout(self.whole)
+        # self.setLayout(self.whole)
         self.collapsed = False
         self.whole.setAlignment(Qt.AlignmentFlag.AlignTop)
         self.whole.setSizeConstraint(
@@ -431,7 +431,7 @@ class CzeKeyframeOptionCategoryList(QRedFrame):
         self.parentclass.updateviewport()
 
 
-class CzeKeyframeOptions(QRedScrollArea):
+class CzeKeyframeOptions(QWidget):
     baseparams = Params({  # BAD!!! TODO : While we wont support anything else than sources, effects and actions, but we can still generalize this.
         "source": {
             "function": Selectable(0, sourcefunctionsdropdown),
@@ -453,10 +453,15 @@ class CzeKeyframeOptions(QRedScrollArea):
         super().__init__(parent)
 
         self.parentclass = parentclass
+        self.toolbarLayout = QVBoxLayout()
+        self.menuBar = QMenuBar(self)
+        self.scrollArea = QRedScrollArea(self)
+        self.toolbarLayout.addWidget(self.menuBar)
+        self.toolbarLayout.addWidget(self.scrollArea)
+        self.toolbarLayout.setStretchFactor(self.menuBar, 0)
         self.viewframe = QRedFrame(None)
 
         self.whole = QVBoxLayout()
-
         # self.whole.addWidget(self.keyframeNameWidget)
         self.title = QLabel("Keyframe Options", None)
         self.title.setStyleSheet("background:none;")
@@ -473,15 +478,20 @@ class CzeKeyframeOptions(QRedScrollArea):
         self.whole.addLayout(self.widgets)
 
         self.viewframe.setLayout(self.whole)
-        self.viewframe.setContentsMargins(2,8,2,8)
+        self.viewframe.setContentsMargins(2, 8, 2, 8)
 
         self.widgets.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.setWidget(self.viewframe)
+        self.scrollArea.setWidget(self.viewframe)
 
-        self.setSizePolicy(QSizePolicy.Policy.Maximum,
+        self.scrollArea.setSizePolicy(QSizePolicy.Policy.Expanding,
+                                      QSizePolicy.Policy.Expanding)
+        self.setSizePolicy(QSizePolicy.Policy.Expanding,
                            QSizePolicy.Policy.Expanding)
-
-        self.setWidgetResizable(True)
+        self.scrollArea.setWidgetResizable(True)
+        self.setLayout(self.toolbarLayout)
+        self.setContentsMargins(0, 0, 0, 0)
+        self.toolbarLayout.setSpacing(0)
+        self.toolbarLayout.setContentsMargins(0, 0, 0, 0)
 
     def sizeHint(self):
         return QSize(400, 720)
@@ -895,7 +905,7 @@ class CzeTimelineGridLines(QGraphicsItem):
         return self.boundrect()
 
     def paint(self, painter: QPainter, option, widget) -> None:
-        
+
         transform = painter.transform()
         rect: QRectF = self.boundrect()
         scale = transform.m22()
@@ -904,18 +914,19 @@ class CzeTimelineGridLines(QGraphicsItem):
         rect.setTop(rect.top()*scale)
         rect.setRight(rect.right()*scale)
         rect.setBottom(rect.bottom()*scale)
-        
-        transform.setMatrix(1,0,0,0,1,0,transform.m31(),transform.m32(),1)
+
+        transform.setMatrix(
+            1, 0, 0, 0, 1, 0, transform.m31(), transform.m32(), 1)
         painter.setTransform(transform)
-        
+
         painter.setPen(QPen(QColor(255, 255, 255, 63), 0))
-        
+
         painter.setFont(QFont("Tahoma", 8))
         for grid in range(int(rect.left()/distance-1), int(rect.right()/distance+1)):
             painter.drawLine(grid*distance, rect.top()-1,
                              grid*distance, rect.bottom()+1)
-            painter.drawText(QRectF(grid*distance, rect.top(),distance,30),Qt.AlignmentFlag.AlignTop,str(int(grid*distance/scale)))
-
+            painter.drawText(QRectF(grid*distance, rect.top(), distance, 30),
+                             Qt.AlignmentFlag.AlignTop, str(int(grid*distance/scale)))
 
 
 class CzeTimelineAnimationSidebar(QGraphicsItem):
@@ -1564,6 +1575,13 @@ class CzeTimeline(QWidget):
         self.playbackcursor.setLine(QLine(self.parentclass.playbackframe, boundingrect.top(
         ), self.parentclass.playbackframe, boundingrect.bottom()))
 
+    def deleteKeyframe(self, keyframe: Keyframe):
+        if (keyframe == self.draggedframe):
+            self.draggedframe = None
+        self.deleteKeyframeItems(keyframe)
+        self.scene.removeItem(self.keyframes[keyframe])
+        
+
     def keyPressEvent(self, event: QKeyEvent) -> None:
         if self.animationProperty is None:
             if event.text() == "k":
@@ -1571,13 +1589,8 @@ class CzeTimeline(QWidget):
                 self.addKeyframe(self.parentclass.keyframes.create(
                     self.parentclass.playbackframe))
             elif event.key() == Qt.Key.Key_Delete and not self.parentclass.rendering and not self.parentclass.seeking:
-                if (self.parentclass.selectedframe == self.draggedframe):
-                    self.draggedframe = None
-                self.deleteKeyframeItems(self.parentclass.selectedframe)
-                self.scene.removeItem(
-                    self.keyframes[self.parentclass.selectedframe])
-                self.parentclass.keyframes.remove(
-                    self.parentclass.selectedframe)
+                self.deleteKeyframe(self.parentclass.selectedFrame)
+                self.parentclass.keyframes.remove(self.parentclass.selectedframe)
                 del self.keyframes[self.parentclass.selectedframe]
                 self.parentclass.selectedframe = None
                 self.parentclass.regeneratekeyframeoptions()
@@ -1597,7 +1610,7 @@ class CzeTimeline(QWidget):
         self.animationProperty = property
         if self.animationProperty.timeline is None:
             self.animationProperty.timeline = AnimationKeyframeList(
-                self.animationProperty.tracks, self.parentclass)
+                self.animationProperty.tracks)
         for keyframe in self.animationKeyframes:
             self.scene.removeItem(self.animationKeyframes[keyframe])
         self.animationKeyframes = {}
@@ -1797,7 +1810,7 @@ class CzePresets(QWidget):
         r.setSize(event.size()/self.graphicsview.transform().m11() +
                   QSize(1000, 1000))
         self.graphicsview.setSceneRect(r)
-        #self.graphicsview.setFixedSize(event.size())
+        # self.graphicsview.setFixedSize(event.size())
         r = self.graphicsview.sceneRect()
         r.setSize(event.size()/self.graphicsview.transform().m11())
         self.graphicsview.setSceneRect(r)

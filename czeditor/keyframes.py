@@ -9,7 +9,24 @@ from czeditor.customShaderCompilation import compileProgram
 from czeditor.openglfunctions import *
 from czeditor.properties import LineStringProperty
 from czeditor.util import *
+from czeditor.util.params_operations import deserializeParams,paramsAssociateKeyframe
+import czeditor.shared
 
+def getDefaultKeyframeParams():
+    return Params({
+        "properties": {
+            "params": {
+                "name": LineStringProperty(""),
+            }
+        },
+        "source":
+        {
+            "function": Selectable(0, czeditor.shared.windowObject.sourcefunctionsdropdown),
+            "params": Selectable(0, czeditor.shared.windowObject.sourcefunctionsdropdown)().params.copy()
+        },
+        "actions": [],
+        "effects": []
+    })
 
 class Keyframe():
 
@@ -247,6 +264,57 @@ class Keyframe():
             if hasattr(effect.function(), "initialize"):
                 effect.function().initialize(effect.params)
 
+    def serialize(self):
+        returndict = {}
+        returndict["frame"] = self.frame
+        returndict["layer"] = self.layer
+        returndict["properties"] = {
+            "params": self.params.properties.params.serialize()}
+        returndict["source"] = {"function": self.params.source.function(
+        ).__name__, "params": self.params.source.params.serialize()}
+        actions = []
+        for action in self.params.actions:
+            actions.append({"function": action.function().__name__,
+                           "params": action.params.serialize()})
+        returndict["actions"] = actions
+        effects = []
+        for effect in self.params.effects:
+            effects.append({"function": effect.function().__name__,
+                           "params": effect.params.serialize()})
+        returndict["effects"] = effects
+        print(returndict)
+        return returndict
+
+    def deserialize(data):
+        params = getDefaultKeyframeParams()
+        if "properties" in data:
+            params.properties.params = deserializeParams(data["properties"]["params"])
+        if "source" in data:
+            sourceNames = [
+                i.object.__name__ for i in czeditor.shared.windowObject.sourcefunctionsdropdown]
+            params.source.function.index = sourceNames.index(data["source"]["function"])
+            params.source.params = deserializeParams(data["source"]["params"],czeditor.shared.windowObject.sourcefunctionsdropdown[sourceNames.index(data["source"]["function"])].object.params.copy())
+        if "actions" in data:
+            actionNames = [
+                i.object.__name__ for i in czeditor.shared.windowObject.actionfunctionsdropdown]
+            for action in data["actions"]:
+                params.actions.append(Params({
+                    "function": Selectable(actionNames.index(action["function"]), czeditor.shared.windowObject.actionfunctionsdropdown),
+                    "params": deserializeParams(action["params"],czeditor.shared.windowObject.actionfunctionsdropdown[actionNames.index(action["function"])].object.params.copy())
+                })
+                )
+        if "effects" in data:
+            effectNames = [
+                i.object.__name__ for i in czeditor.shared.windowObject.effectfunctionsdropdown]
+            for effect in data["effects"]:
+                params.effects.append(Params({
+                    "function": Selectable(effectNames.index(effect["function"]), czeditor.shared.windowObject.effectfunctionsdropdown),
+                    "params": deserializeParams(effect["params"],czeditor.shared.windowObject.effectfunctionsdropdown[effectNames.index(effect["function"])].object.params.copy())
+                })
+                )
+        returnkeyframe = Keyframe(data["frame"], data["layer"], params)
+        paramsAssociateKeyframe(returnkeyframe.params,returnkeyframe)
+        return returnkeyframe
 
 class Keyframelist():
     def __init__(self, windowClass):
@@ -367,26 +435,22 @@ class Keyframelist():
         return keyframe in self.keyframes
 
     def create(self, frame: int):
-        addedkeyframe = Keyframe(frame, 0, Params(
-            {
-                "properties": {
-                    "params": {
-                        "name": LineStringProperty(""),
-                    }
-                },
-                "source":
-                {
-                    "function": Selectable(0, self.windowClass.sourcefunctionsdropdown),
-                    "params": Selectable(0, self.windowClass.sourcefunctionsdropdown)().params.copy()
-                },
-                "actions": [],
-                "effects": []
-            }
-        ))
+        addedkeyframe = Keyframe(frame, 0, getDefaultKeyframeParams())
         self.append(addedkeyframe)
 
         return addedkeyframe
 
+    def serialize(self):
+        returnlist = []
+        for keyframe in self.keyframes:
+            returnlist.append(keyframe.serialize())
+        return returnlist
+
+    def deserialize(windowObject, data):
+        keyframelist = Keyframelist(windowObject)
+        for keyframe in data:
+            keyframelist.keyframes.append(Keyframe.deserialize(keyframe))
+        return keyframelist
 
 """keyframes.append(Keyframe(20,Params(
     {

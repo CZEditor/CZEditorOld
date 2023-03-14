@@ -4,12 +4,16 @@ from PySide6.QtWidgets import QMainWindow
 from czeditor.property_widgets import *
 from czeditor.animation_keyframes import *
 from czeditor.util import Selectable, Params, SelectableItem
+import czeditor.shared
 
 
 class Property:
     def __init__(self, value):
         self._val = value
         self.associatedKeyframe = None
+
+    def __init_subclass__(cls):
+        czeditor.shared.deserializable[cls.__name__] = cls
 
     def copy(self):
         return Property(self._val)
@@ -22,6 +26,12 @@ class Property:
 
     def associateKeyframe(self, keyframe):
         self.associatedKeyframe = keyframe
+
+    def serialize(self):
+        return {"value": self._val}
+
+    def deserialize(data):
+        return __class__(data["value"])
 
 
 class IntProperty(Property):
@@ -47,6 +57,9 @@ class IntProperty(Property):
 
     def set(self, value):
         self._val = value
+    
+    def deserialize(data):
+        return __class__(data["value"])
 
 
 class StringProperty(Property):
@@ -76,6 +89,9 @@ class StringProperty(Property):
     def __str__(self):
         return self._val
 
+    def deserialize(data):
+        return __class__(data["value"])
+
 
 class OpenWindowButtonProperty(Property):
     def __init__(self, button_name: str, window: QMainWindow, value: Any):
@@ -103,6 +119,10 @@ class OpenWindowButtonProperty(Property):
 
     def __str__(self):
         return self._val
+
+    def deserialize(data):
+        from czeditor.code_edit_window import CodeEditWindow
+        return __class__("Edit Script...", CodeEditWindow, data["value"]) # Why would you do it like that? This only complicates saving! TODO :Support other types of windows.
 
 
 class LineStringProperty(Property):
@@ -132,6 +152,8 @@ class LineStringProperty(Property):
     def __str__(self):
         return self._val
 
+    def deserialize(data):
+        return __class__(data["value"])
 
 class FileProperty(Property):
     def __init__(self, value, filetypes=""):
@@ -157,12 +179,20 @@ class FileProperty(Property):
 
     def set(self, value):
         self._val = value
+    
+    def serialize(self):
+        return {"value":self._val,"filetypes":self._filetypes}
+
+    def deserialize(data):
+        return __class__(data["value"],data["filetypes"])
+        
 
 
 class TransientProperty(Property):
     def __init__(self, param):
         self._val = param.copy()
         self._originalparam = param
+        self._dontserialize = True
 
     def copy(self):
         return TransientProperty(self._originalparam.copy())
@@ -180,6 +210,8 @@ class TransientProperty(Property):
 
     def set(self, value):
         self._val = value
+    
+
 
 
 class SizeProperty(Property):
@@ -224,6 +256,11 @@ class SizeProperty(Property):
     def widget(self, windowObject):
         return SizePropertyWidget(self, windowObject)
 
+    def serialize(self):
+        return {"basewidth": self._basewidth, "baseheight": self._baseheight, "width": self._width, "height": self._height}
+
+    def deserialize(data):
+        return __class__(data["basewidth"],data["baseheight"],data["width"],data["height"])
 
 class FloatProperty(Property):
     def __init__(self, value, timeline: Union[AnimationKeyframeList, None] = None):
@@ -235,7 +272,6 @@ class FloatProperty(Property):
         self.compatibleTypes = ["Float", "Int"]
         self.currentvalue = 0
         self.lastframe = 0
-
 
     def copy(self):
         return FloatProperty(self._val, self.timeline)
@@ -260,20 +296,20 @@ class FloatProperty(Property):
         return FloatPropertyWidget(self, windowObject)
 
     def defaultKeyframe(self, frame, tracks):
-        from czeditor.value_outputter_functions import valueOutputterFunctions
-        from czeditor.value_provider_functions import valueProviderFunctions
-
+        
+        sortedValueProviderFunctions = [i for i in czeditor.shared.valueProviderFunctions.values()]
+        sortedValueOutputterFunctions = [i for i in czeditor.shared.valueOutputterFunctions.values()]
         return AnimationKeyframe(frame, [], tracks, Params(
             {
                 "provider":
                 {
-                    "function": Selectable(0, valueProviderFunctions),
-                    "params": Selectable(0, valueProviderFunctions)().params.copy()
+                    "function": Selectable(0, [SelectableItem(i.name,i) for i in sortedValueProviderFunctions]),
+                    "params": sortedValueProviderFunctions[0].params.copy()
                 },
                 "outputter":
                 {
-                    "function": Selectable(0, valueOutputterFunctions),
-                    "params": Selectable(0, valueOutputterFunctions)().params.copy()
+                    "function": Selectable(0, [SelectableItem(i.name,i) for i in sortedValueOutputterFunctions]),
+                    "params": sortedValueOutputterFunctions[0].params.copy()
                 }
             }
         ))
@@ -285,6 +321,16 @@ class FloatProperty(Property):
         if self.timeline:
             self.timeline.associatedKeyframe = keyframe
         return super().associateKeyframe(keyframe)
+
+    def serialize(self):
+        if self.timeline:
+            return {"value": self._val, "timeline": self.timeline.serialize()}
+        return {"value": self._val}
+    
+    def deserialize(data):
+        if "timeline" in data:
+            return __class__(data["value"],AnimationKeyframeList.deserialize(data["timeline"]))
+        return __class__(data["value"])
 
 
 class SelectableProperty(Property):
@@ -303,6 +349,12 @@ class SelectableProperty(Property):
 
     def copy(self):
         return SelectableProperty(self._selectable.copy().options, self._selectable.index)
+
+    def serialize(self):
+        return {"values":[v.serialize() for v in self._selectable.options],"index":self._selectable.index}
+
+    def deserialize(data):
+        return __class__([SelectableItem.deserialize(i) for i in data["values"]],data["index"])
 
 
 class RGBProperty(Property):
@@ -326,3 +378,9 @@ class RGBProperty(Property):
 
     def widget(self, windowObject):
         return RGBPropertyWidget(self, windowObject)
+
+    def serialize(self):
+        return {"R": self._r, "G": self._g, "B": self._b, "A": self._a}
+    
+    def deserialize(data):
+        return __class__(data["R"],data["G"],data["B"],data["A"])

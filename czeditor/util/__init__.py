@@ -74,20 +74,48 @@ class Params(object):
         self.__setattr__(index, value)
         return self
 
+    def serializelist(self, l):
+        returnlist = []
+        for i in l:
+            if hasattr(i, "serialize") and not hasattr(i, "_dontserialize"):
+                returnlist.append(
+                    {"type": i.__class__.__name__, "params": i.serialize()})
+            elif isinstance(i, list):
+                returnlist.append(self.serializelist(i))
+        return returnlist
+
+    def serialize(self):
+        returndict = {}
+        params = vars(self)
+        for k, v in params.items():
+            if hasattr(v, "serialize") and not hasattr(v, "_dontserialize"):
+                returndict[k] = {"type": v.__class__.__name__,
+                                 "params": v.serialize()}
+            elif isinstance(v, list):
+                returndict[k] = self.serializelist(v)
+        return returndict
+
 
 class SelectableItem():
-    def __init__(self, title="", object=None, icon=QIcon()):
+    def __init__(self, title="", object=None, icon=""):
         self.title = title
         self.object = object
         self._icon = icon
+        self._iconname = icon
 
     def copy(self):
-        return SelectableItem(self.title, self.object, QIcon(self.icon()))
+        return SelectableItem(self.title, self.object, self._iconname)
 
     def icon(self):
         if isinstance(self._icon, str):
             self._icon = QIcon(QFileInfo(self._icon).canonicalFilePath())
         return self._icon
+
+    def serialize(self):
+        return {"title": self.title, "object": self.object, "icon": self._iconname}
+    
+    def deserialize(data):
+        return __class__(data["title"],data["object"],data["icon"])
 
 class Selectable():
     def __init__(self, index=0, options=[SelectableItem("None")]):

@@ -1,5 +1,7 @@
 from typing import overload, List
-
+import czeditor.shared
+from czeditor.util import Params,Selectable,SelectableItem
+from czeditor.util.params_operations import deserializeParams
 
 class AnimationKeyframe():
     def __init__(self, frame, inputTracks, outputTracks, params):
@@ -20,16 +22,42 @@ class AnimationKeyframe():
     def outputs(self):
         return self.params.outputter.function().outputs
 
+    def serialize(self):
+        return {"frame": self.frame, "inputTracks": self.inputTracks, "outputTracks": self.outputTracks,
+                "provider": {
+                    "function": self.params.provider.function().__name__,
+                    "params": self.params.provider.params.serialize()
+                },
+                "outputter": {
+                    "function": self.params.outputter.function().__name__,
+                    "params": self.params.outputter.params.serialize()
+                }}
+    
+    def deserialize(data):
+        selectedProviderFunction = Selectable(0,[SelectableItem(i.name,i) for i in czeditor.shared.valueProviderFunctions.values()])
+        selectedProviderFunction.index = selectedProviderFunction.names.index(czeditor.shared.valueProviderFunctions[data["provider"]["function"]].name)
+        selectedOutputterFunction = Selectable(0,[SelectableItem(i.name,i) for i in czeditor.shared.valueOutputterFunctions.values()])
+        selectedOutputterFunction.index = selectedOutputterFunction.names.index(czeditor.shared.valueOutputterFunctions[data["outputter"]["function"]].name) # This is a VERY bad method of doing this
+        return __class__(data["frame"],data["inputTracks"],data["outputTracks"],Params({
+            "provider":{
+                "function": selectedProviderFunction,
+                "params": deserializeParams(data["provider"]["params"])
+            },
+            "outputter":{
+                "function": selectedOutputterFunction,
+                "params": deserializeParams(data["outputter"]["params"])
+            }
+            })
+            )
 
 class AnimationKeyframeList():
-    def __init__(self, tracks: dict, windowClass, associatedKeyframe=None):
-        self.windowClass = windowClass
-        self.keyframes: List[AnimationKeyframe] = []
+    def __init__(self, tracks: dict, keyframes = []):
+        self.windowObject = czeditor.shared.windowObject
+        self.keyframes: List[AnimationKeyframe] = keyframes
         self.needssorting = False
         self.tracks = tracks
         self.originaltracks = tracks
-        self.associatedKeyframe = associatedKeyframe
-        self.windowClass.connectToEvent("UpdateAnimationKeyframeTracks",self.updateKeyframeTracks)
+        self.windowObject.connectToEvent("UpdateAnimationKeyframeTracks",self.updateKeyframeTracks)
 
     def add(self, keyframe: AnimationKeyframe) -> None:
         self.keyframes.append(keyframe)
@@ -173,7 +201,7 @@ class AnimationKeyframeList():
         return inputTracks, outputTracks, keyframe.inputTracks, keyframe.outputTracks
 
     def updateKeyframeTracks(self):
-        keyframe:AnimationKeyframe = self.windowClass.selectedAnimationFrame
+        keyframe:AnimationKeyframe = self.windowObject.selectedAnimationFrame
         inputTracks = keyframe.inputs()
         outputTracks = keyframe.outputs()
 
@@ -241,3 +269,9 @@ class AnimationKeyframeList():
                 self.tracks[track] = outputTracks[i]
                 i += 1
         return self.tracks
+
+    def serialize(self):
+        return {"tracks":self.originaltracks,"keyframes":[keyframe.serialize() for keyframe in self.keyframes]}
+
+    def deserialize(data):
+        return __class__({int(k):v for k,v in data["tracks"].items()},[AnimationKeyframe.deserialize(i) for i in data["keyframes"]])

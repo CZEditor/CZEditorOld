@@ -1,33 +1,41 @@
-import concurrent.futures
-import sys
-import traceback
-from ctypes import c_void_p
-from time import perf_counter
-from typing import *
 
-import numpy as np
-import sounddevice
-from moviepy.video.VideoClip import VideoClip
-from moviepy.audio.AudioClip import AudioClip
-from PIL import Image
-from PySide6.QtCore import QPoint, QSize, Qt, QTimerEvent
-from PySide6.QtGui import (QImage, QKeyEvent, QMouseEvent, QPixmap,
-                           QResizeEvent, QWheelEvent, QPalette)
-from PySide6.QtOpenGLWidgets import QOpenGLWidget
-from PySide6.QtWidgets import (QGraphicsScene, QGraphicsView, QLabel,
-                               QMainWindow, QSizePolicy, QSplitter, QWidget)
 
-from czeditor.base_ui import *
-from czeditor.effectfunctions import *
-from czeditor.sourcefunctions import *
-from czeditor.keyframes import *
-from czeditor.actionfunctions import *
-from czeditor.ui import *
-from czeditor.util import *
-from czeditor.avreader import PyAVAudioWriter
+import czeditor.shared
+czeditor.shared.init()
+if True:  # autopep8 will break the program how funny
+    from czeditor.value_provider_functions import *
+    from czeditor.value_outputter_functions import *
+    from czeditor.avreader import PyAVAudioWriter
+    from czeditor.util import *
+    from czeditor.ui import *
+    from czeditor.actionfunctions import *
+    from czeditor.keyframes import *
+    from czeditor.sourcefunctions import *
+    from czeditor.effectfunctions import *
+    from czeditor.base_ui import *
+    from PySide6.QtWidgets import (QGraphicsScene, QGraphicsView, QLabel,
+                                   QMainWindow, QSizePolicy, QSplitter, QWidget,
+                                   QToolBar)
+    from PySide6.QtOpenGLWidgets import QOpenGLWidget
+    from PySide6.QtGui import (QImage, QKeyEvent, QMouseEvent, QPixmap,
+                               QResizeEvent, QWheelEvent, QPalette, QAction)
+    from PySide6.QtCore import QPoint, QSize, Qt, QTimerEvent
+    from PIL import Image
+    from moviepy.audio.AudioClip import AudioClip
+    from moviepy.video.VideoClip import VideoClip
+    import sounddevice
+    import numpy as np
+    from typing import *
+    from time import perf_counter
+    from ctypes import c_void_p
+    import traceback
+    import sys
+    import concurrent.futures
+    import json
 
 
 # TODO : Move these into the Window class
+
 
 def stateprocessor(frame, keyframes, windowClass):
     state = []
@@ -292,6 +300,7 @@ class CzeViewport(QWidget):
 class Window(QMainWindow):
     def __init__(self):
         super().__init__()
+        czeditor.shared.windowObject = self
         self.events = {}
         self.playbackframe = 100
         self.sourcefunctionsdropdown = sourcefunctionsdropdown
@@ -309,8 +318,15 @@ class Window(QMainWindow):
         hozsplitter = QSplitter(Qt.Orientation.Vertical, self)
         # rightsplitter = QSplitter(hozsplitter)
         topsplitter = QSplitter(hozsplitter)
-
+        
         self.keyframeoptions = CzeKeyframeOptions(topsplitter, self)
+        fileMenu = self.keyframeoptions.menuBar.addMenu("File")
+        saveFile = QAction("Save", fileMenu)
+        saveFile.triggered.connect(self.saveProject)
+        fileMenu.addAction(saveFile)
+        loadFile = QAction("Load", fileMenu)
+        loadFile.triggered.connect(self.loadProject)
+        fileMenu.addAction(loadFile)
         self.viewport = CzeViewport(topsplitter, self)
         self.presets = CzePresets(topsplitter, self)
         self.timeline = CzeTimeline(hozsplitter, self)
@@ -378,7 +394,6 @@ class Window(QMainWindow):
             function()
 
     def triggerEventWithParam(self, event, param):
-        print(event)
         if event not in self.events:
             return
         for function in self.events[event]:
@@ -558,4 +573,33 @@ class Window(QMainWindow):
         widget.move(pos)
         widget.show()
         self.currentDropdown = widget
-        
+
+    def saveProject(self, s):
+        # dialog = QFileDialog(self,Qt.WindowType.SubWindow)
+        # dialog.setNameFilter("CZEditor Project File (*.cze)")
+        # dialog.setAcceptMode(QFileDialog.AcceptMode.AcceptSave)
+        filepath = QFileDialog.getSaveFileUrl(
+            self, "Save Project", filter="CZEditor Project File (*.cze)")[0].path()[1:]
+        if filepath == "":
+            return
+        with open(filepath, "w") as f:
+            outdict = {"keyframes": self.keyframes.serialize()}
+            print(outdict)
+            f.write(json.encoder.JSONEncoder().encode(outdict))
+
+    def loadProject(self, s):
+        filepath = QFileDialog.getOpenFileUrl(
+            self, "Load Project", filter="CZEditor Project File (*.cze)")[0].path()[1:]
+        if filepath == "":
+            return
+        with open(filepath, "r") as f:
+            data = json.load(f)
+        print(data)
+        if 'keyframes' in data:
+            for keyframe in self.keyframes:
+                self.timeline.deleteKeyframe(keyframe)
+            self.keyframes = Keyframelist.deserialize(
+                self, data["keyframes"])
+        print([keyframe.params for keyframe in self.keyframes.keyframes])
+        for keyframe in self.keyframes.keyframes:
+            self.timeline.addKeyframe(keyframe)
