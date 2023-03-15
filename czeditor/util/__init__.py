@@ -64,6 +64,9 @@ class Params(object):
             returnal[k] = str(v)
         return str(returnal)
 
+    def __repr__(self) -> str:
+        return self.__str__()
+
     def __getitem__(self, param):
         return self.__getattribute__(param)
 

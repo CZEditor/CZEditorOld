@@ -2,13 +2,13 @@ from czeditor.handles import (CzeViewportDraggableOffset,
                               CzeViewportDraggableOffsetLine)
 from czeditor.properties import *
 from czeditor.util import Params, SelectableItem
+import czeditor.shared
 
-
-actionfunctionsdropdown = []
 
 class Action:
     def __init_subclass__(cls):
-        actionfunctionsdropdown.append(SelectableItem(cls.name, cls, cls.icon))
+        czeditor.shared.actionFunctions[cls.__name__] = cls
+
 
 class NormalKeyframe(Action):
     name = "Media"
@@ -90,6 +90,7 @@ class CameraMotionKeyframe(Action):
         "fov": IntProperty(90)
     })
     icon = "editor:actions/Camera Motion.png"
+
     def action(statetomodify, keyframe, params, frame, windowObject):
         windowObject.cameraParams.x = params.params.x()
         windowObject.cameraParams.y = params.params.y()
@@ -99,6 +100,3 @@ class CameraMotionKeyframe(Action):
         windowObject.cameraParams.roll = params.params.roll()
         windowObject.cameraParams.fov = params.params.fov()
         return statetomodify
-
-
-

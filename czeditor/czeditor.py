@@ -303,9 +303,12 @@ class Window(QMainWindow):
         czeditor.shared.windowObject = self
         self.events = {}
         self.playbackframe = 100
-        self.sourcefunctionsdropdown = sourcefunctionsdropdown
-        self.actionfunctionsdropdown = actionfunctionsdropdown
-        self.effectfunctionsdropdown = effectfunctionsdropdown
+        self.sourcefunctionsdropdown = [SelectableItem(
+            i.name, i, i.icon) for i in czeditor.shared.sourceFunctions.values()]
+        self.actionfunctionsdropdown = [SelectableItem(
+            i.name, i, i.icon) for i in czeditor.shared.actionFunctions.values()]
+        self.effectfunctionsdropdown = [SelectableItem(
+            i.name, i, i.icon) for i in czeditor.shared.effectFunctions.values()]
         self.keyframes = Keyframelist(self)
         self.setWindowTitle("CZEditor")
         self.setGeometry(100, 100, 1280, 720)

@@ -14,15 +14,15 @@ from czeditor.graphics import *
 from czeditor.properties import *
 from czeditor.timelineitems import *
 from czeditor.util import *
+import czeditor.shared
 
 loadedimages = {}
 emptyimage = Image.new("RGBA", (1, 1), (0, 0, 0, 0))
 
-sourcefunctionsdropdown = []
 
 class Source:
     def __init_subclass__(cls) -> None:
-        sourcefunctionsdropdown.append(SelectableItem(cls.name, cls, cls.icon))
+        czeditor.shared.sourceFunctions[cls.__name__] = cls
 
 
 class NormalImage(Source):
@@ -227,8 +227,9 @@ class Video(Source):
         chunk = transient.moviepyobject.reader.read_chunk(512)
         return chunk, transient.moviepyobject.fps
 
-    def timelineitem(param: Params, keyframe, windowClass):
-        return [TimelineDurationLineItem(param, windowClass, keyframe), TimelineDurationHandleItem(param, windowClass, keyframe), TimelineStartFrameHandleItem(param, windowClass, keyframe), TimelineVerticalLineItem(param, windowClass, keyframe)]
+    def timelineitem(params: Params, keyframe, windowClass):
+        # return [TimelineDurationLineItem(param, windowClass, keyframe), TimelineDurationHandleItem(param, windowClass, keyframe), TimelineStartFrameHandleItem(param, windowClass, keyframe), TimelineVerticalLineItem(param, windowClass, keyframe)]
+        return [TimelineDurationItem(params, keyframe)]
 
     def seek(params: Params, frame):
         if (frame < params.transient().maxduration):

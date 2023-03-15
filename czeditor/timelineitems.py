@@ -1,23 +1,27 @@
 from PySide6.QtCore import QPointF, QRectF, Qt
 from PySide6.QtGui import QColor, QPen
-from PySide6.QtWidgets import QGraphicsItem, QGraphicsSceneMouseEvent
+from PySide6.QtWidgets import QGraphicsItem, QGraphicsSceneMouseEvent, QGraphicsItemGroup
 
 from czeditor.keyframes import Keyframe
+import czeditor.shared
 
 
 class TimelineDurationLineItem(QGraphicsItem):
-    def __init__(self, params, windowClass, keyframe):
+    def __init__(self, params, keyframe):
         super().__init__(None)
         self.params = params
-        self.windowClass = windowClass
+        self.windowClass = czeditor.shared.windowObject
         self.keyframe = keyframe
         self.setPos(self.keyframe.frame, -self.keyframe.layer*25)
         self.setCursor(Qt.CursorShape.IBeamCursor)
+        self.setAcceptedMouseButtons(Qt.MouseButton.RightButton)
 
     def boundingRect(self) -> QRectF:
-        return QRectF(0, -4, self.params.params.duration(), 4)
+        return QRectF(0, -4, self.params.params.duration(), 8)
 
     def paint(self, painter, option, widget):
+        if not self.keyframe:
+            return
         self.setPos(self.keyframe.frame, -self.keyframe.layer *
                     25+self.params.params.transient().handleHeight)
         painter.setPen(QPen(QColor(255, 255, 255), 0))
@@ -39,13 +43,14 @@ class TimelineDurationLineItem(QGraphicsItem):
         self.params.params.duration.set(durationAfterKeyframe)
         self.params.params.startframe.set(originalStartFrame)
         event.accept()
+    
 
 
 class TimelineVerticalLineItem(QGraphicsItem):
-    def __init__(self, params, windowClass, keyframe):
+    def __init__(self, params, keyframe):
         super().__init__(None)
         self.params = params
-        self.windowClass = windowClass
+        self.windowClass = czeditor.shared.windowObject
         self.keyframe = keyframe
         self.setPos(self.keyframe.frame, -self.keyframe.layer*25)
         self.setCursor(Qt.CursorShape.IBeamCursor)
@@ -62,10 +67,10 @@ class TimelineVerticalLineItem(QGraphicsItem):
 
 
 class TimelineDurationHandleItem(QGraphicsItem):
-    def __init__(self, params, windowClass, keyframe):
+    def __init__(self, params, keyframe):
         super().__init__(None)
         self.params = params
-        self.windowClass = windowClass
+        self.windowClass = czeditor.shared.windowObject
         self.keyframe = keyframe
         self.setPos(self.keyframe.frame+self.params.params.duration(), -
                     self.keyframe.layer*25+self.params.params.transient().handleHeight)
@@ -81,6 +86,7 @@ class TimelineDurationHandleItem(QGraphicsItem):
         painter.drawEllipse(QRectF(-5, -5, 9, 9))
 
     def mousePressEvent(self, event: QGraphicsSceneMouseEvent) -> None:
+
         event.accept()
 
     def mouseMoveEvent(self, event: QGraphicsSceneMouseEvent):
@@ -103,10 +109,10 @@ class TimelineDurationHandleItem(QGraphicsItem):
 
 
 class TimelineStartFrameHandleItem(QGraphicsItem):
-    def __init__(self, params, windowClass, keyframe):
+    def __init__(self, params, keyframe):
         super().__init__(None)
         self.params = params
-        self.windowClass = windowClass
+        self.windowClass = czeditor.shared.windowObject
         self.keyframe = keyframe
         self.setPos(self.keyframe.frame, -self.keyframe.layer*25)
         self.setCursor(Qt.CursorShape.SizeHorCursor)
@@ -164,3 +170,15 @@ class TimelineStartFrameHandleItem(QGraphicsItem):
                     self.params.params.transient().handleHeight)
 
         event.accept()
+
+
+class TimelineDurationItem(QGraphicsItemGroup):
+    def __init__(self, params, keyframe):
+        super().__init__(None)
+        self.keyframe = keyframe
+        self.params = params
+        self.addToGroup(TimelineDurationLineItem(self.params, self.keyframe))
+        self.addToGroup(TimelineDurationHandleItem(self.params,self.keyframe))
+        self.addToGroup(TimelineStartFrameHandleItem(self.params,self.keyframe))
+        self.addToGroup(TimelineVerticalLineItem(self.params,self.keyframe))
+        self.setHandlesChildEvents(False)

@@ -14,6 +14,7 @@ from czeditor.openglfunctions import *
 from czeditor.properties import *
 from czeditor.util import ParamLink, Params, SelectableItem
 from czeditor.code_edit_window import CodeEditWindow
+import czeditor.shared
 
 imagecache = {}
 """def cachecomposite(func,parentclass,width,height):
@@ -22,12 +23,12 @@ imagecache = {}
     if strparam not in imagecache:
         imagecache[strparam] = func.function().image(func.params,parentclass).resize((width,height))
     return imagecache[strparam]"""
-effectfunctionsdropdown = []
+
 
 
 class Effect:
     def __init_subclass__(cls):
-        effectfunctionsdropdown.append(SelectableItem(cls.name, cls, cls.icon))
+        czeditor.shared.effectFunctions[cls.__name__] = cls
 
 
 class Media2D(Effect):

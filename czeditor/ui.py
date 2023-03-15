@@ -432,6 +432,12 @@ class CzeKeyframeOptionCategoryList(QRedFrame):
 
 
 class CzeKeyframeOptions(QWidget):
+    actionfunctionsdropdown = [SelectableItem(
+        i.name, i, i.icon) for i in czeditor.shared.actionFunctions.values()]
+    sourcefunctionsdropdown = [SelectableItem(
+        i.name, i, i.icon) for i in czeditor.shared.sourceFunctions.values()]
+    effectfunctionsdropdown = [SelectableItem(
+        i.name, i, i.icon) for i in czeditor.shared.effectFunctions.values()]
     baseparams = Params({  # BAD!!! TODO : While we wont support anything else than sources, effects and actions, but we can still generalize this.
         "source": {
             "function": Selectable(0, sourcefunctionsdropdown),
@@ -1084,6 +1090,18 @@ class CzeTimelineAnimationSidebar(QGraphicsItem):
         return super().hoverLeaveEvent(event)
 
 
+class QFixedGraphicsScene(QGraphicsScene):
+    def __init__(self,parent):
+        super().__init__(parent)
+        self.setItemIndexMethod(self.ItemIndexMethod.NoIndex)
+    def removeItem(self, item: QGraphicsItem) -> None:
+        for child_item in item.childItems():
+            child_item.prepareGeometryChange()
+            super().removeItem(child_item)
+        item.prepareGeometryChange()
+        super().removeItem(item)
+
+
 class CzeTimeline(QWidget):
     coolgradient = QRadialGradient(50, 50, 90)
     coolgradient.setColorAt(1, QColor(255, 255, 255))
@@ -1103,7 +1121,7 @@ class CzeTimeline(QWidget):
 
         # self.setSizePolicy(QSizePolicy.Policy.Preferred,QSizePolicy.Policy.Ignored)
 
-        self.scene = QGraphicsScene(self)
+        self.scene = QFixedGraphicsScene(self)
         self.graphicsview = QGraphicsViewEvent(self)
         # self.graphicsview.setSceneRect(QRectF(0,0,200,2000))
         self.graphicsview.setScene(self.scene)
@@ -1547,7 +1565,8 @@ class CzeTimeline(QWidget):
         if (keyframe is None):
             return
         if (keyframe in self.keyframeitems):
-            for param in self.keyframeitems[keyframe].keys():
+            params = [i for i in self.keyframeitems[keyframe].keys()]
+            for param in params:
                 for item in self.keyframeitems[keyframe][param]:
                     self.scene.removeItem(item)
             del self.keyframeitems[keyframe]
@@ -1580,7 +1599,6 @@ class CzeTimeline(QWidget):
             self.draggedframe = None
         self.deleteKeyframeItems(keyframe)
         self.scene.removeItem(self.keyframes[keyframe])
-        
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
         if self.animationProperty is None:
@@ -1589,9 +1607,11 @@ class CzeTimeline(QWidget):
                 self.addKeyframe(self.parentclass.keyframes.create(
                     self.parentclass.playbackframe))
             elif event.key() == Qt.Key.Key_Delete and not self.parentclass.rendering and not self.parentclass.seeking:
-                self.deleteKeyframe(self.parentclass.selectedFrame)
-                self.parentclass.keyframes.remove(self.parentclass.selectedframe)
+                self.deleteKeyframe(self.parentclass.selectedframe)
+                self.parentclass.keyframes.remove(
+                    self.parentclass.selectedframe)
                 del self.keyframes[self.parentclass.selectedframe]
+                del self.parentclass.selectedframe
                 self.parentclass.selectedframe = None
                 self.parentclass.regeneratekeyframeoptions()
                 self.parentclass.viewport.updatehandles()
