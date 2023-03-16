@@ -7,8 +7,9 @@ from czeditor.base_ui import (QRedButton, QRedDecimalSpinBox, QRedFrame,
 
 
 class IntPropertyWidget(QRedFrame):
-    def __init__(self, property, windowObject):
+    def __init__(self, property, windowObject,updateParamsFunction):
         super().__init__(None)
+        self.updateParamsFunction = updateParamsFunction
         self.windowObject = windowObject
         self.theproperty = property
         self.widgets = QHBoxLayout()
@@ -17,18 +18,23 @@ class IntPropertyWidget(QRedFrame):
         self.widgets.addWidget(self.spinbox)
         self.setLayout(self.widgets)
         self.setStyleSheet("border-width:0px;")
+        self.windowObject.connectToEvent("FrameUpdate",self.updateself)
 
     def updateproperty(self, value):
         self.theproperty._val = value
         self.windowObject.updateviewport()
+        self.updateParamsFunction()
 
     def updateself(self):
         self.spinbox.setValue(self.theproperty._val)
-
+    def disconnectNotify(self, signal) -> None:
+        self.windowObject.disconnectFromEvent("FrameUpdate", self.updateself)
+        return super().disconnectNotify(signal)
 
 class StringPropertyWidget(QRedFrame):
-    def __init__(self, property, windowObject):
+    def __init__(self, property, windowObject,updateParamsFunction):
         super().__init__(None)
+        self.updateParamsFunction = updateParamsFunction
         self.windowObject = windowObject
         self.theproperty = property
         self.widgets = QHBoxLayout()
@@ -45,14 +51,16 @@ class StringPropertyWidget(QRedFrame):
     def updateproperty(self):
         self.theproperty._val = self.textbox.toPlainText()
         self.windowObject.updateviewport()
+        self.updateParamsFunction()
 
     def updateself(self):
         self.textbox.setPlainText(self.theproperty._val)
 
 
 class OpenWindowButtonPropertyWidget(QRedFrame):
-    def __init__(self, property, windowObject):
+    def __init__(self, property, windowObject,updateParamsFunction):
         super().__init__(None)
+        self.updateParamsFunction = updateParamsFunction
         self.the_property = property
         self.window_: QMainWindow = self.the_property.window(
             property, windowObject)
@@ -73,14 +81,16 @@ class OpenWindowButtonPropertyWidget(QRedFrame):
     def updateproperty(self):
         self.the_property._val = self.window_.text_box.toPlainText()
         self.windowObject.updateviewport()
+        self.updateParamsFunction()
 
     def updateself(self):
         self.window_.text_box.setPlainText(self.the_property._val)
 
 
 class LineStringPropertyWidget(QRedFrame):
-    def __init__(self, property, windowObject):
+    def __init__(self, property, windowObject,updateParamsFunction):
         super().__init__(None)
+        self.updateParamsFunction = updateParamsFunction
         self.windowObject = windowObject
         self.theproperty = property
         self.widgets = QHBoxLayout()
@@ -97,14 +107,16 @@ class LineStringPropertyWidget(QRedFrame):
     def updateproperty(self):
         self.theproperty._val = self.textbox.text()
         self.windowObject.updateviewport()
+        self.updateParamsFunction()
 
     def updateself(self):
         self.textbox.setText(self.theproperty._val)
 
 
 class FilePropertyWidget(QRedFrame):
-    def __init__(self, property, filetypes, windowObject):
+    def __init__(self, property, filetypes, windowObject,updateParamsFunction):
         super().__init__(None)
+        self.updateParamsFunction = updateParamsFunction
         self.windowObject = windowObject
         self.theproperty = property
         self.filetypes = filetypes
@@ -125,6 +137,7 @@ class FilePropertyWidget(QRedFrame):
     def updateproperty(self):
         self.theproperty._val = self.textbox.toPlainText()
         self.windowObject.updateviewport()
+        self.updateParamsFunction()
 
     def updateself(self):
         self.textbox.setPlainText(self.theproperty._val)
@@ -135,9 +148,11 @@ class FilePropertyWidget(QRedFrame):
         # ,options=QFileDialog.Option.DontUseNativeDialog
 
 
+
 class SizePropertyWidget(QRedFrame):
-    def __init__(self, property, windowObject):
+    def __init__(self, property, windowObject,updateParamsFunction):
         super().__init__(None)
+        self.updateParamsFunction = updateParamsFunction
         self.windowObject = windowObject
         self.theproperty = property
         self.widgets = QVBoxLayout()
@@ -178,6 +193,7 @@ class SizePropertyWidget(QRedFrame):
         self.setStyleSheet(
             "border-image:url(editor:Square Frame.png) 2; border-width:2;")
         self.setLayout(self.widgets)
+        self.windowObject.connectToEvent("FrameUpdate",self.updateself)
 
     def updateproperty(self, value):
         self.theproperty.set(
@@ -187,6 +203,7 @@ class SizePropertyWidget(QRedFrame):
         self.relativeHeightSpinBox.setValueBypass(
             self.theproperty._relativeheight*100)
         self.windowObject.updateviewport()
+        self.updateParamsFunction()
 
     def updaterelativeproperty(self, value):
         self.theproperty.setrelative(
@@ -194,6 +211,7 @@ class SizePropertyWidget(QRedFrame):
         self.widthSpinBox.setValueBypass(self.theproperty._width)
         self.heightSpinBox.setValueBypass(self.theproperty._height)
         self.windowObject.updateviewport()
+        self.updateParamsFunction()
 
     def updateself(self):
         self.baseWidthLabel.setText(
@@ -206,11 +224,15 @@ class SizePropertyWidget(QRedFrame):
         self.relativeHeightSpinBox.setValue(
             self.theproperty._relativeheight*100)
 
+    def disconnectNotify(self, signal) -> None:
+        self.windowObject.disconnectFromEvent("FrameUpdate", self.updateself)
+        return super().disconnectNotify(signal)
 
 class FloatPropertyWidget(QRedFrame):
 
-    def __init__(self, property, windowObject):
+    def __init__(self, property, windowObject,updateParamsFunction):
         super().__init__(None)
+        self.updateParamsFunction = updateParamsFunction
         self.windowObject = windowObject
         self.theproperty = property
         self.widgets = QHBoxLayout()
@@ -230,6 +252,7 @@ class FloatPropertyWidget(QRedFrame):
     def updateproperty(self, value):
         self.theproperty._val = value
         self.windowObject.updateviewport()
+        self.updateParamsFunction()
 
     def updateself(self):
         self.spinbox.onchange = self.lock  # Smart!
@@ -249,8 +272,9 @@ class FloatPropertyWidget(QRedFrame):
 
 
 class SelectablePropertyWidget(QRedFrame):
-    def __init__(self, property, windowObject):
+    def __init__(self, property, windowObject,updateParamsFunction):
         super().__init__(None)
+        self.updateParamsFunction = updateParamsFunction
         self.windowObject = windowObject
         self.theproperty = property
         self.widgets = QHBoxLayout()
@@ -282,8 +306,9 @@ class SelectablePropertyWidget(QRedFrame):
 
 
 class RGBPropertyWidget(QRedFrame):
-    def __init__(self, property, windowObject):
+    def __init__(self, property, windowObject,updateParamsFunction):
         super().__init__(None)
+        self.updateParamsFunction = updateParamsFunction
         self.windowObject = windowObject
         self.theproperty = property
         self.widgets = QHBoxLayout()
@@ -299,6 +324,7 @@ class RGBPropertyWidget(QRedFrame):
         self.theproperty._b = color.blue()
         self.theproperty._a = color.alpha()
         self.windowObject.updateviewport()
+        self.updateParamsFunction()
 
     def updateself(self):
         r, g, b, a = self.theproperty()

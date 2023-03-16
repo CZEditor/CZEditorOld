@@ -44,8 +44,8 @@ class IntProperty(Property):
     def __call__(self):
         return self._val
 
-    def widget(self, windowObject):
-        return IntPropertyWidget(self, windowObject)
+    def widget(self, windowObject, updateParamsFunction):
+        return IntPropertyWidget(self, windowObject, updateParamsFunction)
 
     @property
     def val(self):
@@ -72,8 +72,8 @@ class StringProperty(Property):
     def __call__(self):
         return self._val
 
-    def widget(self, windowObject):
-        return StringPropertyWidget(self, windowObject)
+    def widget(self, windowObject, updateParamsFunction):
+        return StringPropertyWidget(self, windowObject, updateParamsFunction)
 
     @property
     def val(self):
@@ -111,8 +111,8 @@ class OpenWindowButtonProperty(Property):
     def copy(self):
         return OpenWindowButtonProperty(self.__button_name, self.__window, self._val)
 
-    def widget(self, windowObject) -> OpenWindowButtonPropertyWidget:
-        return OpenWindowButtonPropertyWidget(self, windowObject)
+    def widget(self, windowObject, updateParamsFunction) -> OpenWindowButtonPropertyWidget:
+        return OpenWindowButtonPropertyWidget(self, windowObject, updateParamsFunction)
 
     def __call__(self):
         return self._val
@@ -135,8 +135,8 @@ class LineStringProperty(Property):
     def __call__(self):
         return self._val
 
-    def widget(self, windowObject):
-        return LineStringPropertyWidget(self, windowObject)
+    def widget(self, windowObject,updateParamsFunction):
+        return LineStringPropertyWidget(self, windowObject,updateParamsFunction)
 
     @property
     def val(self):
@@ -166,8 +166,8 @@ class FileProperty(Property):
     def __call__(self):
         return self._val
 
-    def widget(self, windowObject):
-        return FilePropertyWidget(self, self._filetypes, windowObject)
+    def widget(self, windowObject,updateParamsFunction):
+        return FilePropertyWidget(self, self._filetypes, windowObject,updateParamsFunction)
 
     @property
     def val(self):
@@ -253,8 +253,8 @@ class SizeProperty(Property):
     def height(self):
         return self._height
 
-    def widget(self, windowObject):
-        return SizePropertyWidget(self, windowObject)
+    def widget(self, windowObject,updateParamsFunction):
+        return SizePropertyWidget(self, windowObject,updateParamsFunction)
 
     def serialize(self):
         return {"basewidth": self._basewidth, "baseheight": self._baseheight, "width": self._width, "height": self._height}
@@ -292,8 +292,8 @@ class FloatProperty(Property):
             self.currentvalue = self._val
             return self.currentvalue
 
-    def widget(self, windowObject):
-        return FloatPropertyWidget(self, windowObject)
+    def widget(self, windowObject,updateParamsFunction):
+        return FloatPropertyWidget(self, windowObject,updateParamsFunction)
 
     def defaultKeyframe(self, frame, tracks):
         
@@ -341,8 +341,8 @@ class SelectableProperty(Property):
     def __call__(self):
         return self._selectable()
 
-    def widget(self, windowObject):
-        return SelectablePropertyWidget(self, windowObject)
+    def widget(self, windowObject,updateParamsFunction):
+        return SelectablePropertyWidget(self, windowObject,updateParamsFunction)
 
     def set(self, value):
         self._selectable.index = value
@@ -376,8 +376,8 @@ class RGBProperty(Property):
     def copy(self):
         return RGBProperty(self._r, self._g, self._b, self._a)
 
-    def widget(self, windowObject):
-        return RGBPropertyWidget(self, windowObject)
+    def widget(self, windowObject,updateParamsFunction):
+        return RGBPropertyWidget(self, windowObject,updateParamsFunction)
 
     def serialize(self):
         return {"R": self._r, "G": self._g, "B": self._b, "A": self._a}

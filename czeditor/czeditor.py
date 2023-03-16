@@ -147,6 +147,7 @@ class CzeVideoView(QOpenGLWidget):
         rendered = glReadPixels(
             0, 0, 1280, 720, GL_RGBA, GL_UNSIGNED_BYTE, None)
         self.windowObject.rendering = False
+        self.windowObject.viewport.renderingDone()
 
 
 class CzeViewport(QWidget):
@@ -204,6 +205,12 @@ class CzeViewport(QWidget):
             self.picture = QPixmap.fromImage(img)
             # self.picture = self.picture.scaled(QSize(min(self.size().width(),1280),min(self.size().height(),720)),Qt.AspectRatioMode.KeepAspectRatio)
             self.viewportimage.setPixmap(self.picture)
+    
+    def renderingDone(self):
+        global rendered
+        img = QImage(rendered, 1280, 720, QImage.Format_RGBA8888)
+        self.picture = QPixmap.fromImage(img)
+        self.viewportimage.setPixmap(self.picture)
 
     # self , keyframe of the handle , function of the param , param itself
     def createhandle(self, keyframe, function, param):

@@ -155,7 +155,7 @@ class Video(Source):
     params = Params({
         "videopath": FileProperty("", "Video Files (*.mp4 *.mov *.mkv *.avi *.webm)"),
         "startframe": IntProperty(0),
-        "duration": IntProperty(0),
+        "duration": IntProperty(-1),
         "transient": TransientProperty(Params({
             "pyavobject": None,
             "moviepyobject": None,
@@ -173,7 +173,7 @@ class Video(Source):
         # return Image.open(param.imagespath.replace("*",str(int(parentclass.playbackframe))))
         transient = param.transient()
         if (not os.path.exists(param.videopath())):
-            param.duration.set(0)
+            param.duration.set(-1)
             return np.array(emptyimage)
         if (param.videopath() != transient.lastpath or transient.pyavobject == None):
             if (transient.pyavobject != None):
@@ -186,8 +186,9 @@ class Video(Source):
             transient.moviepyobject = AudioFileClip(
                 param.videopath(), nbytes=2, fps=48000)
             transient.lastpath = param.videopath()
-            param.duration.set(int(
-                len(transient.pyavobject)/transient.pyavobject.frame_rate*60)-param.startframe())
+            if param.duration() == -1:
+                param.duration.set(int(
+                    len(transient.pyavobject)/transient.pyavobject.frame_rate*60)-param.startframe())
             transient.maxduration = int(
                 len(transient.pyavobject)/transient.pyavobject.frame_rate*60)
             print(transient.maxduration)
@@ -249,8 +250,9 @@ class Video(Source):
             transient.moviepyobject = AudioFileClip(
                 param.videopath(), nbytes=2, fps=48000)
             transient.lastpath = param.videopath()
-            param.duration.set(int(
-                len(transient.pyavobject)/transient.pyavobject.frame_rate*60)-param.startframe())
+            if param.duration() == -1:
+                param.duration.set(int(
+                    len(transient.pyavobject)/transient.pyavobject.frame_rate*60)-param.startframe())
             transient.maxduration = int(
                 len(transient.pyavobject)/transient.pyavobject.frame_rate*60)
         # print(chunk)
@@ -271,6 +273,26 @@ class Video(Source):
             #    buffer = np.append(buffer,audioframe.to_ndarray()[0])
             # else:
             # return audioframe.to_ndarray()[0],secrets.avobject.streams.audio[0]
+
+    def updateParams(params):
+        transient = params.transient()
+        if (not os.path.exists(params.videopath())):
+            params.duration.set(-1)
+            return
+        if (params.videopath() != transient.lastpath or transient.moviepyobject == None):
+            if (transient.moviepyobject != None):
+                transient.pyavobject.close()
+                transient.moviepyobject.close()
+            transient.pyavobject = PyAVSeekableVideoReader(
+                params.videopath())
+            transient.moviepyobject = AudioFileClip(
+                params.videopath(), nbytes=2, fps=48000)
+            transient.lastpath = params.videopath()
+            if params.duration() == -1:
+                params.duration.set(int(
+                    len(transient.pyavobject)/transient.pyavobject.frame_rate*60)-params.startframe())
+            transient.maxduration = int(
+                len(transient.pyavobject)/transient.pyavobject.frame_rate*60)
 
     def __str__(self):
         return self.name

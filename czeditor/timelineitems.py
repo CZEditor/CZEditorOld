@@ -1,4 +1,4 @@
-from PySide6.QtCore import QPointF, QRectF, Qt
+from PySide6.QtCore import QPointF, QRectF, Qt, QPoint
 from PySide6.QtGui import QColor, QPen
 from PySide6.QtWidgets import QGraphicsItem, QGraphicsSceneMouseEvent, QGraphicsItemGroup
 
@@ -24,7 +24,7 @@ class TimelineDurationLineItem(QGraphicsItem):
             return
         self.setPos(self.keyframe.frame, -self.keyframe.layer *
                     25+self.params.params.transient().handleHeight)
-        painter.setPen(QPen(QColor(255, 255, 255), 0))
+        painter.setPen(QPen(QColor(255, 255, 255, 127), 0))
         painter.drawLine(QPointF(0, 0), QPointF(
             self.params.params.duration(), 0))
         # print(self.params.params.duration())
@@ -75,34 +75,45 @@ class TimelineDurationHandleItem(QGraphicsItem):
         self.setPos(self.keyframe.frame+self.params.params.duration(), -
                     self.keyframe.layer*25+self.params.params.transient().handleHeight)
         self.setCursor(Qt.CursorShape.SizeHorCursor)
+        self.setFlags(self.GraphicsItemFlag.ItemIgnoresTransformations)
 
     def boundingRect(self) -> QRectF:
-        return QRectF(-5, -5, 9, 9)
+        return QRectF(-3, -5, 3, 11)
 
     def paint(self, painter, option, widget):
         self.setPos(self.keyframe.frame+self.params.params.duration(), -
                     self.keyframe.layer*25+self.params.params.transient().handleHeight)
         painter.setPen(QPen(QColor(255, 255, 255), 1))
-        painter.drawEllipse(QRectF(-5, -5, 9, 9))
+        painter.drawLines([QPoint(0,-5),QPoint(0,5),QPoint(0,5),QPoint(-5,0),QPoint(-5,0),QPoint(0,-5)])
 
     def mousePressEvent(self, event: QGraphicsSceneMouseEvent) -> None:
-
+        self.origduration = self.params.params.duration()
+        self.origheight = self.params.params.transient().handleHeight
+        self.startpress = event.scenePos().toPoint()
         event.accept()
 
     def mouseMoveEvent(self, event: QGraphicsSceneMouseEvent):
         scenepos = event.scenePos().toPoint()
-        self.params.params.duration.set(max(1, min(self.params.params.transient(
-        ).maxduration-self.params.params.startframe(), scenepos.x()-self.keyframe.frame)))
-        self.params.params.transient().handleHeight = scenepos.y()+self.keyframe.layer*25
+        if abs(self.startpress.x()-scenepos.x()) > abs(self.startpress.y()-scenepos.y()):
+            self.params.params.duration.set(max(1, min(self.params.params.transient(
+            ).maxduration-self.params.params.startframe(), scenepos.x()-self.keyframe.frame)))
+            self.params.params.transient().handleHeight = self.origheight
+        else:
+            self.params.params.transient().handleHeight = scenepos.y()+self.keyframe.layer*25
+            self.params.params.duration.set(self.origduration)
         self.setPos(self.keyframe.frame+self.params.params.duration(), -
                     self.keyframe.layer*25+self.params.params.transient().handleHeight)
         event.accept()
 
     def mouseReleaseEvent(self, event: QGraphicsSceneMouseEvent):
         scenepos = event.scenePos().toPoint()
-        self.params.params.duration.set(max(1, min(self.params.params.transient(
-        ).maxduration-self.params.params.startframe(), scenepos.x()-self.keyframe.frame)))
-        self.params.params.transient().handleHeight = scenepos.y()+self.keyframe.layer*25
+        if abs(self.startpress.x()-scenepos.x()) > abs(self.startpress.y()-scenepos.y()):
+            self.params.params.duration.set(max(1, min(self.params.params.transient(
+            ).maxduration-self.params.params.startframe(), scenepos.x()-self.keyframe.frame)))
+            self.params.params.transient().handleHeight = self.origheight
+        else:
+            self.params.params.transient().handleHeight = scenepos.y()+self.keyframe.layer*25
+            self.params.params.duration.set(self.origduration)
         self.setPos(self.keyframe.frame+self.params.params.duration(), -
                     self.keyframe.layer*25+self.params.params.transient().handleHeight)
         event.accept()
@@ -116,59 +127,87 @@ class TimelineStartFrameHandleItem(QGraphicsItem):
         self.keyframe = keyframe
         self.setPos(self.keyframe.frame, -self.keyframe.layer*25)
         self.setCursor(Qt.CursorShape.SizeHorCursor)
+        self.setFlags(self.GraphicsItemFlag.ItemIgnoresTransformations)
 
     def boundingRect(self) -> QRectF:
-        return QRectF(-5, -5, 9, 9)
+        return QRectF(0, -5, 3, 11)
 
     def paint(self, painter, option, widget):
         self.setPos(self.keyframe.frame, -self.keyframe.layer *
                     25+self.params.params.transient().handleHeight)
         painter.setPen(QPen(QColor(127, 127, 127), 1))
-        painter.drawEllipse(QRectF(-5, -5, 9, 9))
+        painter.drawLines([QPoint(0,-5),QPoint(0,5),QPoint(0,5),QPoint(5,0),QPoint(5,0),QPoint(0,-5)])
 
     def mousePressEvent(self, event: QGraphicsSceneMouseEvent) -> None:
+        self.origduration = self.params.params.duration()
+        self.origheight = self.params.params.transient().handleHeight
+        self.origstartframe = self.params.params.startframe()
+        self.origframe = self.keyframe.frame
+        self.startpress = event.scenePos().toPoint()
         event.accept()
 
     def mouseMoveEvent(self, event: QGraphicsSceneMouseEvent):
         scenepos = event.scenePos().toPoint()
-        self.params.params.duration.set(min(self.params.params.transient(
-        ).maxduration, self.params.params.duration()-scenepos.x()+self.keyframe.frame))
-        self.params.params.startframe.set(min(self.params.params.transient().maxduration,
-                                              self.params.params.duration()+self.keyframe.frame,
-                                              self.params.params.startframe()+scenepos.x()-self.keyframe.frame))
-        self.params.params.duration.set(max(0, self.params.params.duration()))
-        self.params.params.startframe.set(
-            max(0, self.params.params.startframe()))
-        clampedpos = max(self.keyframe.frame -
-                         self.params.params.startframe(), scenepos.x())
-        # print(self.keyframe.frame,self.params.params.startframe(),scenepos.x(),clampedpos)
-        self.keyframe.frame = clampedpos
-        self.windowClass.timeline.keyframes[self.keyframe].setPos(
-            clampedpos, -self.keyframe.layer*25)
-        self.params.params.transient().handleHeight = scenepos.y()+self.keyframe.layer*25
-        self.setPos(clampedpos, -self.keyframe.layer*25 +
-                    self.params.params.transient().handleHeight)
+        if abs(self.startpress.x()-scenepos.x()) > abs(self.startpress.y()-scenepos.y()):
+            self.params.params.startframe.set(min(self.params.params.transient().maxduration,
+                                                self.origduration+self.origframe,
+                                                self.origstartframe+scenepos.x()-self.origframe))
+            self.params.params.startframe.set(
+                max(0, self.params.params.startframe()))
+            self.params.params.duration.set(min(self.params.params.transient(
+            ).maxduration, self.origduration-scenepos.x()+self.origframe,self.origduration+self.origstartframe))
+            self.params.params.duration.set(
+                max(0, self.params.params.duration()))
+            
+            clampedpos = max(self.origframe -
+                            self.origstartframe, scenepos.x())
+            # print(self.keyframe.frame,self.params.params.startframe(),scenepos.x(),clampedpos)
+            self.keyframe.frame = clampedpos
+            self.windowClass.timeline.keyframes[self.keyframe].setPos(
+                clampedpos, -self.keyframe.layer*25)
+            self.params.params.transient().handleHeight = self.origheight
+            self.setPos(clampedpos, -self.keyframe.layer*25 +
+                        self.params.params.transient().handleHeight)
+        else:
+            self.params.params.duration.set(self.origduration)
+            self.params.params.startframe.set(self.origstartframe)
+            self.keyframe.frame = self.origframe
+            self.windowClass.timeline.keyframes[self.keyframe].setPos(
+                self.origframe, -self.keyframe.layer*25)
+            self.params.params.transient().handleHeight = scenepos.y()+self.keyframe.layer*25
+            self.setPos(self.keyframe.frame, -self.keyframe.layer*25 + self.params.params.transient().handleHeight)
         event.accept()
 
     def mouseReleaseEvent(self, event: QGraphicsSceneMouseEvent):
         scenepos = event.scenePos().toPoint()
-        self.params.params.duration.set(min(self.params.params.transient(
-        ).maxduration, self.params.params.duration()-scenepos.x()+self.keyframe.frame))
-        self.params.params.startframe.set(min(self.params.params.transient().maxduration, self.params.params.duration(
-        )+self.keyframe.frame, self.params.params.startframe()+scenepos.x()-self.keyframe.frame))
-        self.params.params.duration.set(max(0, self.params.params.duration()))
-        self.params.params.startframe.set(
-            max(0, self.params.params.startframe()))
-        clampedpos = min(self.keyframe.frame+self.params.params.duration(),
-                         max(self.keyframe.frame-self.params.params.startframe(), scenepos.x()))
-        # print(self.keyframe.frame,self.params.params.startframe(),scenepos.x(),clampedpos)
-        self.keyframe.frame = clampedpos
-        self.windowClass.timeline.keyframes[self.keyframe].setPos(
-            clampedpos, -self.keyframe.layer*25)
-        self.params.params.transient().handleHeight = scenepos.y()+self.keyframe.layer*25
-        self.setPos(clampedpos, -self.keyframe.layer*25 +
-                    self.params.params.transient().handleHeight)
-
+        if abs(self.startpress.x()-scenepos.x()) > abs(self.startpress.y()-scenepos.y()):
+            self.params.params.startframe.set(min(self.params.params.transient().maxduration,
+                                                self.origduration+self.origframe,
+                                                self.origstartframe+scenepos.x()-self.origframe))
+            self.params.params.startframe.set(
+                max(0, self.params.params.startframe()))
+            self.params.params.duration.set(min(self.params.params.transient(
+            ).maxduration, self.origduration-scenepos.x()+self.origframe,self.origduration+self.origstartframe))
+            self.params.params.duration.set(
+                max(0, self.params.params.duration()))
+            
+            clampedpos = max(self.origframe -
+                            self.origstartframe, scenepos.x())
+            # print(self.keyframe.frame,self.params.params.startframe(),scenepos.x(),clampedpos)
+            self.keyframe.frame = clampedpos
+            self.windowClass.timeline.keyframes[self.keyframe].setPos(
+                clampedpos, -self.keyframe.layer*25)
+            self.params.params.transient().handleHeight = self.origheight
+            self.setPos(clampedpos, -self.keyframe.layer*25 +
+                        self.params.params.transient().handleHeight)
+        else:
+            self.params.params.duration.set(self.origduration)
+            self.params.params.startframe.set(self.origstartframe)
+            self.keyframe.frame = self.origframe
+            self.windowClass.timeline.keyframes[self.keyframe].setPos(
+                self.origframe, -self.keyframe.layer*25)
+            self.params.params.transient().handleHeight = scenepos.y()+self.keyframe.layer*25
+            self.setPos(self.keyframe.frame, -self.keyframe.layer*25 + self.params.params.transient().handleHeight)
         event.accept()
 
 

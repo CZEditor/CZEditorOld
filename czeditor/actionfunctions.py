@@ -16,7 +16,7 @@ class NormalKeyframe(Action):
     icon = "editor:actions/Media.png"
 
     def action(statetomodify, keyframe, stateparam, frame, windowObject):
-        if (keyframe.params.source.params.duration and keyframe.params.source.params.duration() != 0):
+        if (keyframe.params.source.params.duration):
             if (keyframe.params.source.params.duration() < frame):
                 return statetomodify
         statetomodify.append(keyframe)

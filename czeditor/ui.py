@@ -224,7 +224,7 @@ class CzeKeyframeOptionCategory(QRedDropDownFrame):
             #    None, params.function, self.parentclass, self.rebuild))
             self.selectable = SelectableProperty([SelectableItem()], 0)
             self.selectable._selectable = params.function
-            self.selectablewidget = self.selectable.widget(self.parentclass)
+            self.selectablewidget = self.selectable.widget(self.parentclass, lambda: None if hasattr(self.params.function().updateParams) else lambda: self.params.function().updateParams(self.params.params))
             self.selectablewidget.callback = self.rebuild
             self.selectablewidget.setSizePolicy(
                 QSizePolicy.Policy.MinimumExpanding, QSizePolicy.Policy.MinimumExpanding)
@@ -262,7 +262,7 @@ class CzeKeyframeOptionCategory(QRedDropDownFrame):
             toremove.deleteLater()
             self.selectable = SelectableProperty([SelectableItem()], 0)
             self.selectable._selectable = params.function
-            self.selectablewidget = self.selectable.widget(self.parentclass)
+            self.selectablewidget = self.selectable.widget(self.parentclass, lambda: None if hasattr(params.function().updateParams) else lambda: params.function().updateParams(params.params))
             self.selectablewidget.callback = self.rebuild
             self.selectablewidget.setSizePolicy(
                 QSizePolicy.Policy.MinimumExpanding, QSizePolicy.Policy.MinimumExpanding)
@@ -280,10 +280,13 @@ class CzeKeyframeOptionCategory(QRedDropDownFrame):
         self.parentclass.updateviewport()
 
     def iterate(self, params):
+        updateParamsFunction = lambda : None
+        if self.params.function is not None and hasattr(self.params.function(),"updateParams"):
+            updateParamsFunction = lambda : self.params.function().updateParams(self.params.params)
         for key in vars(params).keys():
             param = params[key]
             if (hasattr(param, "widget")):
-                self.widgets.addRow(key, param.widget(self.parentclass))
+                self.widgets.addRow(key, param.widget(self.parentclass,updateParamsFunction))
 
 
 class CzeKeyframeOptionCategoryList(QRedFrame):
