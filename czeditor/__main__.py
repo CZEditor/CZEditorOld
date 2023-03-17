@@ -12,8 +12,7 @@ if __name__ == "__main__":
 from PySide6.QtCore import QDir
 from PySide6.QtWidgets import QApplication
 from czeditor.czeditor import *
-from palanteer import plInitAndStart
-plInitAndStart("CZEditor")
+
 # Set up resource paths for Qt internals like stylesheets
 # Use importlib.resources when it's possible to do so
 root = os.path.dirname(os.path.abspath(__file__))
