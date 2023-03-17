@@ -141,8 +141,11 @@ class CzeVideoView(QOpenGLWidget):
                              self.windowObject.cameraParams.y, self.windowObject.cameraParams.z)
         # print(projection)
         self.windowObject.rendering = True
-        for keyframe in self.state:
-            keyframe.composite(self.windowObject, self.spectrum, projection)
+        try:
+            for keyframe in self.state:
+                keyframe.composite(self.windowObject, self.spectrum, projection)
+        except Exception:
+            self.windowObject.rendering = False
         glBindBuffer(GL_ARRAY_BUFFER, 0)
         glBindVertexArray(0)
 
@@ -172,7 +175,7 @@ class CzeViewport(QWidget):
         self.infolabel.raise_()
         self.infolabel.setStyleSheet("background: transparent;")
         self.parentclass = parentclass
-
+        self.rendering = False
         self.updateviewportimage(
             getstate(self.parentclass.playbackframe, self.parentclass), np.zeros(512))
         self.picture = QPixmap(1280, 720)
@@ -193,15 +196,18 @@ class CzeViewport(QWidget):
         self.graphicsview.onscroll = self.scrollEvent
         self.vao = None
         self.vbo = None
+        
 
     def sizeHint(self):
         return QSize(1280, 720)
 
     def updateviewportimage(self, state, spectrum):
         #global rendered
-        self.videorenderer.state = state
-        self.videorenderer.spectrum = spectrum
-        self.videorenderer.update()
+        if not self.rendering:
+            self.rendering = True
+            self.videorenderer.state = state
+            self.videorenderer.spectrum = spectrum
+            self.videorenderer.update()
         #if (rendered):
         #    img = QImage(rendered, 1280, 720, QImage.Format_RGBA8888)
         #    self.picture = QPixmap.fromImage(img)
@@ -213,6 +219,7 @@ class CzeViewport(QWidget):
         img = QImage(rendered, 1280, 720, QImage.Format_RGBA8888)
         self.picture = QPixmap.fromImage(img)
         self.viewportimage.setPixmap(self.picture)
+        self.rendering = False
 
     # self , keyframe of the handle , function of the param , param itself
     def createhandle(self, keyframe, function, param):
@@ -541,6 +548,7 @@ class Window(QMainWindow):
     def timer(self) -> None:
         while True:
             if self.isplaying and not self.seeking:
+                QApplication.processEvents()
                 firstcopy = np.copy(self.currentaudio)
 
                 self.currentspectrum = np.fft.rfft(firstcopy)
@@ -554,10 +562,9 @@ class Window(QMainWindow):
                 self.currentframestate = getstate(self.playbackframe, self)
                 self.viewport.updateviewportimage(
                     self.currentframestate, self.currentspectrum)
-                self.timeline.updateplaybackcursor(self.playbackframe)
                 self.triggerEvent("FrameUpdate")
                 self.needtoupdate = False
-                QApplication.processEvents()
+                
             if self.needtoupdate and not self.seeking:
                 self.viewport.updateviewportimage(
                     getstate(self.playbackframe, self), self.currentspectrum)

@@ -937,6 +937,33 @@ class CzeTimelineGridLines(QGraphicsItem):
             painter.drawText(QRectF(grid*distance, rect.top(), distance, 30),
                              Qt.AlignmentFlag.AlignTop, str(int(grid*distance/scale)))
 
+class CzeTimelineTimeCursor(QGraphicsItem):
+
+    def __init__(self, boundrect):
+        super().__init__()
+        self.boundrect = boundrect
+
+    def boundingRect(self):
+        rect = self.boundrect()
+        rect.setLeft(czeditor.shared.windowObject.playbackframe)
+        rect.setWidth(1)
+        return rect
+
+    def paint(self, painter: QPainter, option, widget) -> None:
+        
+        transform = painter.transform()
+        rect: QRectF = self.boundrect()
+        scale = transform.m22()
+        rect.setTop(rect.top()*scale)
+        rect.setBottom(rect.bottom()*scale)
+
+        transform.setMatrix(
+            1, 0, 0, 0, 1, 0, transform.m31(), transform.m32(), 1)
+        painter.setTransform(transform)
+
+        painter.setPen(QPen(QColor(255, 0, 0, 128), 0))
+
+        painter.drawLine(czeditor.shared.windowObject.playbackframe*scale,rect.top(),czeditor.shared.windowObject.playbackframe*scale,rect.bottom())
 
 class CzeTimelineAnimationSidebar(QGraphicsItem):
     coolgradient = QRadialGradient(100, 150, 200)
@@ -1142,10 +1169,6 @@ class CzeTimeline(QWidget):
         # self.graphicsview.setTransformationAnchor(QGraphicsView.ViewportAnchor.AnchorUnderMouse)
         for keyframe in self.parentclass.keyframes:
             self.addKeyframe(keyframe)
-        boundingrect = self.graphicsview.mapToScene(
-            self.graphicsview.viewport().geometry()).boundingRect()
-        self.playbackcursor = self.scene.addLine(QLine(playbackframe, boundingrect.top(
-        )-1, playbackframe, boundingrect.bottom()+1), QPen(QColor(255, 0, 0), 0))
         self.draggedframe = None
         self.graphicsview.onpress = self.pressEvent
         self.graphicsview.onrelease = self.releaseEvent
@@ -1177,20 +1200,17 @@ class CzeTimeline(QWidget):
         def boundrect(): return self.graphicsview.mapToScene(
             self.graphicsview.viewport().geometry()).boundingRect()
         self.gridlines = CzeTimelineGridLines(boundrect)
+        self.playbackcursor = CzeTimelineTimeCursor(boundrect)
         self.scene.addItem(self.gridlines)
+        self.scene.addItem(self.playbackcursor)
 
     def timerEvent(self, event) -> None:
         self.updateSeekingState()
+        self.graphicsview.update()
         return super().timerEvent(event)
 
     def sizeHint(self):
         return QSize(self.size().width(), 150)
-
-    def updateplaybackcursor(self, frame):
-        boundingrect = self.graphicsview.mapToScene(
-            self.graphicsview.viewport().geometry()).boundingRect()
-        self.playbackcursor.setLine(
-            QLine(frame, boundingrect.top()-1, frame, boundingrect.bottom()+1))
 
     def updateSeekingState(self):
         if self.parentclass.seeking and not self.seekingBackground:
@@ -1361,8 +1381,6 @@ class CzeTimeline(QWidget):
                 elif isinstance(founditem, CzeTimelineGridLines):
                     self.parentclass.seek(
                         self.graphicsview.mapToScene(event.pos().x(), 0).x())
-                    self.updateplaybackcursor(
-                        self.graphicsview.mapToScene(event.pos().x(), 0).x())
                     self.parentclass.updateviewport()
                     self.graphicsview.update()
         else:
@@ -1383,8 +1401,6 @@ class CzeTimeline(QWidget):
                         self.graphicsview.update()
                     else:
                         self.parentclass.seek(
-                            self.graphicsview.mapToScene(event.pos().x(), 0).x())
-                        self.updateplaybackcursor(
                             self.graphicsview.mapToScene(event.pos().x(), 0).x())
                         self.parentclass.updateviewport()
                         self.graphicsview.update()
@@ -1509,10 +1525,6 @@ class CzeTimeline(QWidget):
         # self.graphicsview.setSceneRect(r)
         # self.graphicsview.setTransform(originaltransform)
 
-        boundingrect = self.graphicsview.mapToScene(
-            self.graphicsview.viewport().geometry()).boundingRect()
-        self.playbackcursor.setLine(QLine(self.parentclass.playbackframe, boundingrect.top(
-        ), self.parentclass.playbackframe, boundingrect.bottom()))
 
     def addKeyframe(self, keyframe: Keyframe):
         # self.keyframes[keyframe] = self.scene.addRect(QRectF(-9,-9,18,18),QPen(QColor(0,0,0),0),self.coolgradient)
@@ -1592,10 +1604,6 @@ class CzeTimeline(QWidget):
             QGraphicsView.ViewportAnchor.AnchorViewCenter)
 
         self.graphicsview.translate(delta.x(), delta.y())
-        boundingrect = self.graphicsview.mapToScene(
-            self.graphicsview.viewport().geometry()).boundingRect()
-        self.playbackcursor.setLine(QLine(self.parentclass.playbackframe, boundingrect.top(
-        ), self.parentclass.playbackframe, boundingrect.bottom()))
 
     def deleteKeyframe(self, keyframe: Keyframe):
         if (keyframe == self.draggedframe):
@@ -1965,3 +1973,4 @@ class CzeDropdownSelectable(QRedScrollArea):
     def resizeEvent(self, arg__1) -> None:
         self.setMaximumSize(self.viewFrame.size()+QSize(4, 4))
         return super().resizeEvent(arg__1)
+
