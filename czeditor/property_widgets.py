@@ -26,7 +26,8 @@ class IntPropertyWidget(QRedFrame):
         self.updateParamsFunction()
 
     def updateself(self):
-        self.spinbox.setValue(self.theproperty._val)
+        self.spinbox.setValueBypass(self.theproperty._val)
+
     def disconnectNotify(self, signal) -> None:
         self.windowObject.disconnectFromEvent("FrameUpdate", self.updateself)
         return super().disconnectNotify(signal)
@@ -218,10 +219,10 @@ class SizePropertyWidget(QRedFrame):
             "Base Width\n"+str(self.theproperty._basewidth))
         self.baseHeightLabel.setText(
             "Base Height\n"+str(self.theproperty._baseheight))
-        self.widthSpinBox.setValue(self.theproperty._width)
-        self.heightSpinBox.setValue(self.theproperty._height)
-        self.relativeWidthSpinBox.setValue(self.theproperty._relativewidth*100)
-        self.relativeHeightSpinBox.setValue(
+        self.widthSpinBox.setValueBypass(self.theproperty._width)
+        self.heightSpinBox.setValueBypass(self.theproperty._height)
+        self.relativeWidthSpinBox.setValueBypass(self.theproperty._relativewidth*100)
+        self.relativeHeightSpinBox.setValueBypass(
             self.theproperty._relativeheight*100)
 
     def disconnectNotify(self, signal) -> None:

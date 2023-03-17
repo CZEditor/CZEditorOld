@@ -1165,7 +1165,7 @@ class CzeTimeline(QWidget):
         self.graphicsview.dragmove = self.dragMoveEvent
         self.seekingBackground = None
         self.seekingText = None
-        self.startTimer(0.25, Qt.TimerType.CoarseTimer)
+        self.startTimer(250, Qt.TimerType.CoarseTimer)
         self.hoveredkeyframe = None
         self.animationProperty = None
         self.animationKeyframes = {}

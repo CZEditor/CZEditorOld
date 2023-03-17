@@ -34,9 +34,8 @@ class PyAVSeekableVideoReader:
     def seekForward(self, frame: int):
         self._currentFrame = frame
         for decodedFrame in self._container.decode(self._stream):
-            if (int(decodedFrame.pts*self._stream.time_base*self.frame_rate) < frame):
-                continue
-            return decodedFrame
+            if not (int(decodedFrame.pts*self._stream.time_base*self.frame_rate) < frame):
+                return decodedFrame
         else:
             return decodedFrame
 

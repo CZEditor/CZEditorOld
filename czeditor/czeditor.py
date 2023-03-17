@@ -15,7 +15,7 @@ if True:  # autopep8 will break the program how funny
     from czeditor.base_ui import *
     from PySide6.QtWidgets import (QGraphicsScene, QGraphicsView, QLabel,
                                    QMainWindow, QSizePolicy, QSplitter, QWidget,
-                                   QToolBar)
+                                   QToolBar, QApplication)
     from PySide6.QtOpenGLWidgets import QOpenGLWidget
     from PySide6.QtGui import (QImage, QKeyEvent, QMouseEvent, QPixmap,
                                QResizeEvent, QWheelEvent, QPalette, QAction)
@@ -32,6 +32,8 @@ if True:  # autopep8 will break the program how funny
     import sys
     import concurrent.futures
     import json
+    import threading
+    import time
 
 
 # TODO : Move these into the Window class
@@ -196,15 +198,15 @@ class CzeViewport(QWidget):
         return QSize(1280, 720)
 
     def updateviewportimage(self, state, spectrum):
-        global rendered
+        #global rendered
         self.videorenderer.state = state
         self.videorenderer.spectrum = spectrum
         self.videorenderer.update()
-        if (rendered):
-            img = QImage(rendered, 1280, 720, QImage.Format_RGBA8888)
-            self.picture = QPixmap.fromImage(img)
-            # self.picture = self.picture.scaled(QSize(min(self.size().width(),1280),min(self.size().height(),720)),Qt.AspectRatioMode.KeepAspectRatio)
-            self.viewportimage.setPixmap(self.picture)
+        #if (rendered):
+        #    img = QImage(rendered, 1280, 720, QImage.Format_RGBA8888)
+        #    self.picture = QPixmap.fromImage(img)
+        #    # self.picture = self.picture.scaled(QSize(min(self.size().width(),1280),min(self.size().height(),720)),Qt.AspectRatioMode.KeepAspectRatio)
+        #    self.viewportimage.setPixmap(self.picture)
     
     def renderingDone(self):
         global rendered
@@ -346,7 +348,8 @@ class Window(QMainWindow):
         self.show()
 
         self.draggedpreset = None
-        self.startTimer(0.016, Qt.TimerType.CoarseTimer)
+        #self.startTimer(16, Qt.TimerType.CoarseTimer)
+        
         self.lastframetime = perf_counter()
         self.isplaying = False
         self.starttime = perf_counter()
@@ -381,6 +384,7 @@ class Window(QMainWindow):
         palette.setColor(QPalette.ColorGroup.All,
                          QPalette.ColorRole.Button, QColor(127, 0, 0))
         self.setPalette(palette)
+        threading.Thread(target=self.timer,daemon=True).start()
 
     def registerEvent(self, event):
         if event not in self.events:
@@ -532,32 +536,34 @@ class Window(QMainWindow):
         self.playbacksample = int(frame/60*48000)
         self.currentframestate = getstate(self.playbackframe, self)
         self.seeking = False
+    
 
-    def timerEvent(self, event: QTimerEvent) -> None:
+    def timer(self) -> None:
+        while True:
+            if self.isplaying and not self.seeking:
+                firstcopy = np.copy(self.currentaudio)
 
-        if self.isplaying and not self.seeking:
-            firstcopy = np.copy(self.currentaudio)
+                self.currentspectrum = np.fft.rfft(firstcopy)
+                # freq = np.fft.fftfreq(1)
+                self.currentspectrum = self.currentspectrum[:512]
+                self.currentspectrum = np.abs(self.currentspectrum)
 
-            self.currentspectrum = np.fft.rfft(firstcopy)
-            # freq = np.fft.fftfreq(1)
-            self.currentspectrum = self.currentspectrum[:512]
-            self.currentspectrum = np.abs(self.currentspectrum)
-
-            self.playbackframe = self.startframe + \
-                int((perf_counter()-self.starttime)*60)
-            # self.playbackframe += 1
-            self.currentframestate = getstate(self.playbackframe, self)
-            self.viewport.updateviewportimage(
-                self.currentframestate, self.currentspectrum)
-            self.timeline.updateplaybackcursor(self.playbackframe)
-            self.triggerEvent("FrameUpdate")
-            self.needtoupdate = False
-        if self.needtoupdate and not self.seeking:
-            self.viewport.updateviewportimage(
-                getstate(self.playbackframe, self), self.currentspectrum)
-            self.triggerEvent("FrameUpdate")
-            self.needtoupdate = False
-        return super().timerEvent(event)
+                self.playbackframe = self.startframe + \
+                    int((perf_counter()-self.starttime)*60)
+                # self.playbackframe += 1
+                self.currentframestate = getstate(self.playbackframe, self)
+                self.viewport.updateviewportimage(
+                    self.currentframestate, self.currentspectrum)
+                self.timeline.updateplaybackcursor(self.playbackframe)
+                self.triggerEvent("FrameUpdate")
+                self.needtoupdate = False
+                QApplication.processEvents()
+            if self.needtoupdate and not self.seeking:
+                self.viewport.updateviewportimage(
+                    getstate(self.playbackframe, self), self.currentspectrum)
+                self.triggerEvent("FrameUpdate")
+                self.needtoupdate = False
+            time.sleep(0.016)
 
     def showInfo(self, text):
         self.viewport.showInfo(text)
