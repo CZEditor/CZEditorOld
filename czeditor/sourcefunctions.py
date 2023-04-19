@@ -191,7 +191,6 @@ class Video(Source):
                     len(transient.pyavobject)/transient.pyavobject.frame_rate*60)-param.startframe())
             transient.maxduration = int(
                 len(transient.pyavobject)/transient.pyavobject.frame_rate*60)
-            print(transient.maxduration)
         # Add the beginning frame offset
         frame += param.startframe()
 

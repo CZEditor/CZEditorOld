@@ -1583,7 +1583,6 @@ def Create95Window(icon="", text="", title="", buttons=[], active=True, closebut
         TitleImg = createtextmac(
             title, r"W95:fonts/caption", (255, 255, 255) if active else (192, 192, 192))
         IMAGE = put(IMAGE, TitleImg, 5, 5)
-    print(IMAGE.size)
     IMAGE = put(IMAGE, CloseButton, width-1, 5, "20")
     return IMAGE
 
