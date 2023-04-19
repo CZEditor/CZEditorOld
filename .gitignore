@@ -135,3 +135,6 @@ poetry.lock
 
 # Nuitka temporary directory
 *.onefile-build/
+
+# Version file for setuptools_scm
+czeditor/__version__.py
