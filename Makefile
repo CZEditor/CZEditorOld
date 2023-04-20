@@ -1,23 +1,30 @@
-poetry.lock:
-	poetry install --without=dev
-dev: poetry.lock
-	poetry install
-run: poetry.lock
-	poetry run python -m czeditor
+.venv:
+	python -m virtualenv .venv
+	bash -c "source .venv/bin/activate && pip install -e . || rm -rf .venv"
+run: .venv
+	bash -c "source .venv/bin/activate && czeditor"
 
-build: dev
-	poetry build --format wheel
+dev: .venv
+	bash -c "source .venv/bin/activate && pip install -e .[dev]"
+build-deps: .venv
+	bash -c "source .venv/bin/activate && pip install -e .[build]"
+	
+build: build-deps
+	bash -c "source .venv/bin/activate && python -m build --wheel --no-isolation"
 install: build
 	python -m pip install dist/*.whl
-bundle: dev
-	poetry run python -m nuitka \
+bundle: build-deps
+	bash -c " \
+	source .venv/bin/activate && \
+	python -m nuitka \
 	--standalone --enable-plugin=pyside6 --include-data-dir=./czeditor/res=res \
-	czeditor
+	czeditor \
+	"
 
 clean:
-	rm -rf build dist *.build *.dist *.onefile-build
+	rm -rf build dist *.build *.dist *.onefile-build *.egg-info
 dist-clean: | clean
-	rm -rf .venv poetry.lock
+	rm -rf .venv
 	git clean -ixd
 
 .PHONY: run build install bundle clean dist-clean
