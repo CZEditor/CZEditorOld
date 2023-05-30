@@ -441,7 +441,7 @@ class CzeKeyframeOptions(QWidget):
         i.name, i, i.icon) for i in czeditor.shared.sourceFunctions.values()]
     effectfunctionsdropdown = [SelectableItem(
         i.name, i, i.icon) for i in czeditor.shared.effectFunctions.values()]
-    baseparams = Params({  # BAD!!! TODO : While we wont support anything else than sources, effects and actions, but we can still generalize this.
+    baseparams = Params({  # BAD!!! TODO : While we wont support anything else than sources, effects and actions, we can still generalize this.
         "source": {
             "function": Selectable(0, sourcefunctionsdropdown),
             "params": Selectable(0, sourcefunctionsdropdown)().params.copy()
@@ -704,6 +704,7 @@ class CzeTimelineKeyframeItem(QGraphicsItemGroup):
 
     def __init__(self, keyframe):
         super().__init__()
+        czeditor.shared.timelineSnapElements[self] = True
         self.keyframe = keyframe
         self.currentBrush = self.coolgradient
         self.setFlag(
@@ -715,6 +716,9 @@ class CzeTimelineKeyframeItem(QGraphicsItemGroup):
     def setBrush(self, brush):
         self.currentBrush = brush
         self.keyframeshape.setBrush(brush)
+    
+    def __del__(self):
+        del czeditor.shared.timelineSnapElements[self]
 
 
 class CzeTimelineAnimationKeyframeShape(QGraphicsItem):
@@ -936,6 +940,30 @@ class CzeTimelineGridLines(QGraphicsItem):
                              grid*distance, rect.bottom()+1)
             painter.drawText(QRectF(grid*distance, rect.top(), distance, 30),
                              Qt.AlignmentFlag.AlignTop, str(int(grid*distance/scale)))
+
+
+class CzeTimelineSnapLine(QGraphicsItem):
+
+    def __init__(self, boundrect):
+        super().__init__()
+        self.boundrect = boundrect
+        self.showline = False
+        self.isvertical = False
+        self.desiredpos = QPoint(0, 0)
+
+    def boundingRect(self):
+        return self.boundrect()
+
+    def paint(self, painter: QPainter, option, widget) -> None:
+        if self.showline:
+            if self.isvertical:
+                painter.drawLine(QPoint(self.desiredpos.x(), self.boundrect().top()), QPoint(
+                    self.desiredpos.x(), self.boundrect().bottom()))
+            else:
+                painter.drawLine(QPoint(self.boundrect().left(), self.desiredpos.y()), QPoint(
+                    self.boundrect().right(), self.desiredpos.y()))
+            self.showline = False
+
 
 class CzeTimelineTimeCursor(QGraphicsItem):
 
@@ -1200,9 +1228,11 @@ class CzeTimeline(QWidget):
         def boundrect(): return self.graphicsview.mapToScene(
             self.graphicsview.viewport().geometry()).boundingRect()
         self.gridlines = CzeTimelineGridLines(boundrect)
+        self.snapline = CzeTimelineSnapLine(boundrect)
         self.playbackcursor = CzeTimelineTimeCursor(boundrect)
         self.scene.addItem(self.gridlines)
         self.scene.addItem(self.playbackcursor)
+        self.scene.addItem(self.snapline)
 
     def timerEvent(self, event) -> None:
         self.updateSeekingState()
@@ -1268,7 +1298,7 @@ class CzeTimeline(QWidget):
             if self.draggedframe and self.graphicsview.geometry().contains(event.pos()):
 
                 mapped = self.graphicsview.mapToScene(event.pos())
-
+                mapped = self.getSnapPos(mapped,self.keyframes[self.draggedframe])
                 self.parentclass.keyframes.setframe(
                     self.draggedframe, int(mapped.x()))
                 self.parentclass.keyframes.setlayer(
@@ -1378,7 +1408,7 @@ class CzeTimeline(QWidget):
                     self.parentclass.regeneratekeyframeoptions()
                     self.parentclass.viewport.updatehandles()
                     self.graphicsview.update()
-                elif isinstance(founditem, CzeTimelineGridLines):
+                elif isinstance(founditem, CzeTimelineSnapLine):
                     self.parentclass.seek(
                         self.graphicsview.mapToScene(event.pos().x(), 0).x())
                     self.parentclass.updateviewport()
@@ -1441,6 +1471,7 @@ class CzeTimeline(QWidget):
             if event.button() == Qt.MouseButton.LeftButton:
                 if self.draggedframe:
                     mapped = self.graphicsview.mapToScene(event.pos())
+                    mapped = self.getSnapPos(mapped,self.keyframes[self.draggedframe])
 
                     self.parentclass.keyframes.setframe(
                         self.draggedframe, int(mapped.x()))
@@ -1672,6 +1703,21 @@ class CzeTimeline(QWidget):
         self.backButton.hide()
         self.parentclass.selectedAnimationFrame = None
 
+    def getSnapPos(self, point, exclude=None):
+        for snapElement in czeditor.shared.timelineSnapElements.keys():
+            if snapElement == exclude:
+                continue
+            if abs(snapElement.pos().x()-point.x()) < 64 and abs(snapElement.pos().y()-point.y()) < 8:
+                self.snapline.desiredpos = snapElement.pos()
+                self.snapline.isvertical = False
+                self.snapline.showline = True
+                return QPoint(point.x(),snapElement.pos().y())
+            elif abs(snapElement.pos().y()-point.y()) < 64 and abs(snapElement.pos().x()-point.x()) < 8:
+                self.snapline.desiredpos = snapElement.pos()
+                self.snapline.isvertical = True
+                self.snapline.showline = True
+                return QPoint(snapElement.pos().x(),point.y())
+        return point
 
 class CzePresetKeyframeItem(QGraphicsItem):
     coolgradient = QRadialGradient(50, 50, 90)

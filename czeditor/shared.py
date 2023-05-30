@@ -6,6 +6,7 @@ def init():
     global actionFunctions
     global sourceFunctions
     global effectFunctions
+    global timelineSnapElements
     deserializable = {}
     windowObject = None
     valueProviderFunctions = {}
@@ -13,3 +14,4 @@ def init():
     actionFunctions = {}
     sourceFunctions = {}
     effectFunctions = {}
+    timelineSnapElements = {}

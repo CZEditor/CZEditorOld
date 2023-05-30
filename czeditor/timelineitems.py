@@ -3,6 +3,7 @@ from PySide6.QtGui import QColor, QPen
 from PySide6.QtWidgets import QGraphicsItem, QGraphicsSceneMouseEvent, QGraphicsItemGroup
 
 from czeditor.keyframes import Keyframe
+from czeditor.base_ui import CzeSnapItem
 import czeditor.shared
 
 
@@ -66,7 +67,7 @@ class TimelineVerticalLineItem(QGraphicsItem):
         # print(self.params.params.duration()
 
 
-class TimelineDurationHandleItem(QGraphicsItem):
+class TimelineDurationHandleItem(CzeSnapItem):
     def __init__(self, params, keyframe):
         super().__init__(None)
         self.params = params
@@ -94,6 +95,7 @@ class TimelineDurationHandleItem(QGraphicsItem):
 
     def mouseMoveEvent(self, event: QGraphicsSceneMouseEvent):
         scenepos = event.scenePos().toPoint()
+        scenepos = self.windowClass.timeline.getSnapPos(scenepos, self)
         if abs(self.startpress.x()-scenepos.x()) > abs(self.startpress.y()-scenepos.y()):
             self.params.params.duration.set(max(1, min(self.params.params.transient(
             ).maxduration-self.params.params.startframe(), scenepos.x()-self.keyframe.frame)))
@@ -107,6 +109,7 @@ class TimelineDurationHandleItem(QGraphicsItem):
 
     def mouseReleaseEvent(self, event: QGraphicsSceneMouseEvent):
         scenepos = event.scenePos().toPoint()
+        scenepos = self.windowClass.timeline.getSnapPos(scenepos, self)
         if abs(self.startpress.x()-scenepos.x()) > abs(self.startpress.y()-scenepos.y()):
             self.params.params.duration.set(max(1, min(self.params.params.transient(
             ).maxduration-self.params.params.startframe(), scenepos.x()-self.keyframe.frame)))
@@ -148,6 +151,7 @@ class TimelineStartFrameHandleItem(QGraphicsItem):
 
     def mouseMoveEvent(self, event: QGraphicsSceneMouseEvent):
         scenepos = event.scenePos().toPoint()
+        scenepos = self.windowClass.timeline.getSnapPos(scenepos,self.windowClass.timeline.keyframes[self.keyframe])
         if abs(self.startpress.x()-scenepos.x()) > abs(self.startpress.y()-scenepos.y()):
             self.params.params.startframe.set(min(self.params.params.transient().maxduration,
                                                 self.origduration+self.origframe,
@@ -180,6 +184,7 @@ class TimelineStartFrameHandleItem(QGraphicsItem):
 
     def mouseReleaseEvent(self, event: QGraphicsSceneMouseEvent):
         scenepos = event.scenePos().toPoint()
+        scenepos = self.windowClass.timeline.getSnapPos(scenepos,self.windowClass.timeline.keyframes[self.keyframe])
         if abs(self.startpress.x()-scenepos.x()) > abs(self.startpress.y()-scenepos.y()):
             self.params.params.startframe.set(min(self.params.params.transient().maxduration,
                                                 self.origduration+self.origframe,

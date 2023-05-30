@@ -4,9 +4,10 @@ from PySide6.QtWidgets import (QComboBox, QDoubleSpinBox, QFrame, QLineEdit,
                                QPlainTextEdit, QPushButton, QScrollArea,
                                QSizePolicy, QSpinBox, QToolButton, QGroupBox,
                                QColorDialog, QDialogButtonBox, QHBoxLayout,
-                               QVBoxLayout, QSlider, QWidget)
+                               QVBoxLayout, QSlider, QWidget, QGraphicsItem)
 
 from czeditor.util import dummyfunction
+import czeditor.shared
 
 from typing import List
 
@@ -298,3 +299,11 @@ class QRedColorPicker(QPushButton):
         painter.setBrush(self.currentColor)
         painter.drawRect(QRect(rect.left()+1, rect.top()+1,
                          rect.width()-2, rect.height()-2))
+
+
+class CzeSnapItem(QGraphicsItem):
+    def __init__(self, parent=None) -> None:
+        super().__init__(parent)
+        czeditor.shared.timelineSnapElements[self] = True
+    def __del__(self):
+        del czeditor.shared.timelineSnapElements[self]
