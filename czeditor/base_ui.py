@@ -126,9 +126,9 @@ class QRedSpinBox(QSpinBox):
         self.onchange(self.value())
 
     def setValueBypass(self, value):
-        self.blockSignals(True)
+        self.valueChanged.disconnect(self.change)
         self.setValue(value)
-        self.blockSignals(False)
+        self.valueChanged.connect(self.change)
 
 
 class QRedDecimalSpinBox(QDoubleSpinBox):

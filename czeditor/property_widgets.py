@@ -5,7 +5,6 @@ from czeditor.base_ui import (QRedButton, QRedDecimalSpinBox, QRedFrame,
                               QRedSpinBox, QRedTextBox, QRedTextEntry,
                               QRedExpandableButton, QRedComboBox, QRedColorPicker,
                               QRedFontComboBox)
-from fontTools import ttLib
 
 
 class IntPropertyWidget(QRedFrame):
@@ -242,8 +241,7 @@ class FloatPropertyWidget(QRedFrame):
         self.theproperty = property
         self.widgets = QHBoxLayout()
         self.spinbox = QRedDecimalSpinBox(self, self.updateproperty)
-        self.spinbox.setValue(self.theproperty(
-            self.windowObject.playbackframe))
+        self.spinbox.setValue(self.theproperty())
         self.animationModeButton = QRedExpandableButton(
             self, "A", self.enterAnimationMode)
         self.animationModeButton.setSizePolicy(
@@ -261,8 +259,7 @@ class FloatPropertyWidget(QRedFrame):
 
     def updateself(self):
         self.spinbox.onchange = self.lock  # Smart!
-        self.spinbox.setValue(self.theproperty(
-            self.windowObject.playbackframe))
+        self.spinbox.setValue(self.theproperty())
         self.update()
 
     def enterAnimationMode(self):

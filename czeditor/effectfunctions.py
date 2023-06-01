@@ -51,7 +51,7 @@ class Media2D(Effect):
 
         imageResolution = (image.shape[1], image.shape[0])
 
-        x, y = params.x(frame), params.y(frame)
+        x, y = params.x(), params.y()
 
         # Detect change in image resolution
         if transient.lastsize[0] != imageResolution[0] or transient.lastsize[1] != imageResolution[1]:
@@ -69,7 +69,7 @@ class Media2D(Effect):
                                       [-width/2,  height/2, 0.0, 0.0, 1.0],
                                       [width/2,  height/2, 0.0, 1.0, 1.0]], dtype=np.float32)
 
-        angle = np.deg2rad(params.rotation(frame))
+        angle = np.deg2rad(params.rotation())
 
         rotationMatrix = np.array([[np.cos(angle), -np.sin(angle)],
                                    [np.sin(angle), np.cos(angle)]])
@@ -108,7 +108,7 @@ class Media3D(Effect):
 
         imageResolution = (image.shape[1], image.shape[0])
 
-        x, y, z = params.x(frame), params.y(frame), params.z(frame)
+        x, y, z = params.x(), params.y(), params.z()
 
         # Detect change in image resolution
         if transient.lastsize[0] != imageResolution[0] or transient.lastsize[1] != imageResolution[1]:
@@ -129,9 +129,9 @@ class Media3D(Effect):
         newvertices = np.hstack(
             (
                 Rotation.from_euler("xyz", (
-                    params.rotationX(frame),
-                    params.rotationY(frame),
-                    params.rotationZ(frame)), True).apply(
+                    params.rotationX(),
+                    params.rotationY(),
+                    params.rotationZ()), True).apply(
                     newvertices[:, :3]
                 ),
                 newvertices[:, 3:]
@@ -192,7 +192,7 @@ class ScrollingShader(Effect):
         # TODO : Add more complex stuff, like custom equations or scaling the tile effect
         shader.append({"fragmentshader": transient.shader,
                        # TODO : Do not pass in parameters like this (You would have to recompile every time if the properties were animated). Use a uniform.
-                       "fragmentlinetoadd": "shaderscrolling($inpos,frame,"+str(params.speedX(frame))+","+str(params.speedY(frame))+",$outpos);",
+                       "fragmentlinetoadd": "shaderscrolling($inpos,frame,"+str(params.speedX())+","+str(params.speedY())+",$outpos);",
                        "fragmentdeclaration": "void shaderscrolling(in vec2 inpos, float frame, float speedx, float speedy, out vec2 outpos);"})
         return image, vertices, shader
 
@@ -217,7 +217,7 @@ class TilingShader(Effect):
                 }
             """, GL_FRAGMENT_SHADER)
         shader.append({"fragmentshader": transient.shader,
-                       "fragmentlinetoadd": "shadertiling($inpos,"+str(params.amountX(frame))+","+str(params.amountY(frame))+",$outpos);",
+                       "fragmentlinetoadd": "shadertiling($inpos,"+str(params.amountX())+","+str(params.amountY())+",$outpos);",
                        "fragmentdeclaration": "void shadertiling(in vec2 inpos, float amountx, float amounty, out vec2 outpos);"})
         return image, vertices, shader
 
@@ -251,7 +251,7 @@ class CustomShader(Effect):
             transient.previousIndex = index
 
         shader.append({"fragmentshader": transient.shader,
-                       "fragmentlinetoadd": "shadercustom"+str(index)+"($inpos,frame,worldPos,spectrum"+str(params.variableA(frame))+","+str(params.variableB(frame))+",$outpos);",
+                       "fragmentlinetoadd": "shadercustom"+str(index)+"($inpos,frame,worldPos,spectrum"+str(params.variableA())+","+str(params.variableB())+",$outpos);",
                        "fragmentdeclaration": "void shadercustom"+str(index)+"(in vec2 inpos, float frame, vec3 worldpos, in float spectrum[512], float variableA, float variableB, out vec2 outpos);"})
         return image, vertices, shader
 
@@ -287,7 +287,7 @@ class CustomColorShader(Effect):
             transient.previousIndex = index
 
         shader.append({"fragmentshader": transient.shader,
-                       "fragmentlinetoadd": "shadercustom"+str(index)+"($inpos,frame,width,height,worldPos,spectrum,image,"+str(params.variableA(frame))+","+str(params.variableB(frame))+");",
+                       "fragmentlinetoadd": "shadercustom"+str(index)+"($inpos,frame,width,height,worldPos,spectrum,image,"+str(params.variableA())+","+str(params.variableB())+");",
                        "fragmentdeclaration": "vec4 shadercustom"+str(index)+"(in vec2 inpos, float frame, int width, int height, vec3 worldpos, in float spectrum[512], in sampler2D image,float variableA, float variableB);",
                        "ismultisample": True})
         return image, vertices, shader
@@ -414,7 +414,7 @@ class CustomVertexShader(Effect):
             transient.previousIndex = index
 
         shader.append({"vertexshader": transient.shader,
-                       "vertexlinetoadd": "shadercustom"+str(index)+"($inpos,vertexColor,spectrum,"+str(params.variableA(frame))+","+str(params.variableB(frame))+",frame,$outpos);",
+                       "vertexlinetoadd": "shadercustom"+str(index)+"($inpos,vertexColor,spectrum,"+str(params.variableA())+","+str(params.variableB())+",frame,$outpos);",
                        "vertexdeclaration": "void shadercustom"+str(index)+"(in vec3 inpos, in vec2 vertexColor, in float spectrum[512], float variableA, float variableB, float frame, out vec3 outpos);"})
         return image, vertices, shader
 # ["Normal Media",ImageComposite],

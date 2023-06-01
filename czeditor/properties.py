@@ -6,7 +6,6 @@ from czeditor.property_widgets import *
 from czeditor.animation_keyframes import *
 from czeditor.util import Selectable, Params, SelectableItem
 import czeditor.shared
-from fontTools import ttLib
 
 class Property:
     def __init__(self, value):
@@ -277,7 +276,8 @@ class FloatProperty(Property):
     def copy(self):
         return FloatProperty(self._val, self.timeline)
 
-    def __call__(self, frame):
+    def __call__(self):
+        frame = czeditor.shared.windowObject.playbackframe
         if self.timeline is None:
             self.currentvalue = self._val
             return self._val

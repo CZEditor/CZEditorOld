@@ -20,14 +20,14 @@ class StaticDecimalNumber(Provider):
     output = ["Float"]
 
     def getValue(params, trackValues, keyframe, frame):
-        return [{"type": "Float", "value": params.value(frame)}]
+        return [{"type": "Float", "value": params.value()}]
 
 
 class MathProvider(Provider):
     name = "Math function"
     params = Params(
         {
-            "function": OpenWindowButtonProperty("Edit Script...", CodeEditWindow, "sin(frame)")
+            "function": OpenWindowButtonProperty("Edit Script...", CodeEditWindow, "sin(frame/60)")
         }
     )
     output = ["Float"]

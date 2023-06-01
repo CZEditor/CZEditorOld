@@ -338,8 +338,8 @@ class RadialGradient(Source):
         x = np.arange(params.width())
         y = np.arange(params.height())
         xx, yy = np.meshgrid(x, y)
-        dist = np.hypot(xx - params.Xcenter(frame), yy - params.Ycenter(frame))
-        radius = [0,params.radius(frame)]
+        dist = np.hypot(xx - params.Xcenter(), yy - params.Ycenter())
+        radius = [0,params.radius()]
         i_r,i_g,i_b,i_a = params.color_inner()
         o_r,o_g,o_b,o_a = params.color_outer()
         f_r = scipy.interpolate.interp1d(radius,[i_r,o_r], bounds_error = False, fill_value=(i_r,o_r))
@@ -359,6 +359,7 @@ class Text(Source):
         "text": StringProperty(""),
         "font": FontProperty("Trebuchet MS"),
         "size": IntProperty(8),
+        "spacing": FloatProperty(100.0),
         "color": RGBProperty(255, 255, 255),
         "transient": TransientProperty(Params({
             "QPainter": None,
@@ -369,11 +370,16 @@ class Text(Source):
 
     def image(params: Params, windowObject, frame):
         transient = params.transient()
+        font = params.font()
+        font.setPointSize(params.size())
+        font.setLetterSpacing(QFont.SpacingType.PercentageSpacing,params.spacing())
+        rect = QFontMetrics(font).boundingRect(QRect(0,0,10000,10000),Qt.AlignmentFlag.AlignCenter,params.text())
+        if rect.width() != transient.QImage.width() or rect.height() != transient.QImage.height():
+            transient.QImage = QImage(max(1,rect.width()), max(1,rect.height()),QImage.Format.Format_RGBA8888)
         transient.QImage.fill(QColor(0,0,0,0))
         transient.QPainter.begin(transient.QImage)
         transient.QPainter.setPen(QColor(*params.color()))
-        font = params.font()
-        font.setPointSize(params.size())
+        
         transient.QPainter.setFont(font)
         
 
@@ -392,6 +398,7 @@ class Text(Source):
         transient = params.transient()
         font = params.font()
         font.setPointSize(params.size())
+        font.setLetterSpacing(QFont.SpacingType.PercentageSpacing,params.spacing())
         rect = QFontMetrics(font).boundingRect(QRect(0,0,10000,10000),Qt.AlignmentFlag.AlignCenter,params.text())
         transient.QImage = QImage(max(1,rect.width()), max(1,rect.height()),QImage.Format.Format_RGBA8888)
         transient.QImage.fill(QColor(0,0,0,0))
