@@ -5,8 +5,9 @@ import scipy.interpolate
 import pyspng
 import sounddevice
 from moviepy.audio.io.AudioFileClip import AudioFileClip
-from PIL import Image
-from PySide6.QtCore import QFileInfo
+from PIL import Image, ImageFont, ImageDraw
+from PySide6.QtCore import QFileInfo, QRect
+from PySide6.QtGui import QRawFont, QImage, QFontMetrics
 
 from czeditor.avreader import PyAVSeekableVideoReader
 from czeditor.generate import CreateXPWindow
@@ -16,6 +17,7 @@ from czeditor.timelineitems import *
 from czeditor.util import *
 import czeditor.shared
 
+import traceback
 loadedimages = {}
 emptyimage = Image.new("RGBA", (1, 1), (0, 0, 0, 0))
 
@@ -349,3 +351,47 @@ class RadialGradient(Source):
         b = f_b(dist).astype(np.uint8)
         a = f_a(dist).astype(np.uint8)
         return np.dstack((r,g,b,a))
+
+
+class Text(Source):
+    name = "Text"
+    params = Params({
+        "text": StringProperty(""),
+        "font": FontProperty("Trebuchet MS"),
+        "size": IntProperty(8),
+        "color": RGBProperty(255, 255, 255),
+        "transient": TransientProperty(Params({
+            "QPainter": None,
+            "QImage": None
+        }))
+    })
+    icon = "editor:Text.png"
+
+    def image(params: Params, windowObject, frame):
+        transient = params.transient()
+        transient.QImage.fill(QColor(0,0,0,0))
+        transient.QPainter.begin(transient.QImage)
+        transient.QPainter.setPen(QColor(*params.color()))
+        font = params.font()
+        font.setPointSize(params.size())
+        transient.QPainter.setFont(font)
+        
+
+        transient.QPainter.drawText(transient.QImage.rect(), Qt.AlignmentFlag.AlignCenter, params.text())
+        transient.QPainter.end()
+
+        ptr = transient.QImage.constBits()
+        return np.frombuffer(ptr, np.uint8).reshape((transient.QImage.height(), transient.QImage.width(), 4))
+    def initialize(params: Params):
+        transient = params.transient()
+        transient.QImage = QImage(1,1,QImage.Format.Format_RGBA8888)
+        transient.QImage.fill(QColor(0,0,0,0))
+        transient.QPainter = QPainter()
+
+    def updateParams(params):
+        transient = params.transient()
+        font = params.font()
+        font.setPointSize(params.size())
+        rect = QFontMetrics(font).boundingRect(QRect(0,0,10000,10000),Qt.AlignmentFlag.AlignCenter,params.text())
+        transient.QImage = QImage(max(1,rect.width()), max(1,rect.height()),QImage.Format.Format_RGBA8888)
+        transient.QImage.fill(QColor(0,0,0,0))

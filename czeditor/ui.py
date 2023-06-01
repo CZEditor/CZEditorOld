@@ -240,6 +240,8 @@ class CzeKeyframeOptionCategory(QRedDropDownFrame):
         for i in range(self.widgets.rowCount()):
             self.widgets.removeRow(0)
         self.params.params = self.params.function().params.copy()
+        if hasattr(self.params.function(),"initialize"):
+            self.params.function().initialize(self.params.params)
         if self.parentclass.selectedframe:
             paramsAssociateKeyframe(
                 self.params.params, self.parentclass.selectedframe)

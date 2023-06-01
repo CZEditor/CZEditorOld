@@ -1,11 +1,12 @@
 from typing import Any, Union
 from PySide6.QtWidgets import QMainWindow
+from PySide6.QtGui import QFont
 
 from czeditor.property_widgets import *
 from czeditor.animation_keyframes import *
 from czeditor.util import Selectable, Params, SelectableItem
 import czeditor.shared
-
+from fontTools import ttLib
 
 class Property:
     def __init__(self, value):
@@ -384,3 +385,28 @@ class RGBProperty(Property):
     
     def deserialize(data):
         return __class__(data["R"],data["G"],data["B"],data["A"])
+
+
+class FontProperty(Property):
+    def __init__(self, font):
+        self.font = font
+        self._font = QFont(font)
+
+    def __call__(self):
+        return self._font
+
+    def set(self, font):
+        self.font = font
+        self._font = QFont(font)
+
+    def copy(self):
+        return FontProperty(self.font)
+
+    def widget(self, windowObject, updateParamsFunction):
+        return FontPropertyWidget(self, windowObject, updateParamsFunction)
+
+    def serialize(self):
+        return {"font": self.font}
+
+    def deserialize(data):
+        return __class__(data["font"])

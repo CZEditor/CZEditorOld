@@ -4,7 +4,9 @@ from PySide6.QtWidgets import (QComboBox, QDoubleSpinBox, QFrame, QLineEdit,
                                QPlainTextEdit, QPushButton, QScrollArea,
                                QSizePolicy, QSpinBox, QToolButton, QGroupBox,
                                QColorDialog, QDialogButtonBox, QHBoxLayout,
-                               QVBoxLayout, QSlider, QWidget, QGraphicsItem)
+                               QVBoxLayout, QSlider, QWidget, QGraphicsItem,
+                               QFontComboBox)
+
 
 from czeditor.util import dummyfunction
 import czeditor.shared
@@ -169,6 +171,27 @@ class QRedComboBox(QComboBox):
 
     def valuechanged(self, index) -> None:
         self.onchange(self.currentText(), self.currentIndex())
+
+
+class QRedFontComboBox(QFontComboBox):
+    def __init__(self, parent, onchange=dummyfunction):
+        super().__init__(parent)
+        self.onchange = onchange
+        # styl = QApplication.style()
+        # p = styl.standardIcon(QStyle.SP_ArrowDown)
+        # p.pixmap(16,16).save("arrow.png")
+        # self.setStyleSheet("border-image:url(editor/Text Box.png) 2; border-width:2;")
+        self.setStyleSheet(
+            """
+            QFontComboBox { background:none; border-image:url(editor:Text Box.png); border-width:2;}
+            QFontComboBox::drop-down { border-image:url(editor:Button.png); border-width:3; }
+            QFontComboBox::down-arrow { image: url(editor:Arrow Down.png); }
+        """
+        )
+        self.currentIndexChanged.connect(self.valuechanged)
+
+    def valuechanged(self, index) -> None:
+        self.onchange(self.currentFont())
 
 
 class QRedColorPicker(QPushButton):
