@@ -16,7 +16,12 @@ class IntPropertyWidget(QRedFrame):
         self.widgets = QHBoxLayout()
         self.spinbox = QRedSpinBox(self, self.updateproperty)
         self.spinbox.setValue(self.theproperty._val)
+        self.animationModeButton = QRedExpandableButton(
+            self, "A", self.enterAnimationMode)
+        self.animationModeButton.setSizePolicy(
+            QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Fixed)
         self.widgets.addWidget(self.spinbox)
+        self.widgets.addWidget(self.animationModeButton)
         self.setLayout(self.widgets)
         self.setStyleSheet("border-width:0px;")
         self.windowObject.connectToEvent("FrameUpdate", self.updateself)
@@ -28,6 +33,9 @@ class IntPropertyWidget(QRedFrame):
 
     def updateself(self):
         self.spinbox.setValueBypass(self.theproperty._val)
+
+    def enterAnimationMode(self):
+        self.windowObject.enterAnimationMode(self.theproperty)
 
     def disconnectNotify(self, signal) -> None:
         self.windowObject.disconnectFromEvent("FrameUpdate", self.updateself)

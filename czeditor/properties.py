@@ -35,30 +35,75 @@ class Property:
 
 
 class IntProperty(Property):
-    def __init__(self, value):
+    def __init__(self, value, timeline: Union[AnimationKeyframeList, None] = None):
         self._val = value
+        self.timeline = timeline
+        self.tracks = {0: {"type": "Int", "value": 0}}
+        self.mixerFunctions = []
+        self.providerFunctions = []
+        self.compatibleTypes = ["Float", "Int"]
+        self.currentvalue = 0
+        self.lastframe = 0
+        self.associatedKeyframe = None
 
     def copy(self):
-        return IntProperty(self._val)
+        return IntProperty(self._val, self.timeline)
 
     def __call__(self):
-        return self._val
+        frame = czeditor.shared.windowObject.playbackframe
+        if self.timeline is None:
+            self.currentvalue = self._val
+            return self._val
+        else:
+            if self.lastframe == frame:
+                return self.currentvalue
+            self.lastframe = frame
+            gotten = self.timeline.getValueAt(frame)
+            if gotten is not None:
+                self.currentvalue = gotten[0]["value"]
+                return self.currentvalue
+
+            self.currentvalue = self._val
+            return self.currentvalue
 
     def widget(self, windowObject, updateParamsFunction):
         return IntPropertyWidget(self, windowObject, updateParamsFunction)
 
-    @property
-    def val(self):
-        return self._val
-
-    @val.setter
-    def val(self, value):
-        self._val = value
+    def defaultKeyframe(self, frame, tracks):
+        
+        sortedValueProviderFunctions = [i for i in czeditor.shared.valueProviderFunctions.values()]
+        sortedValueOutputterFunctions = [i for i in czeditor.shared.valueOutputterFunctions.values()]
+        return AnimationKeyframe(frame, [], tracks, Params(
+            {
+                "provider":
+                {
+                    "function": Selectable(0, [SelectableItem(i.name,i) for i in sortedValueProviderFunctions]),
+                    "params": sortedValueProviderFunctions[0].params.copy()
+                },
+                "outputter":
+                {
+                    "function": Selectable(0, [SelectableItem(i.name,i) for i in sortedValueOutputterFunctions]),
+                    "params": sortedValueOutputterFunctions[0].params.copy()
+                }
+            }
+        ))
 
     def set(self, value):
         self._val = value
+
+    def associateKeyframe(self, keyframe):
+        if self.timeline:
+            self.timeline.associatedKeyframe = keyframe
+        return super().associateKeyframe(keyframe)
+
+    def serialize(self):
+        if self.timeline:
+            return {"value": self._val, "timeline": self.timeline.serialize()}
+        return {"value": self._val}
     
     def deserialize(data):
+        if "timeline" in data:
+            return __class__(data["value"],AnimationKeyframeList.deserialize(data["timeline"]))
         return __class__(data["value"])
 
 
@@ -272,6 +317,7 @@ class FloatProperty(Property):
         self.compatibleTypes = ["Float", "Int"]
         self.currentvalue = 0
         self.lastframe = 0
+        self.associatedKeyframe = None
 
     def copy(self):
         return FloatProperty(self._val, self.timeline)

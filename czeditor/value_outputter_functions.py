@@ -3,6 +3,7 @@ from czeditor.properties import *
 from PySide6.QtGui import QPainter, QPainterPath
 from PySide6.QtCore import QPoint, QRectF
 import czeditor.shared
+from math import floor, ceil
 
 
 class Outputter:
@@ -135,6 +136,46 @@ class StringConcatenation(Outputter):
 
     def getValue(params, trackValues, keyframe, frame, nextKeyframes):
         return [{"type": "String", "value": str(trackValues[0]["value"]) + str(trackValues[1]["value"])}]
+
+    def getInputShape(params, track, bottom, top, keyframe, painter: QPainter):
+        painter.drawPolygon(
+            [QPoint(-3, 0), QPoint(-7, -4), QPoint(-7, -7+top), QPoint(-3, -7+top), QPoint(-3, -7), QPoint(0, -7), QPoint(0, 7), QPoint(-3, 7), QPoint(-3, 7+bottom), QPoint(-7, 7+bottom), QPoint(-7, 4)])
+        #        CENTER           GO ↙️       ⬇️ to connect         ➡️ by 4           ⬆️ back         ➡️            ⬆️           ⬅️            ⬆️ to connect         ⬅️ by 4            ⬇️ back
+
+    def getOutputShape(params, track, bottom, top, keyframe, painter: QPainter):
+        painter.drawPolygon(
+            [QPoint(-1, 7), QPoint(-1, -7), QPoint(0, -7), QPoint(7, 0), QPoint(0, 7)])
+
+    def getInputRect(params, track, bottom, top, keyframe):
+        return QRectF(-7, -7+top, 7, 15+bottom-top)
+
+    def getOutputRect(params, track, bottom, top, keyframe):
+        return QRectF(-1, -7, 8, 15)
+
+    def getOutputIcon(params, track, keyframe, painter: QPainter):
+        painter.drawLines([QPoint(1, -3), QPoint(1, 3),
+                          QPoint(3, -3), QPoint(3, 3)])
+
+    def getInputPath(params, track, keyframe):
+        path = QPainterPath()
+        path.addRect(-7, -7, 7, 15)
+        return path
+
+    def getOutputPath(params, track, keyframe):
+        path = QPainterPath()
+        path.addRect(-1, -7, 8, 15)
+        return path
+
+class Round(Outputter):
+    name = "Round"
+    params = Params({
+        "rounding": SelectableProperty([SelectableItem("Round (round to nearest)",0), SelectableItem("Floor (round down)",1), SelectableItem("Ceil (round up)",2)])
+    })
+    outputs = ["Int"]
+    inputs = ["Int"]
+
+    def getValue(params,trackValues,keyframe,frame,nextKeyframes):
+        return [{"type":"Int","value":[round,floor,ceil][params.rounding()](trackValues[0]["value"])}]
 
     def getInputShape(params, track, bottom, top, keyframe, painter: QPainter):
         painter.drawPolygon(
